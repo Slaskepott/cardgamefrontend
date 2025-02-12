@@ -116,13 +116,23 @@ button:hover {
     background-color: #fff8dc;
 }
 
-.card[data-suit="Hearts"], .card[data-suit="Diamonds"] {
+.card[data-suit="Fire"] {
     color: red;
 }
 
-.card[data-suit="Clubs"], .card[data-suit="Spades"] {
-    color: black;
+.card[data-suit="Air"] {
+    color: white;
+    text-shadow: 0px 0px 5px gray;
 }
+
+.card[data-suit="Earth"] {
+    color: brown;
+}
+
+.card[data-suit="Water"] {
+    color: blue;
+}
+
 
 
 #play-hand-btn {

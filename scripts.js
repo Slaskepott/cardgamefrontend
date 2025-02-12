@@ -79,9 +79,10 @@ function renderCards(cards) {
 }
 
 function getSuitSymbol(suit) {
-    const symbols = { "Hearts": "♥", "Diamonds": "♦", "Clubs": "♣", "Spades": "♠" };
+    const symbols = { "Fire": "🔥", "Air": "💨", "Earth": "🌿", "Water": "💧" };
     return symbols[suit] || "";
 }
+
 
 function toggleCardSelection(cardElement, card) {
     if (selectedCards.includes(card)) {
@@ -181,9 +182,14 @@ function setupWebSocket() {
                 updateHealth(player, message.health_update[player]);
             });
             logMessage(`${message.player} played ${message.hand_type}`);
-            if (message.remaining_discards !== undefined) {
+            if ((message.remaining_discards !== undefined) && message.player === playerId) {
                 updateDiscardButton(message.remaining_discards);
+    
             }
+            if (message.new_hand !== undefined && message.player === playerId){
+                renderCards(message.new_hand)
+            }
+            
         }
         if (message.type === "new_hand") {
             console.log("Received new hand:", message.cards);
