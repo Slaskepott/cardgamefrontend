@@ -141,3 +141,29 @@ button:hover {
     background-color: #ccc;
     cursor: not-allowed;
 }
+
+.health-bar-container {
+    display: flex;
+    justify-content: center;
+    gap: 50px;
+    margin-top: 20px;
+}
+.health-bar-wrapper {
+    text-align: center;
+}
+.health-bar {
+    width: 200px;
+    height: 20px;
+    background-color: #ddd;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid #000;
+    margin-top: 5px;
+}
+.health-fill {
+    height: 100%;
+    width: 100%; /* Default full health */
+    background-color: #ff4d4d;
+    transition: width 0.5s ease-in-out;
+}

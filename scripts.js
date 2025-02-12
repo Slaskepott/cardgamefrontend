@@ -10,12 +10,44 @@ function logMessage(message) {
     logDiv.scrollTop = logDiv.scrollHeight;
 }
 
+async function createGame() {
+    gameId = document.getElementById("gameId").value.trim();
+    if (!gameId) return logMessage("Please enter a game ID!");
+    
+    const response = await fetch(`${BASE_URL}/game/create/${gameId}`, { method: "POST" });
+    const data = await response.json();
+    if (data.error) return logMessage(data.error);
+    logMessage(`Game created: ${gameId}`);
+    joinGame();
+}
+
+async function joinGame() {
+    gameId = document.getElementById("gameId").value.trim();
+    if (!gameId) return logMessage("Please enter a game ID!");
+    
+    const response = await fetch(`${BASE_URL}/game/${gameId}/players`);
+    const data = await response.json();
+    if (data.error) return logMessage(data.error);
+    
+    const existingPlayers = data.players;
+    let nextPlayerNumber = 1;
+    while (existingPlayers.includes(`player${nextPlayerNumber}`)) {
+        nextPlayerNumber++;
+    }
+    playerId = `player${nextPlayerNumber}`;
+    
+    await fetch(`${BASE_URL}/game/join/${gameId}?player_id=${playerId}`, { method: "POST" });
+    logMessage(`Joined as ${playerId}`);
+    setupWebSocket();
+}
+
 function updateTurnIndicator(nextPlayer) {
     document.getElementById("game-banner").textContent = `Current Turn: ${nextPlayer}`;
     document.getElementById("turn-indicator").textContent = `Current Turn: ${nextPlayer}`;
 }
 
 function updateHealth(player, healthPercentage) {
+    console.log("Update health was called for player "+player+" with percentage "+healthPercentage)
     document.getElementById(`health-${player}`).style.width = `${healthPercentage}%`;
 }
 
@@ -71,6 +103,12 @@ async function playHand() {
         selectedCards = [];
         document.getElementById("play-hand-btn").disabled = true;
     }
+    document.querySelectorAll(".card.selected").forEach(card => {
+        card.classList.remove("selected");
+    });
+
+    selectedCards = [];
+    document.getElementById("play-hand-btn").disabled = true;
 }
 
 function setupWebSocket() {
@@ -90,11 +128,11 @@ function setupWebSocket() {
         logMessage(`Game Update: ${event.data}`);
 
         if (message.next_player) updateTurnIndicator(message.next_player);
-        if (message.type === "card_played") {
-            logMessage(`${message.player} played ${message.card}. Dealt ${message.damage} damage!`);
+        if (message.type === "hand_played") {
             Object.keys(message.health_update).forEach(player => {
                 updateHealth(player, message.health_update[player]);
             });
+            logMessage(`${event.player} played ${event.hand_type}`)
         }
         if (message.type === "new_hand") {
             console.log("Received new hand:", message.cards);
