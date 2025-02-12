@@ -14,7 +14,7 @@
     <h2>Game Log</h2>
     <div id="log"></div>
     <h2>Current Turn</h2>
-    <div id="turn-indicator">Waiting for turn info...</div>
+    <div id="turn-indicator">Waiting for game to start...</div>
     <h2>Players' Health</h2>
     <div class="health-bar-container">
         <div>
@@ -50,8 +50,15 @@
         }
         
         function renderCards(cards) {
+            console.log("Rendering cards:", cards); // ✅ Debugging line
             const cardContainer = document.getElementById("card-container");
-            cardContainer.innerHTML = "";
+            cardContainer.innerHTML = ""; // ✅ Clear previous cards
+
+            if (!cards || cards.length === 0) {
+                cardContainer.innerHTML = "<p>No cards available.</p>";
+                return;
+            }
+
             cards.forEach(card => {
                 const cardElement = document.createElement("div");
                 cardElement.classList.add("card");
@@ -105,32 +112,43 @@
         function setupWebSocket() {
             if (!gameId || !playerId) return;
             const wsUrl = `wss://cardgame-lndd.onrender.com/game/${gameId}/ws/${playerId}`;
+            console.log("Connecting to WebSocket:", wsUrl); // ✅ Debugging log
             ws = new WebSocket(wsUrl);
-            
-            ws.onopen = () => logMessage("Connected to WebSocket!");
+
+            ws.onopen = () => {
+                console.log("WebSocket connection established!"); // ✅ Debugging log
+                logMessage("Connected to WebSocket!");
+            };
+
             ws.onmessage = (event) => {
+                console.log("Raw WebSocket Message:", event.data); // ✅ Debugging log
                 const message = JSON.parse(event.data);
                 logMessage(`Game Update: ${event.data}`);
-                
-                console.log("WebSocket Message Received:", message); // ✅ Debugging line
 
                 if (message.next_player) updateTurnIndicator(message.next_player);
-                
                 if (message.type === "card_played") {
                     logMessage(`${message.player} played ${message.card}. Dealt ${message.damage} damage!`);
                     Object.keys(message.health_update).forEach(player => {
                         updateHealth(player, message.health_update[player]);
                     });
                 }
-                
                 if (message.type === "new_hand") {
-                    console.log("Received new hand:", message.cards); // ✅ Debugging line
+                    console.log("Received new hand:", message.cards); // ✅ Debugging log
                     renderCards(message.cards);
                 }
             };
-            ws.onclose = () => logMessage("WebSocket disconnected");
-            ws.onerror = (error) => logMessage(`WebSocket Error: ${error.message}`);
+
+            ws.onclose = () => {
+                console.log("WebSocket connection closed."); // ✅ Debugging log
+                logMessage("WebSocket disconnected");
+            };
+
+            ws.onerror = (error) => {
+                console.error("WebSocket Error:", error); // ✅ Debugging log
+                logMessage(`WebSocket Error: ${error.message}`);
+            };
         }
+
     </script>
 </body>
 </html>
