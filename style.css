@@ -86,14 +86,25 @@ button:hover {
     border: 2px solid black;
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
-    font-size: 18px;
     font-weight: bold;
-    text-transform: uppercase;
     cursor: pointer;
     transition: transform 0.2s ease-in-out;
     position: relative;
+    font-size: 20px;
+}
+
+.card-rank {
+    font-size: 40px; /* Large number */
+    font-weight: bold;
+    line-height: 1;
+}
+
+.card-suit {
+    font-size: 45px; /* Bigger emoji */
+    margin-top: 5px;
 }
 
 .card:hover {
@@ -113,13 +124,6 @@ button:hover {
     color: black;
 }
 
-.card::after {
-    content: attr(data-symbol);
-    font-size: 24px;
-    position: absolute;
-    top: 5px;
-    right: 5px;
-}
 
 #play-hand-btn {
     margin-top: 15px;
@@ -131,6 +135,35 @@ button:hover {
     border-radius: 5px;
     cursor: pointer;
     transition: background 0.3s;
+}
+
+#discard-btn {
+    margin-top: 15px;
+    padding: 12px 20px;
+    font-size: 18px;
+    background-color: #a75728;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+#discard-btn:hover {
+    margin-top: 15px;
+    padding: 12px 20px;
+    font-size: 18px;
+    background-color: #c67445;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+#discard-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
 }
 
 #play-hand-btn:hover {

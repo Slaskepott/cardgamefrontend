@@ -64,9 +64,15 @@ function renderCards(cards) {
     cards.forEach(card => {
         const cardElement = document.createElement("div");
         cardElement.classList.add("card");
-        cardElement.textContent = `${card.rank} of ${card.suit}`;
         cardElement.dataset.suit = card.suit;
         cardElement.dataset.symbol = getSuitSymbol(card.suit);
+
+        // Set the inner HTML to display a large rank number and a bigger suit emoji
+        cardElement.innerHTML = `
+            <div class="card-rank">${card.rank}</div>
+            <div class="card-suit">${getSuitSymbol(card.suit)}</div>
+        `;
+
         cardElement.onclick = () => toggleCardSelection(cardElement, card);
         cardContainer.appendChild(cardElement);
     });
@@ -86,15 +92,19 @@ function toggleCardSelection(cardElement, card) {
         cardElement.classList.add("selected");
     }
     document.getElementById("play-hand-btn").disabled = selectedCards.length === 0;
+    document.getElementById("discard-btn").disabled = selectedCards.length === 0;
 }
 
 async function discard() {
+    console.log("pressed discard button");
     if (selectedCards.length === 0) return;
+
     const response = await fetch(`${BASE_URL}/game/${gameId}/discard`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ player_id: playerId, cards: selectedCards })
     });
+
     const data = await response.json();
     if (data.error) {
         logMessage(data.error);
@@ -102,13 +112,24 @@ async function discard() {
         logMessage(`${playerId} discarded cards!`);
         selectedCards = [];
         document.getElementById("discard-btn").disabled = true;
+
+        if (data.remaining_discards !== undefined) {
+            updateDiscardButton(data.remaining_discards);
+        }
     }
     document.querySelectorAll(".card.selected").forEach(card => {
         card.classList.remove("selected");
     });
 
     selectedCards = [];
+    document.getElementById("play-hand-btn").disabled = true;
     document.getElementById("discard-btn").disabled = true;
+}
+
+function updateDiscardButton(remaining) {
+    const discardBtn = document.getElementById("discard-btn");
+    discardBtn.textContent = `Discard (${remaining})`;
+    discardBtn.disabled = remaining <= 0;
 }
 
 async function playHand() {
@@ -132,6 +153,7 @@ async function playHand() {
 
     selectedCards = [];
     document.getElementById("play-hand-btn").disabled = true;
+    document.getElementById("discard-btn").disabled = true;
 }
 
 function setupWebSocket() {
@@ -161,9 +183,12 @@ function setupWebSocket() {
             console.log("Received new hand:", message.cards);
             renderCards(message.cards);
         }
-        if (message.type == "hand_updated") {
+        if (message.type === "hand_updated" && message.player === playerId) {
             console.log("Updated hand:", message.cards);
             renderCards(message.cards);
+            if (message.remaining_discards !== undefined) {
+                updateDiscardButton(message.remaining_discards);
+            }
         }
     };
 
