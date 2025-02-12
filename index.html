@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<link rel="stylesheet" href="style.css">
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Game</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        #log { height: 200px; overflow-y: auto; border: 1px solid black; padding: 10px; }
+        button { margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Card Game</h1>
+    <label>Game ID: <input type="text" id="gameId"></label>
+    <button onclick="createGame()">Create Game</button>
+    <button onclick="joinGame()">Join Game</button>
+    <br>
+    <label>Card: <input type="text" id="card"></label>
+    <button onclick="playCard()">Play Card</button>
+    <button onclick="endTurn()">End Turn</button>
+    <h2>Game Log</h2>
+    <div id="log"></div>
+
+    <script>
+        const BASE_URL = "https://cardgame-lndd.onrender.com";
+        let playerId = null;
+        let gameId = null;
+        let ws = null;
+
+        function logMessage(message) {
+            const logDiv = document.getElementById("log");
+            logDiv.innerHTML += `<p>${message}</p>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        async function createGame() {
+            gameId = document.getElementById("gameId").value.trim();
+            if (!gameId) return logMessage("Please enter a game ID!");
+
+            const response = await fetch(`${BASE_URL}/game/create/${gameId}`, { method: "POST" });
+            const data = await response.json();
+            if (data.error) return logMessage(data.error);
+            logMessage(`Game created: ${gameId}`);
+            joinGame();
+        }
+
+        async function joinGame() {
+            gameId = document.getElementById("gameId").value.trim();
+            if (!gameId) return logMessage("Please enter a game ID!");
+
+            const response = await fetch(`${BASE_URL}/game/${gameId}/players`);
+            const data = await response.json();
+            if (data.error) return logMessage(data.error);
+
+            const existingPlayers = data.players;
+            let nextPlayerNumber = 1;
+            while (existingPlayers.includes(`player${nextPlayerNumber}`)) {
+                nextPlayerNumber++;
+            }
+            playerId = `player${nextPlayerNumber}`;
+
+            await fetch(`${BASE_URL}/game/join/${gameId}?player_id=${playerId}`, { method: "POST" });
+            logMessage(`Joined as ${playerId}`);
+            setupWebSocket();
+        }
+
+        async function playCard() {
+            const card = document.getElementById("card").value.trim();
+            if (!card) return logMessage("Enter a card!");
+            const response = await fetch(`${BASE_URL}/game/${gameId}/play?player_id=${playerId}&card=${card}`, { method: "POST" });
+            const data = await response.json();
+            logMessage(`${playerId} played ${card}`);
+        }
+
+        async function endTurn() {
+            const response = await fetch(`${BASE_URL}/game/${gameId}/end_turn?player_id=${playerId}`, { method: "POST" });
+            const data = await response.json();
+            logMessage("Turn ended");
+        }
+
+        function setupWebSocket() {
+            if (!gameId || !playerId) return;
+            const wsUrl = `wss://cardgame-lndd.onrender.com/game/${gameId}/ws/${playerId}`;
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => logMessage("Connected to WebSocket!");
+            ws.onmessage = (event) => logMessage(`Game Update: ${event.data}`);
+            ws.onclose = () => logMessage("WebSocket disconnected");
+            ws.onerror = (error) => logMessage(`WebSocket Error: ${error.message}`);
+        }
+    </script>
+</body>
+</html>
