@@ -105,11 +105,18 @@
 
             ws.onopen = () => logMessage("Connected to WebSocket!");
             ws.onmessage = (event) => {
-                const message = JSON.parse(event.data);
-                logMessage(`Game Update: ${event.data}`);
-                if (message.next_player) updateTurnIndicator(message.next_player);
-                if (message.health) updateHealth(message.player, message.health);
-            };
+            const message = JSON.parse(event.data);
+            logMessage(`Game Update: ${event.data}`);
+
+            if (message.next_player) updateTurnIndicator(message.next_player);
+
+            if (message.type === "health_update") {
+                // ✅ Update all players' health bars
+                Object.keys(message.players_health).forEach(player => {
+                    updateHealth(player, message.players_health[player]);
+                });
+            }
+        };
             ws.onclose = () => logMessage("WebSocket disconnected");
             ws.onerror = (error) => logMessage(`WebSocket Error: ${error.message}`);
         }
