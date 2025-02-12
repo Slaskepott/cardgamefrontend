@@ -10,6 +10,10 @@ function logMessage(message) {
     logDiv.scrollTop = logDiv.scrollHeight;
 }
 
+function hideGameSetup() {
+    document.getElementById("game-setup").style.display = "none";
+}
+
 async function createGame() {
     gameId = document.getElementById("gameId").value.trim();
     if (!gameId) return logMessage("Please enter a game ID!");
@@ -18,6 +22,7 @@ async function createGame() {
     const data = await response.json();
     if (data.error) return logMessage(data.error);
     logMessage(`Game created: ${gameId}`);
+    hideGameSetup();
     joinGame();
 }
 
@@ -36,14 +41,13 @@ async function joinGame() {
         nextPlayerNumber++;
     }
     playerId = `player${nextPlayerNumber}`;
-    
     await fetch(`${BASE_URL}/game/join/${gameId}?player_id=${playerId}`, { method: "POST" });
     logMessage(`Joined as ${playerId}`);
+    hideGameSetup();
     setupWebSocket();
 }
 
 function updateTurnIndicator(nextPlayer) {
-    document.getElementById("game-banner").textContent = `Current Turn: ${nextPlayer}`;
     document.getElementById("turn-indicator").textContent = `Current Turn: ${nextPlayer}`;
 }
 
@@ -175,7 +179,6 @@ async function playHand() {
     if (data.error) {
         logMessage(data.error);
     } else {
-        logMessage(`${playerId} played a hand. Dealt ${data.damage} damage!`);
         selectedCards = [];
         document.getElementById("play-hand-btn").disabled = true;
         if (data.remaining_discards !== undefined) {
@@ -212,7 +215,7 @@ function setupWebSocket() {
             Object.keys(message.health_update).forEach(player => {
                 updateHealth(player, message.health_update[player]);
             });
-            logMessage(`${message.player} played ${message.hand_type} (x${message.multiplier})`);
+            logMessage(`${message.player} played ${message.hand_type} for ${message.damage} damage (x${message.multiplier})`);
             if ((message.remaining_discards !== undefined) && message.player === playerId) {
                 updateDiscardButton(message.remaining_discards);
     
@@ -223,9 +226,7 @@ function setupWebSocket() {
             if (message.score_update) {
                 updateScore(message.score_update);
             }
-    
-            logMessage(`${message.player} played ${message.hand_type} (x${message.multiplier})`);
-    
+        
             if (message.winner) {
                 alert(`Game over! ${message.winner} wins!`);
             }
@@ -240,6 +241,11 @@ function setupWebSocket() {
             renderCards(message.cards);
             if (message.remaining_discards !== undefined) {
                 updateDiscardButton(message.remaining_discards);
+            }
+        }
+        if (message.type === "players_updated") {
+            if (message.players.length === 2) {
+                updateTurnIndicator("Player 1");  // ✅ Set text to "Player 1 turn"
             }
         }
     };
