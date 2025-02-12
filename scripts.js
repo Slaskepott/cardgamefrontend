@@ -27,6 +27,7 @@ async function joinGame() {
     
     const response = await fetch(`${BASE_URL}/game/${gameId}/players`);
     const data = await response.json();
+    console.log(data)
     if (data.error) return logMessage(data.error);
     
     const existingPlayers = data.players;
@@ -52,7 +53,18 @@ function updateHealth(player, healthPercentage) {
 }
 
 function renderCards(cards) {
-    console.log("Rendering cards:", cards);
+    console.log("Rendering cards before sorting:", cards);
+    
+    const rankOrder = {
+        "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8, "9": 9, "10": 10,
+        "J": 11, "Q": 12, "K": 13, "A": 14
+    };
+
+    // Sort cards by rank before rendering
+    cards.sort((a, b) => rankOrder[a.rank] - rankOrder[b.rank]);
+
+    console.log("Rendering cards after sorting:", cards);
+
     const cardContainer = document.getElementById("card-container");
     cardContainer.innerHTML = "";
 
@@ -64,13 +76,11 @@ function renderCards(cards) {
     cards.forEach(card => {
         const cardElement = document.createElement("div");
         cardElement.classList.add("card");
-        cardElement.dataset.suit = card.suit;
-        cardElement.dataset.symbol = getSuitSymbol(card.suit);
+        cardElement.setAttribute("data-suit", card.suit);
 
-        // Set the inner HTML to display a large rank number and a bigger suit emoji
         cardElement.innerHTML = `
             <div class="card-rank">${card.rank}</div>
-            <div class="card-suit">${getSuitSymbol(card.suit)}</div>
+            <div class="card-suit" data-suit="${card.suit}">${getSuitSymbol(card.suit)}</div>
         `;
 
         cardElement.onclick = () => toggleCardSelection(cardElement, card);
@@ -78,23 +88,30 @@ function renderCards(cards) {
     });
 }
 
+
 function getSuitSymbol(suit) {
     const symbols = { "Fire": "🔥", "Air": "💨", "Earth": "🌿", "Water": "💧" };
-    return symbols[suit] || "";
+    return symbols[suit] || "❓";
 }
 
 
 function toggleCardSelection(cardElement, card) {
-    if (selectedCards.includes(card)) {
-        selectedCards = selectedCards.filter(c => c !== card);
+    if (selectedCards.some(c => c.rank === card.rank && c.suit === card.suit)) {
+        selectedCards = selectedCards.filter(c => !(c.rank === card.rank && c.suit === card.suit));
         cardElement.classList.remove("selected");
     } else {
+        if (selectedCards.length >= 5) {
+            alert("You can only play a maximum of 5 cards!");
+            return;
+        }
         selectedCards.push(card);
         cardElement.classList.add("selected");
     }
+    
     document.getElementById("play-hand-btn").disabled = selectedCards.length === 0;
     document.getElementById("discard-btn").disabled = selectedCards.length === 0;
 }
+
 
 async function discard() {
     console.log("pressed discard button");
@@ -125,6 +142,20 @@ async function discard() {
     selectedCards = [];
     document.getElementById("play-hand-btn").disabled = true;
     document.getElementById("discard-btn").disabled = true;
+}
+
+function updateScore(scores) {
+    Object.keys(scores).forEach(player => {
+        let scoreElement = document.getElementById(`score-${player}`);
+        if (!scoreElement) {
+            let scoreboard = document.getElementById("scoreboard");
+            let newScore = document.createElement("p");
+            newScore.innerHTML = `${player} Wins: <span id="score-${player}">${scores[player]}</span>`;
+            scoreboard.appendChild(newScore);
+        } else {
+            scoreElement.textContent = scores[player];
+        }
+    });
 }
 
 function updateDiscardButton(remaining) {
@@ -168,26 +199,35 @@ function setupWebSocket() {
 
     ws.onopen = () => {
         console.log("WebSocket connection established!");
-        logMessage("Connected to WebSocket!");
+        //logMessage("Connected to WebSocket!");
     };
 
     ws.onmessage = (event) => {
         console.log("Raw WebSocket Message:", event.data);
         const message = JSON.parse(event.data);
-        logMessage(`Game Update: ${event.data}`);
+        //logMessage(`Game Update: ${event.data}`);
 
         if (message.next_player) updateTurnIndicator(message.next_player);
         if (message.type === "hand_played") {
             Object.keys(message.health_update).forEach(player => {
                 updateHealth(player, message.health_update[player]);
             });
-            logMessage(`${message.player} played ${message.hand_type}`);
+            logMessage(`${message.player} played ${message.hand_type} (x${message.multiplier})`);
             if ((message.remaining_discards !== undefined) && message.player === playerId) {
                 updateDiscardButton(message.remaining_discards);
     
             }
             if (message.new_hand !== undefined && message.player === playerId){
                 renderCards(message.new_hand)
+            }
+            if (message.score_update) {
+                updateScore(message.score_update);
+            }
+    
+            logMessage(`${message.player} played ${message.hand_type} (x${message.multiplier})`);
+    
+            if (message.winner) {
+                alert(`Game over! ${message.winner} wins!`);
             }
             
         }
