@@ -100,6 +100,11 @@ button:hover {
     transform: scale(1.1);
 }
 
+.card.selected {
+    border: 3px solid #ffcc00;
+    background-color: #fff8dc;
+}
+
 .card[data-suit="Hearts"], .card[data-suit="Diamonds"] {
     color: red;
 }
@@ -114,4 +119,25 @@ button:hover {
     position: absolute;
     top: 5px;
     right: 5px;
+}
+
+#play-hand-btn {
+    margin-top: 15px;
+    padding: 12px 20px;
+    font-size: 18px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+#play-hand-btn:hover {
+    background-color: #218838;
+}
+
+#play-hand-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
 }
