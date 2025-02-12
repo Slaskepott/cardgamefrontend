@@ -70,35 +70,6 @@ button:hover {
     color: black;
 }
 
-.health-bar-container {
-    display: flex;
-    justify-content: center;
-    gap: 50px;
-    margin-top: 20px;
-}
-
-.health-bar-wrapper {
-    text-align: center;
-}
-
-.health-bar {
-    width: 200px;
-    height: 20px;
-    background-color: #ddd;
-    border-radius: 10px;
-    overflow: hidden;
-    position: relative;
-    border: 1px solid #000;
-    margin-top: 5px;
-}
-
-.health-fill {
-    height: 100%;
-    width: 100%; /* Default full health */
-    background-color: #ff4d4d;
-    transition: width 0.5s ease-in-out;
-}
-
 .card-container {
     display: flex;
     justify-content: center;
@@ -122,8 +93,25 @@ button:hover {
     text-transform: uppercase;
     cursor: pointer;
     transition: transform 0.2s ease-in-out;
+    position: relative;
 }
 
 .card:hover {
     transform: scale(1.1);
+}
+
+.card[data-suit="Hearts"], .card[data-suit="Diamonds"] {
+    color: red;
+}
+
+.card[data-suit="Clubs"], .card[data-suit="Spades"] {
+    color: black;
+}
+
+.card::after {
+    content: attr(data-symbol);
+    font-size: 24px;
+    position: absolute;
+    top: 5px;
+    right: 5px;
 }
