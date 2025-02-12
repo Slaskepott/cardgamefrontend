@@ -146,6 +146,9 @@ async function playHand() {
         logMessage(`${playerId} played a hand. Dealt ${data.damage} damage!`);
         selectedCards = [];
         document.getElementById("play-hand-btn").disabled = true;
+        if (data.remaining_discards !== undefined) {
+            updateDiscardButton(data.remaining_discards);
+        }
     }
     document.querySelectorAll(".card.selected").forEach(card => {
         card.classList.remove("selected");
@@ -178,6 +181,9 @@ function setupWebSocket() {
                 updateHealth(player, message.health_update[player]);
             });
             logMessage(`${message.player} played ${message.hand_type}`);
+            if (message.remaining_discards !== undefined) {
+                updateDiscardButton(message.remaining_discards);
+            }
         }
         if (message.type === "new_hand") {
             console.log("Received new hand:", message.cards);
