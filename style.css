@@ -58,3 +58,14 @@ button:hover {
     padding: 5px;
     border-bottom: 1px solid #eee;
 }
+
+#turn-indicator {
+    font-size: 20px;
+    font-weight: bold;
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 5px;
+    display: inline-block;
+    background-color: #ffcc00;
+    color: black;
+}

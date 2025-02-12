@@ -1,19 +1,13 @@
 <!DOCTYPE html>
-<link rel="stylesheet" href="style.css">
-
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Card Game</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; }
-        #log { height: 200px; overflow-y: auto; border: 1px solid black; padding: 10px; }
-        button { margin: 5px; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Card Game</h1>
+    <h2><div id="turn-indicator">Waiting for turn info...</div></h2>
     <label>Game ID: <input type="text" id="gameId"></label>
     <button onclick="createGame()">Create Game</button>
     <button onclick="joinGame()">Join Game</button>
@@ -21,8 +15,21 @@
     <label>Card: <input type="text" id="card"></label>
     <button onclick="playCard()">Play Card</button>
     <button onclick="endTurn()">End Turn</button>
+    
     <h2>Game Log</h2>
     <div id="log"></div>
+    
+    <h2>Players' Health</h2>
+    <div class="health-bar-container">
+        <div>
+            <p>Player 1</p>
+            <div class="health-bar"><div id="health-player1" class="health-fill"></div></div>
+        </div>
+        <div>
+            <p>Player 2</p>
+            <div class="health-bar"><div id="health-player2" class="health-fill"></div></div>
+        </div>
+    </div>
 
     <script>
         const BASE_URL = "https://cardgame-lndd.onrender.com";
@@ -34,6 +41,15 @@
             const logDiv = document.getElementById("log");
             logDiv.innerHTML += `<p>${message}</p>`;
             logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function updateTurnIndicator(nextPlayer) {
+            document.getElementById("game-banner").textContent = `Current Turn: ${nextPlayer}`;
+            document.getElementById("turn-indicator").textContent = `Current Turn: ${nextPlayer}`;
+        }
+
+        function updateHealth(player, healthPercentage) {
+            document.getElementById(`health-${player}`).style.width = `${healthPercentage}%`;
         }
 
         async function createGame() {
@@ -78,7 +94,8 @@
         async function endTurn() {
             const response = await fetch(`${BASE_URL}/game/${gameId}/end_turn?player_id=${playerId}`, { method: "POST" });
             const data = await response.json();
-            logMessage("Turn ended");
+            if (data.message) logMessage("Turn ended");
+            if (data.next_player) updateTurnIndicator(data.next_player);
         }
 
         function setupWebSocket() {
@@ -87,7 +104,12 @@
             ws = new WebSocket(wsUrl);
 
             ws.onopen = () => logMessage("Connected to WebSocket!");
-            ws.onmessage = (event) => logMessage(`Game Update: ${event.data}`);
+            ws.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                logMessage(`Game Update: ${event.data}`);
+                if (message.next_player) updateTurnIndicator(message.next_player);
+                if (message.health) updateHealth(message.player, message.health);
+            };
             ws.onclose = () => logMessage("WebSocket disconnected");
             ws.onerror = (error) => logMessage(`WebSocket Error: ${error.message}`);
         }
