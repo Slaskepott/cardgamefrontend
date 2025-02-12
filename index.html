@@ -8,11 +8,15 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h2>Score</h2>
-    <div id="scoreboard">
-        <p>Player 1 Wins: <span id="score-player1">0</span></p>
-        <p>Player 2 Wins: <span id="score-player2">0</span></p>
+    <div id="scoreboard-container" style="display: none;">
+        <h2>Scoreboard</h2>
+        <div id="scoreboard">
+            <p><span class="player-name">Player 1</span> Wins: <span id="score-player1">0</span></p>
+            <p><span class="player-name">Player 2</span> Wins: <span id="score-player2">0</span></p>
+        </div>
     </div>
+    
+
     <div id="game-setup">
         <label>Game ID: <input type="text" id="gameId"></label>
         <button onclick="createGame()">Create Game</button>

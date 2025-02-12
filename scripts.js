@@ -45,6 +45,10 @@ async function joinGame() {
     logMessage(`Joined as ${playerId}`);
     hideGameSetup();
     setupWebSocket();
+    if (existingPlayers.length + 1 === 2) {
+        showScoreboard();
+        showTurnIndicator(1);
+    }
 }
 
 function updateTurnIndicator(nextPlayer) {
@@ -194,6 +198,14 @@ async function playHand() {
     document.getElementById("discard-btn").disabled = true;
 }
 
+function showScoreboard() {
+    document.getElementById("scoreboard-container").style.display = "block";
+}
+
+function showTurnIndicator(player) {
+    updateTurnIndicator(`Player ${player} turn`);
+}
+
 function setupWebSocket() {
     if (!gameId || !playerId) return;
     const wsUrl = `wss://cardgame-lndd.onrender.com/game/${gameId}/ws/${playerId}`;
@@ -245,7 +257,8 @@ function setupWebSocket() {
         }
         if (message.type === "players_updated") {
             if (message.players.length === 2) {
-                updateTurnIndicator("Player 1");  // ✅ Set text to "Player 1 turn"
+                showScoreboard();
+                showTurnIndicator(1);  // ✅ Set text to "Player 1 turn"
             }
         }
     };
