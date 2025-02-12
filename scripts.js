@@ -88,6 +88,29 @@ function toggleCardSelection(cardElement, card) {
     document.getElementById("play-hand-btn").disabled = selectedCards.length === 0;
 }
 
+async function discard() {
+    if (selectedCards.length === 0) return;
+    const response = await fetch(`${BASE_URL}/game/${gameId}/discard`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ player_id: playerId, cards: selectedCards })
+    });
+    const data = await response.json();
+    if (data.error) {
+        logMessage(data.error);
+    } else {
+        logMessage(`${playerId} discarded cards!`);
+        selectedCards = [];
+        document.getElementById("discard-btn").disabled = true;
+    }
+    document.querySelectorAll(".card.selected").forEach(card => {
+        card.classList.remove("selected");
+    });
+
+    selectedCards = [];
+    document.getElementById("discard-btn").disabled = true;
+}
+
 async function playHand() {
     if (selectedCards.length === 0) return;
     const response = await fetch(`${BASE_URL}/game/${gameId}/play_hand`, {
@@ -132,10 +155,14 @@ function setupWebSocket() {
             Object.keys(message.health_update).forEach(player => {
                 updateHealth(player, message.health_update[player]);
             });
-            logMessage(`${event.player} played ${event.hand_type}`)
+            logMessage(`${message.player} played ${message.hand_type}`);
         }
         if (message.type === "new_hand") {
             console.log("Received new hand:", message.cards);
+            renderCards(message.cards);
+        }
+        if (message.type == "hand_updated") {
+            console.log("Updated hand:", message.cards);
             renderCards(message.cards);
         }
     };
