@@ -4,6 +4,7 @@ let gameId = null;
 let ws = null;
 let selectedCards = [];
 
+
 function logMessage(message) {
     const logDiv = document.getElementById("log");
     logDiv.innerHTML += `<p>${message}</p>`;
@@ -122,7 +123,6 @@ function toggleCardSelection(cardElement, card) {
 
 
 async function discard() {
-    console.log("pressed discard button");
     if (selectedCards.length === 0) return;
 
     const response = await fetch(`${BASE_URL}/game/${gameId}/discard`, {
@@ -137,7 +137,7 @@ async function discard() {
     } else {
         logMessage(`${playerId} discarded cards!`);
         selectedCards = [];
-        document.getElementById("discard-btn").disabled = true;
+        document.getElementById("discard-btn").disabled = selectedCards.length === 0;
 
         if (data.remaining_discards !== undefined) {
             updateDiscardButton(data.remaining_discards);
@@ -148,8 +148,8 @@ async function discard() {
     });
 
     selectedCards = [];
-    document.getElementById("play-hand-btn").disabled = true;
-    document.getElementById("discard-btn").disabled = true;
+    document.getElementById("play-hand-btn").disabled = selectedCards.length === 0;
+    document.getElementById("discard-btn").disabled = selectedCards.length === 0;
 }
 
 function updateScore(scores) {
@@ -206,6 +206,8 @@ function showTurnIndicator(player) {
     updateTurnIndicator(`Player ${player} turn`);
 }
 
+ 
+
 function setupWebSocket() {
     if (!gameId || !playerId) return;
     const wsUrl = `wss://cardgame-lndd.onrender.com/game/${gameId}/ws/${playerId}`;
@@ -237,6 +239,9 @@ function setupWebSocket() {
             }
             if (message.score_update) {
                 updateScore(message.score_update);
+            }
+            if (message.remaining_discards && message.player === playerId) {
+                updateDiscardButton(message.remaining_discards)
             }
         
             if (message.winner) {

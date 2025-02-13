@@ -6,8 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Card Game</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/8983/8983569.png">
 </head>
 <body>
+    <!-- Game screen -->
     <div id="scoreboard-container" style="display: none;">
         <h2>Scoreboard</h2>
         <div id="scoreboard">
@@ -41,5 +43,18 @@
     <h2>Game Log</h2>
     <div id="log"></div>
     
+    <!-- Shop screen -->
+    <div id="shop-container" style="display: none;">
+        <h2>Upgrade Shop</h2>
+        <p>Coins: <span id="player-coins">0</span></p>
+        <div id="shop-items">
+            <button onclick="buyUpgrade('extra_health')">+20 Health (5 Coins)</button>
+            <button onclick="buyUpgrade('extra_discard')">+1 Discard (3 Coins)</button>
+            <button onclick="buyUpgrade('damage_boost')">+10% Damage (5 Coins)</button>
+        </div>
+        <button onclick="leaveShop()">Continue to Next Game</button>
+    </div>
+    
+
 </body>
 </html>
