@@ -12,15 +12,36 @@ let playerGold = 0;
 let upgrades = [];
 
 
-function logMessage(message) {
+function logMessage(message, type = "") {
     const logDiv = document.getElementById("log");
-    logDiv.innerHTML += `<p>${message}</p>`;
-    logDiv.scrollTop = logDiv.scrollHeight;
+    const logEntry = document.createElement("p");
+
+    logEntry.textContent = message; // Ensure raw text is set properly
+
+    // Apply different log styles based on type
+    if (type === "damage") logEntry.classList.add("log-damage");
+    else if (type === "heal") logEntry.classList.add("log-heal");
+    else if (type === "upgrade") logEntry.classList.add("log-upgrade");
+    else if (type === "turn") logEntry.classList.add("log-turn");
+    else if (type === "gameover") logEntry.classList.add("log-gameover");
+
+    logDiv.appendChild(logEntry);
+    logDiv.scrollTop = logDiv.scrollHeight; // Auto-scroll to latest log entry
 }
+
 
 function hideGameSetup() {
     document.getElementById("game-setup").style.display = "none";
 }
+
+function leaveShop() {
+    const shopContainer = document.getElementById("shop-container");
+    const gameContainer = document.getElementById("game-container");
+
+    shopContainer.style.display = "none";
+    gameContainer.classList.remove("hidden"); // Show the game UI again
+}
+
 
 async function createGame() {
     gameId = document.getElementById("gameId").value.trim();
@@ -227,17 +248,46 @@ function showTurnIndicator(player) {
 function openUpgradeStore(upgrades) {
     const shopContainer = document.getElementById("shop-container");
     const shopItems = document.getElementById("shop-items");
+    const gameContainer = document.getElementById("game-container"); // Get the main game container
+
+    // Hide the game elements but keep the scoreboard
+    gameContainer.classList.add("hidden");
+    shopContainer.style.display = "block";
 
     shopItems.innerHTML = "";
+
+    const upgradeEmojis = {
+        "Increase Health": "❤️",
+        "Increase Health %": "💖",
+        "Increase Discards": "♻️",
+        "Increase Damage": "🔥",
+        "Increase Earth Damage": "🌿",
+        "Increase Fire Damage": "🔥",
+        "Increase Water Damage": "💧",
+        "Increase Air Damage": "💨"
+    };
+
     upgrades.forEach(upgrade => {
-        const btn = document.createElement("button");
-        btn.textContent = `${upgrade.name} (${upgrade.cost} Coins)`;
-        btn.onclick = () => buyUpgrade(upgrade.id);
-        shopItems.appendChild(btn);
+        const card = document.createElement("div");
+        card.classList.add("upgradecard", upgrade.rarity);
+
+        const emoji = upgradeEmojis[upgrade.name] || "❓"; // Default fallback
+        
+        card.innerHTML = `
+            <div class="price">${upgrade.cost} 🪙</div>
+            <div class="emoji">${emoji}</div>
+            <div class="upgrade-name">${upgrade.name}</div>
+            <div class="upgrade-effect">${upgrade.effect}</div>
+            <div class="rarity">${upgrade.rarity}</div>
+        `;
+
+        card.onclick = () => buyUpgrade(upgrade.id);
+        shopItems.appendChild(card);
     });
 
     shopContainer.style.display = "block";
-} 
+}
+
 
 function setupWebSocket() {
     if (!gameId || !playerId) return;

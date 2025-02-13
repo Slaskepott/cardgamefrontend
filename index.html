@@ -9,49 +9,46 @@
     <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/8983/8983569.png">
 </head>
 <body>
-    <!-- Game screen -->
+    <!-- Scoreboard -->
     <div id="scoreboard-container" style="display: none;">
-        <h2>Scoreboard</h2>
         <div id="scoreboard">
             <p><span class="player-name">Player 1</span> Wins: <span id="score-player1">0</span></p>
             <p><span class="player-name">Player 2</span> Wins: <span id="score-player2">0</span></p>
         </div>
     </div>
     
-
-    <div id="game-setup">
-        <label>Game ID: <input type="text" id="gameId"></label>
-        <button onclick="createGame()">Create Game</button>
-        <button onclick="joinGame()">Join Game</button>
+    <!-- Game screen -->
+    <div id="game-container">
+        <div id="game-setup">
+            <label>Game ID: <input type="text" id="gameId"></label>
+            <button onclick="createGame()">Create Game</button>
+            <button onclick="joinGame()">Join Game</button>
+        </div>    
+        <div id="turn-indicator">Waiting for game to start...</div>
+        <h2>Players' Health</h2>
+        <div class="health-bar-container">
+            <div>
+                <p>Player 1</p>
+                <div class="health-bar"><div id="health-player1" class="health-fill"></div></div>
+            </div>
+            <div>
+                <p>Player 2</p>
+                <div class="health-bar"><div id="health-player2" class="health-fill"></div></div>
+            </div>
+        </div>
+        <h2>Your Cards</h2>
+        <button id="play-hand-btn" onclick="playHand()" disabled>Play Hand</button>
+        <button id="discard-btn" onclick="discard()" disabled>Discard (1)</button>
+        <div id="card-container" class="card-container"></div>
+        <h2>Game Log</h2>
+        <div id="log"></div>
     </div>    
-    <div id="turn-indicator">Waiting for game to start...</div>
-    <h2>Players' Health</h2>
-    <div class="health-bar-container">
-        <div>
-            <p>Player 1</p>
-            <div class="health-bar"><div id="health-player1" class="health-fill"></div></div>
-        </div>
-        <div>
-            <p>Player 2</p>
-            <div class="health-bar"><div id="health-player2" class="health-fill"></div></div>
-        </div>
-    </div>
-    <h2>Your Cards</h2>
-    <button id="play-hand-btn" onclick="playHand()" disabled>Play Hand</button>
-    <button id="discard-btn" onclick="discard()" disabled>Discard (1)</button>
-    <div id="card-container" class="card-container"></div>
-    <h2>Game Log</h2>
-    <div id="log"></div>
     
     <!-- Shop screen -->
     <div id="shop-container" style="display: none;">
         <h2>Upgrade Shop</h2>
         <p>Coins: <span id="player-coins">0</span></p>
-        <div id="shop-items">
-            <button onclick="buyUpgrade('extra_health')">+20 Health (5 Coins)</button>
-            <button onclick="buyUpgrade('extra_discard')">+1 Discard (3 Coins)</button>
-            <button onclick="buyUpgrade('damage_boost')">+10% Damage (5 Coins)</button>
-        </div>
+        <div id="shop-items" class="shop-upgrade-container"></div>
         <button onclick="leaveShop()">Continue to Next Game</button>
     </div>
     
