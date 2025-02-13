@@ -1,8 +1,15 @@
+//Remember to change wsURL as well!
+
+//const BASE_URL = "http://localhost:8000";
 const BASE_URL = "https://cardgame-lndd.onrender.com";
+
+
 let playerId = null;
 let gameId = null;
 let ws = null;
 let selectedCards = [];
+let playerGold = 0;
+let upgrades = [];
 
 
 function logMessage(message) {
@@ -62,40 +69,41 @@ function updateHealth(player, healthPercentage) {
 }
 
 function renderCards(cards) {
-    console.log("Rendering cards before sorting:", cards);
-    
+    console.log("Rendering cards:", cards);
+
     const rankOrder = {
         "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8, "9": 9, "10": 10,
         "J": 11, "Q": 12, "K": 13, "A": 14
     };
 
-    // Sort cards by rank before rendering
-    cards.sort((a, b) => rankOrder[a.rank] - rankOrder[b.rank]);
-
-    console.log("Rendering cards after sorting:", cards);
+    const sortedCards = [...cards].sort((a, b) => rankOrder[a.rank] - rankOrder[b.rank]);
 
     const cardContainer = document.getElementById("card-container");
     cardContainer.innerHTML = "";
 
-    if (!cards || cards.length === 0) {
+    if (!sortedCards || sortedCards.length === 0) {
         cardContainer.innerHTML = "<p>No cards available.</p>";
         return;
     }
 
-    cards.forEach(card => {
+    sortedCards.forEach((card, index) => {
+        const cardId = `${card.rank}-${card.suit}-${index}`;  // ✅ Unique ID
         const cardElement = document.createElement("div");
         cardElement.classList.add("card");
         cardElement.setAttribute("data-suit", card.suit);
-
+        cardElement.setAttribute("data-id", cardId); // Assign unique ID
+        
         cardElement.innerHTML = `
             <div class="card-rank">${card.rank}</div>
             <div class="card-suit" data-suit="${card.suit}">${getSuitSymbol(card.suit)}</div>
         `;
 
-        cardElement.onclick = () => toggleCardSelection(cardElement, card);
+        cardElement.onclick = () => toggleCardSelection(cardElement, card, cardId);
         cardContainer.appendChild(cardElement);
     });
 }
+
+
 
 
 function getSuitSymbol(suit) {
@@ -104,22 +112,25 @@ function getSuitSymbol(suit) {
 }
 
 
-function toggleCardSelection(cardElement, card) {
-    if (selectedCards.some(c => c.rank === card.rank && c.suit === card.suit)) {
-        selectedCards = selectedCards.filter(c => !(c.rank === card.rank && c.suit === card.suit));
+function toggleCardSelection(cardElement, card, cardId) {
+    // Check if the card is already selected using its unique cardId
+    const existingIndex = selectedCards.findIndex(c => c.cardId === cardId);
+
+    if (existingIndex > -1) {
+        selectedCards.splice(existingIndex, 1);
         cardElement.classList.remove("selected");
     } else {
         if (selectedCards.length >= 5) {
             alert("You can only play a maximum of 5 cards!");
             return;
         }
-        selectedCards.push(card);
+        selectedCards.push({ ...card, cardId }); // ✅ Store cardId to uniquely track selection
         cardElement.classList.add("selected");
     }
-    
-    document.getElementById("play-hand-btn").disabled = selectedCards.length === 0;
-    document.getElementById("discard-btn").disabled = selectedCards.length === 0;
+
+    updateActionButtons();
 }
+
 
 
 async function discard() {
@@ -137,8 +148,7 @@ async function discard() {
     } else {
         logMessage(`${playerId} discarded cards!`);
         selectedCards = [];
-        document.getElementById("discard-btn").disabled = selectedCards.length === 0;
-
+        updateActionButtons();
         if (data.remaining_discards !== undefined) {
             updateDiscardButton(data.remaining_discards);
         }
@@ -148,8 +158,7 @@ async function discard() {
     });
 
     selectedCards = [];
-    document.getElementById("play-hand-btn").disabled = selectedCards.length === 0;
-    document.getElementById("discard-btn").disabled = selectedCards.length === 0;
+    updateActionButtons();
 }
 
 function updateScore(scores) {
@@ -174,29 +183,38 @@ function updateDiscardButton(remaining) {
 
 async function playHand() {
     if (selectedCards.length === 0) return;
+
     const response = await fetch(`${BASE_URL}/game/${gameId}/play_hand`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ player_id: playerId, cards: selectedCards })
+        body: JSON.stringify({
+            player_id: playerId,
+            cards: selectedCards.map(({ rank, suit }) => ({ rank, suit })) // ✅ Only send rank & suit
+        })
     });
+
     const data = await response.json();
     if (data.error) {
         logMessage(data.error);
     } else {
         selectedCards = [];
         document.getElementById("play-hand-btn").disabled = true;
-        if (data.remaining_discards !== undefined) {
-            updateDiscardButton(data.remaining_discards);
-        }
     }
+
     document.querySelectorAll(".card.selected").forEach(card => {
         card.classList.remove("selected");
     });
 
-    selectedCards = [];
-    document.getElementById("play-hand-btn").disabled = true;
-    document.getElementById("discard-btn").disabled = true;
+    updateActionButtons();
 }
+
+
+function updateActionButtons() {
+    document.getElementById("play-hand-btn").disabled = selectedCards.length === 0;
+    document.getElementById("discard-btn").disabled = selectedCards.length === 0;
+}
+
+
 
 function showScoreboard() {
     document.getElementById("scoreboard-container").style.display = "block";
@@ -206,11 +224,25 @@ function showTurnIndicator(player) {
     updateTurnIndicator(`Player ${player} turn`);
 }
 
- 
+function openUpgradeStore(upgrades) {
+    const shopContainer = document.getElementById("shop-container");
+    const shopItems = document.getElementById("shop-items");
+
+    shopItems.innerHTML = "";
+    upgrades.forEach(upgrade => {
+        const btn = document.createElement("button");
+        btn.textContent = `${upgrade.name} (${upgrade.cost} Coins)`;
+        btn.onclick = () => buyUpgrade(upgrade.id);
+        shopItems.appendChild(btn);
+    });
+
+    shopContainer.style.display = "block";
+} 
 
 function setupWebSocket() {
     if (!gameId || !playerId) return;
     const wsUrl = `wss://cardgame-lndd.onrender.com/game/${gameId}/ws/${playerId}`;
+    //const wsUrl = `ws://localhost:8000/game/${gameId}/ws/${playerId}`;
     console.log("Connecting to WebSocket:", wsUrl);
     ws = new WebSocket(wsUrl);
 
@@ -265,6 +297,9 @@ function setupWebSocket() {
                 showScoreboard();
                 showTurnIndicator(1);  // ✅ Set text to "Player 1 turn"
             }
+        }
+        if (message.type === "open_store" && message.player === playerId) {
+            openUpgradeStore(message.upgrades);
         }
     };
 
