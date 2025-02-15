@@ -1,7 +1,7 @@
 //Remember to change wsURL as well!
 
-//const BASE_URL = "http://localhost:8000";
-const BASE_URL = "https://cardgame-lndd.onrender.com";
+const DEVELOPMENT_MODE = true;
+let BASE_URL = DEVELOPMENT_MODE ? "http://localhost:8000" : "https://cardgame-lndd.onrender.com";
 
 
 let playerId = null;
@@ -10,6 +10,8 @@ let ws = null;
 let selectedCards = [];
 let playerGold = 0;
 let upgrades = [];
+let health = 100;
+let maxHealth = 100;
 
 
 function logMessage(message, type = "") {
@@ -84,9 +86,12 @@ function updateTurnIndicator(nextPlayer) {
     document.getElementById("turn-indicator").textContent = `Current Turn: ${nextPlayer}`;
 }
 
-function updateHealth(player, healthPercentage) {
-    console.log("Update health was called for player "+player+" with percentage "+healthPercentage)
-    document.getElementById(`health-${player}`).style.width = `${healthPercentage}%`;
+function updateHealth(player, newHealth, newMaxHealth) {
+    health = newHealth;
+    maxHealth = newMaxHealth;
+    console.log("Update health was called for player "+player+" with percentage "+newHealth+"/"+newMaxHealth)
+    document.getElementById(`health-${player}`).style.width = `${(newHealth / newMaxHealth) * 100}%`;
+    document.getElementById(`${player}-health`).innerHTML = `${newHealth} / ${newMaxHealth}`;
 }
 
 function renderCards(cards) {
@@ -202,6 +207,65 @@ function updateDiscardButton(remaining) {
     discardBtn.disabled = remaining <= 0;
 }
 
+async function buyUpgrade(upgrade) {
+    console.log(upgrade)
+    //cost, effect, name, rarity, tier
+    const response = await fetch(`${BASE_URL}/game/${gameId}/${playerId}/buyupgrade/${upgrade.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+    });
+    const data = await response.json();
+    if (!response.ok || data.error) { // ✅ Better error handling
+        logMessage(data.error || "Failed to buy upgrade");
+        return;
+    }
+    
+
+    console.log("Buyupgrade recieved response: " + data.message);
+    if (data.message === "Not enough gold"){
+        logMessage("Not enough gold")
+    } else {
+        if (data.price) {
+            addGold(-1 * data.price)
+        }
+        upgrades.push(upgrade);
+        renderUpgrades();
+    }
+    
+    
+}
+
+async function renderUpgrades() {
+    upgradeContainer = document.getElementById("upgrade-container");
+    upgradeContainer.innerHTML = ""
+    const upgradeEmojis = {
+        "Increase Health": "❤️",
+        "Increase Health %": "💖",
+        "Increase Discards": "♻️",
+        "Increase Damage": "⚔️",
+        "Increase Earth Damage": "🌿",
+        "Increase Fire Damage": "🔥",
+        "Increase Water Damage": "💧",
+        "Increase Air Damage": "💨"
+    };
+
+    upgrades.forEach(upgrade => {
+        const card = document.createElement("div");
+        card.classList.add("upgradecard", upgrade.rarity);
+
+        const emoji = upgradeEmojis[upgrade.name] || "❓"; // Default fallback
+        
+        card.innerHTML = `
+            <div class="emoji">${emoji}</div>
+            <div class="upgrade-name">${upgrade.name}</div>
+            <div class="upgrade-effect">${upgrade.effect}</div>
+            <div class="rarity">${upgrade.rarity}</div>
+        `;
+
+        upgradeContainer.appendChild(card);
+    });
+}
+
 async function playHand() {
     if (selectedCards.length === 0) return;
 
@@ -281,85 +345,122 @@ function openUpgradeStore(upgrades) {
             <div class="rarity">${upgrade.rarity}</div>
         `;
 
-        card.onclick = () => buyUpgrade(upgrade.id);
+        card.onclick = () => buyUpgrade(upgrade);
         shopItems.appendChild(card);
     });
 
     shopContainer.style.display = "block";
+    addGold(0);
 }
 
 
+function getWebSocketUrl(gameId, playerId) {
+    if (!gameId || !playerId) return null;
+    return DEVELOPMENT_MODE 
+        ? `ws://localhost:8000/game/${gameId}/ws/${playerId}` 
+        : `wss://cardgame-lndd.onrender.com/game/${gameId}/ws/${playerId}`;
+}
+
+function handleWebSocketOpen() {
+    console.log("WebSocket connection established!");
+    // logMessage("Connected to WebSocket!");
+}
+
+function handleWebSocketMessage(event) {
+    console.log("Raw WebSocket Message:", event.data);
+    const message = JSON.parse(event.data);
+    
+    if (message.next_player) updateTurnIndicator(message.next_player);
+    
+    switch (message.type) {
+        case "hand_played":
+            processHandPlayedMessage(message);
+            break;
+        case "new_hand":
+            console.log("Received new hand:", message.cards);
+            renderCards(message.cards);
+            break;
+        case "hand_updated":
+            if (message.player === playerId) {
+                console.log("Updated hand:", message.cards);
+                renderCards(message.cards);
+                if (message.remaining_discards !== undefined) {
+                    updateDiscardButton(message.remaining_discards);
+                }
+            }
+            break;
+        case "players_updated":
+            if (message.players.length === 2) {
+                showScoreboard();
+                showTurnIndicator(1);
+            }
+            break;
+        case "open_store":
+            if (message.player === playerId) {
+                openUpgradeStore(message.upgrades);
+            }
+            break;
+        case "change_max_health":
+            console.log("Recieved change max health websocket message:"+message.player+" "+message.health+" "+message.max_health)
+            updateHealth(message.player,message.health,message.max_health)
+            break;
+    }
+}
+
+function processHandPlayedMessage(message) {
+    Object.keys(message.health_update).forEach(player => {
+        const health = message.health_update[player];
+        const maxHealth = message.max_health_update?.[player];
+        updateHealth(player, health, maxHealth);
+    });
+    logMessage(`${message.player} played ${message.hand_type} for ${message.damage} damage (x${message.multiplier})`);
+    
+    if (message.remaining_discards !== undefined && message.player === playerId) {
+        updateDiscardButton(message.remaining_discards);
+    }
+    
+    if (message.new_hand !== undefined && message.player === playerId) {
+        renderCards(message.new_hand);
+    }
+    
+    if (message.score_update) {
+        updateScore(message.score_update);
+    }
+    
+    if (message.winner) {
+        alert(`Game over! ${message.winner} wins!`);
+    }
+    if (message.gold && message.player === playerId) {
+        addGold(message.gold)
+    }
+}
+
+function addGold(value) {
+    playerGold += value;
+    document.querySelectorAll("#player-coins").forEach(span => {
+        span.innerHTML = `🪙${playerGold}`;
+    });
+}
+
+function handleWebSocketClose() {
+    console.log("WebSocket connection closed.");
+    logMessage("WebSocket disconnected");
+}
+
+function handleWebSocketError(error) {
+    console.error("WebSocket Error:", error);
+    logMessage(`WebSocket Error: ${error.message}`);
+}
+
 function setupWebSocket() {
-    if (!gameId || !playerId) return;
-    const wsUrl = `wss://cardgame-lndd.onrender.com/game/${gameId}/ws/${playerId}`;
-    //const wsUrl = `ws://localhost:8000/game/${gameId}/ws/${playerId}`;
+    let wsUrl = getWebSocketUrl(gameId, playerId);
+    if (!wsUrl) return;
+
     console.log("Connecting to WebSocket:", wsUrl);
     ws = new WebSocket(wsUrl);
 
-    ws.onopen = () => {
-        console.log("WebSocket connection established!");
-        //logMessage("Connected to WebSocket!");
-    };
-
-    ws.onmessage = (event) => {
-        console.log("Raw WebSocket Message:", event.data);
-        const message = JSON.parse(event.data);
-        //logMessage(`Game Update: ${event.data}`);
-
-        if (message.next_player) updateTurnIndicator(message.next_player);
-        if (message.type === "hand_played") {
-            Object.keys(message.health_update).forEach(player => {
-                updateHealth(player, message.health_update[player]);
-            });
-            logMessage(`${message.player} played ${message.hand_type} for ${message.damage} damage (x${message.multiplier})`);
-            if ((message.remaining_discards !== undefined) && message.player === playerId) {
-                updateDiscardButton(message.remaining_discards);
-    
-            }
-            if (message.new_hand !== undefined && message.player === playerId){
-                renderCards(message.new_hand)
-            }
-            if (message.score_update) {
-                updateScore(message.score_update);
-            }
-            if (message.remaining_discards && message.player === playerId) {
-                updateDiscardButton(message.remaining_discards)
-            }
-        
-            if (message.winner) {
-                alert(`Game over! ${message.winner} wins!`);
-            }
-            
-        }
-        if (message.type === "new_hand") {
-            console.log("Received new hand:", message.cards);
-            renderCards(message.cards);
-        }
-        if (message.type === "hand_updated" && message.player === playerId) {
-            console.log("Updated hand:", message.cards);
-            renderCards(message.cards);
-            if (message.remaining_discards !== undefined) {
-                updateDiscardButton(message.remaining_discards);
-            }
-        }
-        if (message.type === "players_updated") {
-            if (message.players.length === 2) {
-                showScoreboard();
-                showTurnIndicator(1);  // ✅ Set text to "Player 1 turn"
-            }
-        }
-        if (message.type === "open_store" && message.player === playerId) {
-            openUpgradeStore(message.upgrades);
-        }
-    };
-
-    ws.onclose = () => {
-        console.log("WebSocket connection closed.");
-        logMessage("WebSocket disconnected");
-    };
-
-    ws.onerror = (error) => {
-        console.error("WebSocket Error:", error);
-        logMessage(`WebSocket Error: ${error.message}`);
-    };
+    ws.onopen = handleWebSocketOpen;
+    ws.onmessage = handleWebSocketMessage;
+    ws.onclose = handleWebSocketClose;
+    ws.onerror = handleWebSocketError;
 }

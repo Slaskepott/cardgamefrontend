@@ -23,35 +23,37 @@
             <label>Game ID: <input type="text" id="gameId"></label>
             <button onclick="createGame()">Create Game</button>
             <button onclick="joinGame()">Join Game</button>
-        </div>    
+        </div>
+        <h2><span id="player-coins">🪙0</span></h2>
         <div id="turn-indicator">Waiting for game to start...</div>
-        <h2>Players' Health</h2>
         <div class="health-bar-container">
             <div>
                 <p>Player 1</p>
+                <p id="player1-health">100/100</p>
                 <div class="health-bar"><div id="health-player1" class="health-fill"></div></div>
             </div>
             <div>
                 <p>Player 2</p>
+                <p id="player2-health">100/100</p>
                 <div class="health-bar"><div id="health-player2" class="health-fill"></div></div>
             </div>
         </div>
-        <h2>Your Cards</h2>
         <button id="play-hand-btn" onclick="playHand()" disabled>Play Hand</button>
         <button id="discard-btn" onclick="discard()" disabled>Discard (1)</button>
         <div id="card-container" class="card-container"></div>
-        <h2>Game Log</h2>
         <div id="log"></div>
     </div>    
     
     <!-- Shop screen -->
     <div id="shop-container" style="display: none;">
         <h2>Upgrade Shop</h2>
-        <p>Coins: <span id="player-coins">0</span></p>
+        <p><span id="player-coins">🪙0</span></p>
         <div id="shop-items" class="shop-upgrade-container"></div>
         <button onclick="leaveShop()">Continue to Next Game</button>
     </div>
     
+    <!-- Upgrade container -->
+    <div id="upgrade-container"></div>
 
 </body>
 </html>
