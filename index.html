@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <script src="scripts.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Card Game</title>
@@ -16,6 +17,56 @@
             <p><span class="player-name">Player 2</span> Wins: <span id="score-player2">0</span></p>
         </div>
     </div>
+
+    <button id="rules-btn" class="question-mark-btn">?</button>
+
+    <div id="rules-container" class="hidden">
+        <div id="rules-content">
+            <button id="close-rules">Close</button>
+            <h2>Game Rules</h2>
+            
+            <p><strong>Objective:</strong> Reduce your opponent's health to 0 by playing powerful hands.</p>
+            
+            <h3>Gameplay</h3>
+            <ul>
+                <li>Each player takes turns playing cards.</li>
+                <li>Cards belong to one of four elements: Fire, Water, Earth, and Air.</li>
+                <li>Upgrades can be purchased between rounds.</li>
+            </ul>
+
+            <h3>Damage Calculation</h3>
+            <p>Your attack damage is based on poker hands. Each hand type has a multiplier:</p>
+            <ul>
+                <li><strong>High Card:</strong> ×1</li>
+                <li><strong>Pair:</strong> ×2</li>
+                <li><strong>Two Pair:</strong> ×2</li>
+                <li><strong>Three of a Kind:</strong> ×3</li>
+                <li><strong>Straight:</strong> ×4</li>
+                <li><strong>Flush:</strong> ×4</li>
+                <li><strong>Full House:</strong> ×4</li>
+                <li><strong>Four of a Kind:</strong> ×7</li>
+                <li><strong>Straight Flush:</strong> ×8</li>
+                <li><strong>Royal Flush:</strong> ×10</li>
+            </ul>
+            <p><strong>Base damage</strong> is calculated from your card ranks and element modifiers.</p>
+            <p><strong>Formula:</strong> (Sum of card values × Element Modifier) ÷ 5 × Multiplier.</p>
+
+            <h3>Elemental Modifiers</h3>
+            <p>If you have upgrades that boost a specific element, cards of that suit will deal extra damage.</p>
+
+            <h3>How Money is Earned</h3>
+            <ul>
+                <li>Winning a round grants you <strong>gold</strong> based on the damage dealt.</li>
+                <li>Higher poker hands = more damage = more gold.</li>
+                <li>Gold can be spent on <strong>upgrades</strong> to improve your attacks.</li>
+            </ul>
+
+            <p>Good luck, and have fun!</p>
+        </div>
+    </div>
+
+
+
     
     <!-- Game screen -->
     <div id="game-container">

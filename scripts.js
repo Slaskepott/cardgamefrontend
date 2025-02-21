@@ -1,6 +1,6 @@
 //Remember to change wsURL as well!
 
-const DEVELOPMENT_MODE = false;
+const DEVELOPMENT_MODE = true;
 let BASE_URL = DEVELOPMENT_MODE ? "http://localhost:8000" : "https://cardgame-lndd.onrender.com";
 
 
@@ -12,6 +12,27 @@ let playerGold = 0;
 let upgrades = [];
 let health = 100;
 let maxHealth = 100;
+let maxDiscards = 1;
+
+document.addEventListener("DOMContentLoaded", function() {
+    const rulesBtn = document.getElementById("rules-btn");
+    const closeRulesBtn = document.getElementById("close-rules");
+    const rulesContainer = document.getElementById("rules-container");
+
+    if (rulesBtn && closeRulesBtn && rulesContainer) {
+        rulesBtn.addEventListener("click", function() {
+            rulesContainer.classList.remove("hidden");
+        });
+
+        closeRulesBtn.addEventListener("click", function() {
+            rulesContainer.classList.add("hidden");
+        });
+    } else {
+        console.error("One or more elements for the rules modal were not found.");
+    }
+});
+
+
 
 
 function logMessage(message, type = "") {
@@ -230,6 +251,15 @@ async function buyUpgrade(upgrade) {
         }
         upgrades.push(upgrade);
         renderUpgrades();
+
+        // Remove the purchased upgrade from the shop by matching its unique ID
+        const shopItems = document.getElementById("shop-items");
+        const upgradeCards = shopItems.querySelectorAll(".upgradecard");
+        upgradeCards.forEach(card => {
+            if (card.dataset.upgradeId === String(upgrade.id)) {
+                card.remove();
+            }
+        });
     }
     
     
@@ -268,6 +298,16 @@ async function renderUpgrades() {
 
 async function playHand() {
     if (selectedCards.length === 0) return;
+
+    selectedCards.forEach(card => {
+        const cardElement = document.querySelector(`[data-id="${card.rank}-${card.suit}"]`);
+        if (cardElement) {
+            cardElement.classList.add("playing");
+            setTimeout(() => {
+                cardElement.remove();  // Remove card after animation
+            }, 800); 
+        }
+    });
 
     const response = await fetch(`${BASE_URL}/game/${gameId}/play_hand`, {
         method: "POST",
@@ -346,6 +386,7 @@ function openUpgradeStore(upgrades) {
         `;
 
         card.onclick = () => buyUpgrade(upgrade);
+        card.dataset.upgradeId = upgrade.id;
         shopItems.appendChild(card);
     });
 
@@ -400,10 +441,22 @@ function handleWebSocketMessage(event) {
                 openUpgradeStore(message.upgrades);
             }
             break;
-        case "change_max_health":
+        case "apply_upgrades":
             console.log("Recieved change max health websocket message:"+message.player+" "+message.health+" "+message.max_health)
             updateHealth(message.player,message.health,message.max_health)
+            updateMaxDiscards(message.player,message.max_discards)
             break;
+        
+    }
+}
+
+function updateMaxDiscards(player, value){
+    if (player == playerId) {
+        console.log(`Updating player ${playerId} max discards to ${value}`)
+        maxDiscards = value;
+        updateDiscardButton(maxDiscards);
+    } else {
+        console.log(`Set other player (${playerId}) max discards to ${value}`)
     }
 }
 
