@@ -62,6 +62,28 @@ function handleCredentialResponse(response) {
     google.accounts.id.prompt();
   }
 
+  function handleCredentialResponse(response) {
+    // Log the JWT credential to the console.
+    console.log("Encoded JWT ID token:", response.credential);
+  }
+
+  // Initialize the Google Identity Services once the page loads.
+  window.onload = function() {
+    google.accounts.id.initialize({
+      client_id: "YOUR_CLIENT_ID.apps.googleusercontent.com", // Replace with your actual client ID.
+      callback: handleCredentialResponse
+    });
+
+    // Render the Google Sign-In button.
+    google.accounts.id.renderButton(
+      document.getElementById("buttonDiv"),
+      { theme: "outline", size: "large" }
+    );
+
+    // Optionally, display the One Tap dialog.
+    google.accounts.id.prompt();
+  }
+
 function logMessage(message, type = "") {
     const logDiv = document.getElementById("log");
     const logEntry = document.createElement("p");
