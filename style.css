@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Indie+Flower&display=swap');
+
 body {
     font-family: Arial, sans-serif;
     text-align: center;
@@ -45,7 +47,7 @@ button:hover {
     background-color: #0056b3;
 }
 
-@import url('https://fonts.googleapis.com/css2?family=Indie+Flower&display=swap');
+
 
 #log {
     height: 250px;
