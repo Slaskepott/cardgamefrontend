@@ -7,15 +7,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="google-signin-client_id" content="48070837973-6js98s233sdoc4qdleqt4g160ch81uek.apps.googleusercontent.com">
     <meta http-equiv="Content-Security-Policy" content="
-    script-src https://accounts.google.com/gsi/client;
-    frame-src https://accounts.google.com/gsi/;
-    connect-src https://accounts.google.com/gsi/;
-    style-src https://accounts.google.com/gsi/style;">
+        script-src https://accounts.google.com/gsi/client;
+        frame-src https://accounts.google.com/gsi/;
+        connect-src https://accounts.google.com/gsi/;
+        style-src 'self' https://accounts.google.com/gsi/style 'unsafe-inline';">
     <title>Card Game</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/8983/8983569.png">
 </head>
 <body>
+    <link rel="stylesheet" href="https://slaskecards.com/style.css">
     <div id="g_id_onload"
         data-client_id="48070837973-6js98s233sdoc4qdleqt4g160ch81uek.apps.googleusercontent.com"
         data-context="signin"
