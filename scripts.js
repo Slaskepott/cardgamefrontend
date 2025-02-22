@@ -33,12 +33,33 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 
-function onSignIn(googleUser) {
-    var profile = googleUser.getBasicProfile();
-    console.log('ID: ' + profile.getId()); // Do not send to your backend! Use an ID token instead.
-    console.log('Name: ' + profile.getName());
-    console.log('Image URL: ' + profile.getImageUrl());
-    console.log('Email: ' + profile.getEmail()); // This is null if the 'email' scope is not present.
+function handleCredentialResponse(response) {
+    // The JWT credential is available as response.credential.
+    console.log("Encoded JWT ID token: " + response.credential);
+
+    // Optionally, decode the JWT to get user profile info.
+    // For example, using jwt-decode (make sure to include it):
+    // const decoded = jwt_decode(response.credential);
+    // console.log("User ID: " + decoded.sub);
+    // console.log("Name: " + decoded.name);
+    // console.log("Email: " + decoded.email);
+  }
+
+  // Initialize the GSI library once the page loads.
+  window.onload = function() {
+    google.accounts.id.initialize({
+      client_id: "YOUR_CLIENT_ID.apps.googleusercontent.com", // Replace with your client ID
+      callback: handleCredentialResponse
+    });
+
+    // Render the Sign-In button in the specified container.
+    google.accounts.id.renderButton(
+      document.getElementById("buttonDiv"),
+      { theme: "outline", size: "large" } // Customize button as needed.
+    );
+
+    // Optionally, prompt the One Tap dialog.
+    google.accounts.id.prompt();
   }
 
 function logMessage(message, type = "") {
