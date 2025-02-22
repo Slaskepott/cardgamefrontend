@@ -48,7 +48,7 @@ function handleCredentialResponse(response) {
   // Initialize the GSI library once the page loads.
   window.onload = function() {
     google.accounts.id.initialize({
-      client_id: "YOUR_CLIENT_ID.apps.googleusercontent.com", // Replace with your client ID
+      client_id: "48070837973-6js98s233sdoc4qdleqt4g160ch81uek.apps.googleusercontent.com", // Replace with your client ID
       callback: handleCredentialResponse
     });
 
