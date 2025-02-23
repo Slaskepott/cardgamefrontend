@@ -2,7 +2,7 @@
 
 const DEVELOPMENT_MODE = false;
 let BASE_URL = DEVELOPMENT_MODE ? "http://localhost:8000" : "https://cardgame-lndd.onrender.com";
-
+let GOOGLE_CLIENT_ID = "48070837973-6js98s233sdoc4qdleqt4g160ch81uek.apps.googleusercontent.com";
 
 let playerId = null;
 let gameId = null;
@@ -13,6 +13,27 @@ let upgrades = [];
 let health = 100;
 let maxHealth = 100;
 let maxDiscards = 1;
+
+function handleCredentialResponse(response) {
+    console.log("Encoded JWT ID token: " + response.credential);
+  }
+  
+  // Initialize Google Identity Services
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleCredentialResponse
+  });
+  
+  // Render the Google Sign-In button into the container with id "buttonDiv"
+  google.accounts.id.renderButton(
+    document.getElementById("buttonDiv"),
+    { theme: "outline", size: "large" } // customization attributes
+  );
+  
+  // Optionally prompt the One Tap dialog (if desired)
+  google.accounts.id.prompt();
+
+
 
 document.addEventListener("DOMContentLoaded", function() {
     const rulesBtn = document.getElementById("rules-btn");
@@ -32,57 +53,6 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 
-
-function handleCredentialResponse(response) {
-    // The JWT credential is available as response.credential.
-    console.log("Encoded JWT ID token: " + response.credential);
-
-    // Optionally, decode the JWT to get user profile info.
-    // For example, using jwt-decode (make sure to include it):
-    // const decoded = jwt_decode(response.credential);
-    // console.log("User ID: " + decoded.sub);
-    // console.log("Name: " + decoded.name);
-    // console.log("Email: " + decoded.email);
-  }
-
-  // Initialize the GSI library once the page loads.
-  window.onload = function() {
-    google.accounts.id.initialize({
-      client_id: "48070837973-6js98s233sdoc4qdleqt4g160ch81uek.apps.googleusercontent.com", // Replace with your client ID
-      callback: handleCredentialResponse
-    });
-
-    // Render the Sign-In button in the specified container.
-    google.accounts.id.renderButton(
-      document.getElementById("buttonDiv"),
-      { theme: "outline", size: "large" } // Customize button as needed.
-    );
-
-    // Optionally, prompt the One Tap dialog.
-    google.accounts.id.prompt();
-  }
-
-  function handleCredentialResponse(response) {
-    // Log the JWT credential to the console.
-    console.log("Encoded JWT ID token:", response.credential);
-  }
-
-  // Initialize the Google Identity Services once the page loads.
-  window.onload = function() {
-    google.accounts.id.initialize({
-      client_id: "YOUR_CLIENT_ID.apps.googleusercontent.com", // Replace with your actual client ID.
-      callback: handleCredentialResponse
-    });
-
-    // Render the Google Sign-In button.
-    google.accounts.id.renderButton(
-      document.getElementById("buttonDiv"),
-      { theme: "outline", size: "large" }
-    );
-
-    // Optionally, display the One Tap dialog.
-    google.accounts.id.prompt();
-  }
 
 function logMessage(message, type = "") {
     const logDiv = document.getElementById("log");
