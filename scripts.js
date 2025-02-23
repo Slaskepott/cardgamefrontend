@@ -1,8 +1,7 @@
 //Remember to change wsURL as well!
 
-const DEVELOPMENT_MODE = false;
+const DEVELOPMENT_MODE = true;
 let BASE_URL = DEVELOPMENT_MODE ? "http://localhost:8000" : "https://cardgame-lndd.onrender.com";
-let GOOGLE_CLIENT_ID = "48070837973-6js98s233sdoc4qdleqt4g160ch81uek.apps.googleusercontent.com";
 
 let playerId = null;
 let gameId = null;
@@ -14,24 +13,7 @@ let health = 100;
 let maxHealth = 100;
 let maxDiscards = 1;
 
-function handleCredentialResponse(response) {
-    console.log("Encoded JWT ID token: " + response.credential);
-  }
-  
-// Initialize Google Identity Services
-google.accounts.id.initialize({
-    client_id: GOOGLE_CLIENT_ID,
-    callback: handleCredentialResponse
-});
 
-// Render the Google Sign-In button into the container with id "buttonDiv"
-google.accounts.id.renderButton(
-    document.getElementById("buttonDiv"),
-    { theme: "outline", size: "large" } // customization attributes
-);
-
-// Optionally prompt the One Tap dialog (if desired)
-google.accounts.id.prompt();
 
 
 

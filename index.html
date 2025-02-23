@@ -2,46 +2,74 @@
 <html lang="en">
 <head>
     <link rel="stylesheet" href="style.css">
-    <script src="https://accounts.google.com/gsi/client" async></script>
     <script src="scripts.js"></script>
 
-    <script>
-        function handleCredentialResponse(response) {
-            console.log("Encoded JWT ID token: " + response.credential);
-        }
-        
-        // Initialize Google Identity Services
-        google.accounts.id.initialize({
-            client_id: GOOGLE_CLIENT_ID,
-            callback: handleCredentialResponse
-        });
-
-        // Render the Google Sign-In button into the container with id "buttonDiv"
-        google.accounts.id.renderButton(
-            document.getElementById("buttonDiv"),
-            { theme: "outline", size: "large" } // customization attributes
-        );
-
-        // Optionally prompt the One Tap dialog (if desired)
-        google.accounts.id.prompt();
-        window.onload = function () {
-          google.accounts.id.initialize({
-            client_id: 'YOUR_GOOGLE_CLIENT_ID',
-            callback: handleCredentialResponse
-          });
-          google.accounts.id.prompt();
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+      
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+          apiKey: "AIzaSyAq70AER3541hJOUhrj4GEBCs-ChkRNjog",
+          authDomain: "slaskecards.firebaseapp.com",
+          projectId: "slaskecards",
+          storageBucket: "slaskecards.firebasestorage.app",
+          messagingSenderId: "282880805544",
+          appId: "1:282880805544:web:bd295dcb1fe0a5e5bb909d"
         };
+      
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        const email = "test@gmail.com"
+        const password = "yoo123"
+
+        createUserWithEmailAndPassword(auth, email, password)
+            .then((userCredential) => {
+                // Signed up 
+                const user = userCredential.user;
+                console.log(user);
+                // ...
+            })
+            .catch((error) => {
+                const errorCode = error.code;
+                const errorMessage = error.message;
+                console.log(error.code);
+                console.log(error.message);
+                // ..
+            });
+        
+        signInWithEmailAndPassword(auth, email, password)
+            .then((userCredential) => {
+                // Signed in 
+                const user = userCredential.user;
+                // ...
+            })
+            .catch((error) => {
+                const errorCode = error.code;
+                const errorMessage = error.message;
+            });
+        
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+            // User is signed in, see docs for a list of available properties
+            // https://firebase.google.com/docs/reference/js/auth.user
+            const uid = user.uid;
+            // ...
+            } else {
+            // User is signed out
+            // ...
+            }
+        });
+                            
     </script>
-    
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="google-signin-client_id" content="48070837973-6js98s233sdoc4qdleqt4g160ch81uek.apps.googleusercontent.com">
-    <meta http-equiv="Content-Security-Policy" content="
-            script-src https://accounts.google.com/gsi/client;
-            frame-src https://accounts.google.com/gsi/;
-            connect-src https://accounts.google.com/gsi/;
-            style-src 'self' https://accounts.google.com/gsi/style 'unsafe-inline' https://fonts.googleapis.com;">
-    <title>Card Game</title>
     <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/8983/8983569.png">
 </head>
 <body>
