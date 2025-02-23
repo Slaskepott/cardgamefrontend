@@ -122,16 +122,21 @@
     
         // Listen for authentication state changes
         onAuthStateChanged(auth, (user) => {
+          const authBox = document.querySelector('.auth-box');
           if (user) {
             // When signed in, hide sign in/up forms and show the user display
             document.getElementById("signInContainer").classList.add("hidden");
             document.getElementById("signUpContainer").classList.add("hidden");
             document.getElementById("userDisplay").classList.remove("hidden");
             document.getElementById("userName").textContent = user.displayName || user.email;
+            authBox.classList.add('signed-in');
+            authBox.classList.remove('signed-out');
           } else {
             // When signed out, show the sign in form and hide the user display
             document.getElementById("signInContainer").classList.remove("hidden");
             document.getElementById("userDisplay").classList.add("hidden");
+            authBox.classList.add('signed-out');
+            authBox.classList.remove('signed-in');
           }
         });
     

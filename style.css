@@ -564,6 +564,16 @@ button:hover {
     box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     font-family: Arial, sans-serif;
   }
+  /* New styles to differentiate auth box states */
+    .auth-box.signed-out {
+        border-color: #ccc;
+        background-color: #f8f8f8;
+    }
+    
+    .auth-box.signed-in {
+        border-color: #4CAF50;
+        background-color: #e0ffe0;
+    }
   .auth-box-header {
     background-color: #f2f2f2;
     padding: 10px;
