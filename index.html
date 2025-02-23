@@ -3,15 +3,61 @@
 <head>
     <link rel="stylesheet" href="style.css">
     <script src="scripts.js"></script>
-
-    <script type="module">
-        // Import the functions you need from the SDKs you need
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/8983/8983569.png">
+</head>
+<body>
+    <div class="auth-box">
+        <div class="auth-box-header">
+          <h3>Authentication</h3>
+          <button class="toggle-btn" id="expandCollapseBtn">-</button>
+        </div>
+        <div class="auth-box-content" id="authContent">
+          <!-- Sign In Form -->
+          <div id="signInContainer">
+            <h4>Sign In</h4>
+            <input type="email" id="signInEmail" placeholder="Email" />
+            <input type="password" id="signInPassword" placeholder="Password" />
+            <button id="signInButton">Sign In</button>
+            <p>
+              Don't have an account?
+              <button id="showSignUp" class="toggle-form-btn">Sign Up</button>
+            </p>
+          </div>
+    
+          <!-- Sign Up Form -->
+          <div id="signUpContainer" class="hidden">
+            <h4>Sign Up</h4>
+            <input type="email" id="signUpEmail" placeholder="Email" />
+            <input type="password" id="signUpPassword" placeholder="Password" />
+            <button id="signUpButton">Sign Up</button>
+            <p>
+              Already have an account?
+              <button id="showSignIn" class="toggle-form-btn">Sign In</button>
+            </p>
+          </div>
+    
+          <!-- User Display & Log Out -->
+          <div id="userDisplay" class="hidden">
+            <p>Welcome, <span id="userName"></span>!</p>
+            <button id="logoutButton">Log Out</button>
+          </div>
+        </div>
+      </div>
+    
+      <script type="module">
+        // Import Firebase functions from the CDN
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
-        // TODO: Add SDKs for Firebase products that you want to use
-        // https://firebase.google.com/docs/web/setup#available-libraries
-      
-        // Your web app's Firebase configuration
+        import { 
+          getAuth, 
+          createUserWithEmailAndPassword, 
+          signInWithEmailAndPassword, 
+          signOut, 
+          onAuthStateChanged 
+        } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
+    
+        // Your Firebase configuration object
         const firebaseConfig = {
           apiKey: "AIzaSyAq70AER3541hJOUhrj4GEBCs-ChkRNjog",
           authDomain: "slaskecards.firebaseapp.com",
@@ -20,60 +66,88 @@
           messagingSenderId: "282880805544",
           appId: "1:282880805544:web:bd295dcb1fe0a5e5bb909d"
         };
-      
-        // Initialize Firebase
+    
+        // Initialize Firebase and get the auth instance
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-
-        const email = "test@gmail.com"
-        const password = "yoo123"
-
-        createUserWithEmailAndPassword(auth, email, password)
-            .then((userCredential) => {
-                // Signed up 
-                const user = userCredential.user;
-                console.log(user);
-                // ...
-            })
-            .catch((error) => {
-                const errorCode = error.code;
-                const errorMessage = error.message;
-                console.log(error.code);
-                console.log(error.message);
-                // ..
-            });
-        
-        signInWithEmailAndPassword(auth, email, password)
-            .then((userCredential) => {
-                // Signed in 
-                const user = userCredential.user;
-                // ...
-            })
-            .catch((error) => {
-                const errorCode = error.code;
-                const errorMessage = error.message;
-            });
-        
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-            // User is signed in, see docs for a list of available properties
-            // https://firebase.google.com/docs/reference/js/auth.user
-            const uid = user.uid;
-            // ...
-            } else {
-            // User is signed out
-            // ...
-            }
+    
+        // Toggle between sign in and sign up forms
+        document.getElementById("showSignUp").addEventListener("click", () => {
+          document.getElementById("signInContainer").classList.add("hidden");
+          document.getElementById("signUpContainer").classList.remove("hidden");
         });
-                            
-    </script>
-
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/8983/8983569.png">
-</head>
-<body>
-    <div id="buttonDiv"></div>
+        document.getElementById("showSignIn").addEventListener("click", () => {
+          document.getElementById("signUpContainer").classList.add("hidden");
+          document.getElementById("signInContainer").classList.remove("hidden");
+        });
+    
+        // Sign In event
+        document.getElementById("signInButton").addEventListener("click", () => {
+          const email = document.getElementById("signInEmail").value;
+          const password = document.getElementById("signInPassword").value;
+          signInWithEmailAndPassword(auth, email, password)
+            .then((userCredential) => {
+              console.log("Signed in:", userCredential.user);
+            })
+            .catch((error) => {
+              console.error("Error signing in:", error);
+              alert(error.message);
+            });
+        });
+    
+        // Sign Up event
+        document.getElementById("signUpButton").addEventListener("click", () => {
+          const email = document.getElementById("signUpEmail").value;
+          const password = document.getElementById("signUpPassword").value;
+          createUserWithEmailAndPassword(auth, email, password)
+            .then((userCredential) => {
+              console.log("Signed up:", userCredential.user);
+            })
+            .catch((error) => {
+              console.error("Error signing up:", error);
+              alert(error.message);
+            });
+        });
+    
+        // Log Out event
+        document.getElementById("logoutButton").addEventListener("click", () => {
+          signOut(auth)
+            .then(() => {
+              console.log("User signed out");
+            })
+            .catch((error) => {
+              console.error("Error signing out:", error);
+            });
+        });
+    
+        // Listen for authentication state changes
+        onAuthStateChanged(auth, (user) => {
+          if (user) {
+            // When signed in, hide sign in/up forms and show the user display
+            document.getElementById("signInContainer").classList.add("hidden");
+            document.getElementById("signUpContainer").classList.add("hidden");
+            document.getElementById("userDisplay").classList.remove("hidden");
+            document.getElementById("userName").textContent = user.displayName || user.email;
+          } else {
+            // When signed out, show the sign in form and hide the user display
+            document.getElementById("signInContainer").classList.remove("hidden");
+            document.getElementById("userDisplay").classList.add("hidden");
+          }
+        });
+    
+        // Expand/Collapse functionality for the auth box
+        const expandCollapseBtn = document.getElementById("expandCollapseBtn");
+        const authContent = document.getElementById("authContent");
+        expandCollapseBtn.addEventListener("click", () => {
+          if (authContent.style.display === "none") {
+            authContent.style.display = "block";
+            expandCollapseBtn.textContent = "−";
+          } else {
+            authContent.style.display = "none";
+            expandCollapseBtn.textContent = "+";
+          }
+        });
+      </script>
 
     <!-- Scoreboard -->
     <div id="scoreboard-container" style="display: none;">

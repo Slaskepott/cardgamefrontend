@@ -1,6 +1,6 @@
 //Remember to change wsURL as well!
 
-const DEVELOPMENT_MODE = true;
+const DEVELOPMENT_MODE = false;
 let BASE_URL = DEVELOPMENT_MODE ? "http://localhost:8000" : "https://cardgame-lndd.onrender.com";
 
 let playerId = null;
