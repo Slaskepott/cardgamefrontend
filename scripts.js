@@ -18,20 +18,20 @@ function handleCredentialResponse(response) {
     console.log("Encoded JWT ID token: " + response.credential);
   }
   
-  // Initialize Google Identity Services
-  google.accounts.id.initialize({
+// Initialize Google Identity Services
+google.accounts.id.initialize({
     client_id: GOOGLE_CLIENT_ID,
     callback: handleCredentialResponse
-  });
-  
-  // Render the Google Sign-In button into the container with id "buttonDiv"
-  google.accounts.id.renderButton(
+});
+
+// Render the Google Sign-In button into the container with id "buttonDiv"
+google.accounts.id.renderButton(
     document.getElementById("buttonDiv"),
     { theme: "outline", size: "large" } // customization attributes
-  );
-  
-  // Optionally prompt the One Tap dialog (if desired)
-  google.accounts.id.prompt();
+);
+
+// Optionally prompt the One Tap dialog (if desired)
+google.accounts.id.prompt();
 
 
 
