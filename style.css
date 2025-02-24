@@ -163,10 +163,12 @@ button:hover {
 
 #p1-health  {
     color: rgb(255, 0, 0);
+    z-index: -1;
 }
 
 #p2-health  {
     color: rgb(255, 0, 0);
+    z-index: -1;
 }
 
 
@@ -557,12 +559,12 @@ button:hover {
     border: 1px solid #ccc;
     border-radius: 5px;
     width: 320px;
-    position: fixed;
     top: 20px;
     right: 20px;
     background-color: #fff;
     box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     font-family: Arial, sans-serif;
+    z-index: 1000;
   }
   /* New styles to differentiate auth box states */
     .auth-box.signed-out {
@@ -622,4 +624,23 @@ button:hover {
     cursor: pointer;
     padding: 0;
     font-size: 14px;
+  }
+
+  /* Some basic styling */
+  #card-element {
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+  }
+  #submit {
+    padding: 10px 20px;
+    background-color: #6772e5;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  #payment-result {
+    margin-top: 10px;
   }

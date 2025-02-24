@@ -3,11 +3,71 @@
 <head>
     <link rel="stylesheet" href="style.css">
     <script src="scripts.js"></script>
+    <script src="https://js.stripe.com/v3/"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/8983/8983569.png">
+    <meta Content-Security-Policy: sandbox allow-same-origin>
 </head>
 <body>
+  <form id="payment-form">
+    <div id="card-element"><!-- Stripe Card Element will be inserted here --></div>
+    <button id="submit" type="submit">Pay $1</button>
+    <div id="payment-result"></div>
+  </form>
+
+  <script>
+    // Initialize Stripe with your publishable key
+    const stripe = Stripe("pk_live_51Qvy8oGOpA4Mg1ux4OMKjnGYSjJ2Iatzw3E0L97GoU3J2PaOMGHR7zhE1aLvqYK3X7dzGvp5Fpz6nMaWeBx1q4Vi00mxbWTZmv");
+    const elements = stripe.elements();
+    const card = elements.create("card");
+    card.mount("#card-element");
+
+    const form = document.getElementById("payment-form");
+    const resultContainer = document.getElementById("payment-result");
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      
+      // Create a PaymentIntent by calling your backend endpoint
+      const response = await fetch("https://cardgame-lndd.onrender.com/pay", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        // $1 is 100 cents in USD
+        body: JSON.stringify({ amount: 100, currency: "usd", description: "Test Payment of $1" })
+      });
+      const data = await response.json();
+
+      if (data.error) {
+        resultContainer.textContent = "Error: " + data.error;
+        return;
+      }
+
+      const clientSecret = data.client_secret;
+      console.log(clientSecret)
+
+      // Confirm the card payment using the client secret and card details
+      const result = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: card,
+          billing_details: {
+            name: "Test User"
+          }
+        }
+      });
+
+      if (result.error) {
+        // Display error message
+        resultContainer.textContent = "Payment failed: " + result.error.message;
+      } else {
+        if (result.paymentIntent.status === "succeeded") {
+          resultContainer.textContent = "Payment succeeded!";
+        }
+      }
+    });
+  </script>
     <div class="auth-box">
         <div class="auth-box-header">
           <h3>Authentication</h3>
