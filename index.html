@@ -54,6 +54,7 @@
           </div>
         </div>
       </div>
+      <button id="resetPasswordBtn" onclick="sendResetEmail()">Reset Password</button>
 
       <script>
         // Initialize Stripe with your publishable key
@@ -248,6 +249,31 @@
           }
         });
         window.auth = auth;
+        import { sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
+        
+        // Function to send a password reset email
+        function sendResetEmail() {
+          let emailForReset;
+          const user = auth.currentUser;
+          if (user && user.email) {
+            emailForReset = user.email;
+          } else {
+            emailForReset = prompt("Enter your email for password reset:");
+          }
+          if (!emailForReset) {
+            alert("Email is required for password reset.");
+            return;
+          }
+          sendPasswordResetEmail(auth, emailForReset)
+            .then(() => {
+              alert("Password reset email sent!");
+            })
+            .catch((error) => {
+              alert("Error: " + error.message);
+            });
+        }
+        window.sendResetEmail = sendResetEmail;
+
       </script>
 
     <!-- Scoreboard -->
