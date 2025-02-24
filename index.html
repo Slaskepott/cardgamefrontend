@@ -57,6 +57,9 @@
 
       <script>
         // Initialize Stripe with your publishable key
+        // Global variable to hold the current user's email
+        let currentUserEmail = "";
+
         const stripe = Stripe("pk_live_51Qvy8oGOpA4Mg1ux4OMKjnGYSjJ2Iatzw3E0L97GoU3J2PaOMGHR7zhE1aLvqYK3X7dzGvp5Fpz6nMaWeBx1q4Vi00mxbWTZmv");
         const elements = stripe.elements();
         const card = elements.create("card");
@@ -67,7 +70,14 @@
     
         form.addEventListener("submit", async (event) => {
           event.preventDefault();
-          
+
+          const user = window.auth ? window.auth.currentUser : null;
+          if (!user || !user.email) {
+            resultContainer.textContent = "Error: No user is signed in.";
+            return;
+          }
+          console.log("The email is")
+          console.log(user.email)
           // Create a PaymentIntent by calling your backend endpoint
           const response = await fetch("https://cardgame-lndd.onrender.com/pay", {
             method: "POST",
@@ -75,7 +85,7 @@
               "Content-Type": "application/json"
             },
             // $1 is 100 cents in USD
-            body: JSON.stringify({ amount: 100, currency: "usd", description: "Test Payment of $1", email: document.getElementById("userName").innerHTML })
+            body: JSON.stringify({ amount: 100, currency: "usd", description: "Test Payment of $1", email: user.email  })
           });
           const data = await response.json();
     
@@ -103,7 +113,6 @@
           } else {
             if (result.paymentIntent.status === "succeeded") {
               resultContainer.textContent = "Payment succeeded! 💰1000 has been added to your account!!!";
-              document.getElementById("player-slaskecoins").innerHTML = "💰1000"
             }
           }
     
@@ -193,6 +202,7 @@
             // Assuming the response returns a JSON number
             const coins = await response.json();
             console.log(`Slaskecoins for ${email}:`, coins);
+            document.getElementById("player-slaskecoins").textContent = `💰${coins}`;
             return coins;
           } catch (error) {
             console.error("Error fetching slaskecoins:", error);
@@ -207,7 +217,8 @@
             document.getElementById("signInContainer").classList.add("hidden");
             document.getElementById("signUpContainer").classList.add("hidden");
             document.getElementById("userDisplay").classList.remove("hidden");
-            document.getElementById("userName").textContent = user.displayName || user.email;
+            currentUserEmail = user.displayName || user.email;
+            document.getElementById("userName").textContent = currentUserEmail;
             authBox.classList.add('signed-in');
             authBox.classList.remove('signed-out');
             const email = document.getElementById("userName").innerHTML;
@@ -236,6 +247,7 @@
             expandCollapseBtn.textContent = "+";
           }
         });
+        window.auth = auth;
       </script>
 
     <!-- Scoreboard -->
