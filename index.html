@@ -63,7 +63,7 @@
         resultContainer.textContent = "Payment failed: " + result.error.message;
       } else {
         if (result.paymentIntent.status === "succeeded") {
-          resultContainer.textContent = "Payment succeeded!";
+          resultContainer.textContent = "Payment succeeded! 💰1 has been added to your account!!!";
           document.getElementById("player-slaskecoins").innerHTML = "💰1"
         }
       }
@@ -281,7 +281,7 @@
             <button onclick="createGame()">Create Game</button>
             <button onclick="joinGame()">Join Game</button>
         </div>
-        <div style="display: flex;">
+        <div style="display: flex; justify-content: center;">
           <h2><span id="player-coins">🪙0</span></h2>
           <h2><span id="player-slaskecoins">💰0</span></h2>
         </div>

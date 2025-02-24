@@ -554,17 +554,14 @@ button:hover {
     transform: scale(0.95);
 }
 
-/* Auth Box Styles */
 .auth-box {
+    width: 320px;
+    margin: 0 auto;
+    background-color: #fff;
     border: 1px solid #ccc;
     border-radius: 5px;
-    width: 320px;
-    top: 20px;
-    right: 20px;
-    background-color: #fff;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    font-family: Arial, sans-serif;
-    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    /* No absolute positioning or high z-index needed */
   }
   /* New styles to differentiate auth box states */
     .auth-box.signed-out {
