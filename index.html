@@ -12,7 +12,7 @@
 <body>
   <form id="payment-form">
     <div id="card-element"><!-- Stripe Card Element will be inserted here --></div>
-    <button id="submit" type="submit">Pay $1</button>
+    <button id="submit" type="submit">Pay $1 = 1 slaskecoin</button>
     <div id="payment-result"></div>
   </form>
 
@@ -64,8 +64,10 @@
       } else {
         if (result.paymentIntent.status === "succeeded") {
           resultContainer.textContent = "Payment succeeded!";
+          document.getElementById("player-slaskecoins").innerHTML = "💰1"
         }
       }
+
     });
   </script>
     <div class="auth-box">
@@ -279,7 +281,10 @@
             <button onclick="createGame()">Create Game</button>
             <button onclick="joinGame()">Join Game</button>
         </div>
-        <h2><span id="player-coins">🪙0</span></h2>
+        <div style="display: flex;">
+          <h2><span id="player-coins">🪙0</span></h2>
+          <h2><span id="player-slaskecoins">💰0</span></h2>
+        </div>
         <div id="turn-indicator">Waiting for game to start...</div>
         <div class="health-bar-container">
             <div>
