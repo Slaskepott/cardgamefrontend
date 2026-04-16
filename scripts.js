@@ -1,7 +1,7 @@
 //Remember to change wsURL as well!
 
 const DEVELOPMENT_MODE = false;
-let BASE_URL = DEVELOPMENT_MODE ? "http://localhost:8000" : "https://cardgame-lndd.onrender.com";
+let BASE_URL = DEVELOPMENT_MODE ? "http://localhost:8000" : "https://cardgame-34x4.onrender.com";
 
 let playerId = null;
 let gameId = null;
@@ -398,9 +398,10 @@ function openUpgradeStore(upgrades) {
 
 function getWebSocketUrl(gameId, playerId) {
     if (!gameId || !playerId) return null;
+    const wsBaseUrl = BASE_URL.replace("https://", "wss://").replace("http://", "ws://");
     return DEVELOPMENT_MODE 
         ? `ws://localhost:8000/game/${gameId}/ws/${playerId}` 
-        : `wss://cardgame-lndd.onrender.com/game/${gameId}/ws/${playerId}`;
+        : `${wsBaseUrl}/game/${gameId}/ws/${playerId}`;
 }
 
 function handleWebSocketOpen() {
