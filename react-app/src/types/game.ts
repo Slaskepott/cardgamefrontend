@@ -70,6 +70,7 @@ export interface LevelMilestone {
 
 export interface MetaProgress {
   level: number;
+  elo_rating: number;
   experience_total: number;
   experience_in_level: number;
   experience_for_next_level: number;
@@ -106,6 +107,12 @@ export interface OpenStoreMessage {
   type: "open_store";
   player: string;
   upgrades: Upgrade[];
+  waiting_players?: string[];
+}
+
+export interface ShopStatusMessage {
+  type: "shop_status";
+  waiting_players: string[];
 }
 
 export interface HandPlayedMessage {
@@ -157,6 +164,7 @@ export type GameSocketMessage =
   | NewHandMessage
   | HandUpdatedMessage
   | OpenStoreMessage
+  | ShopStatusMessage
   | ApplyUpgradesMessage
   | TurnEndedMessage
   | Record<string, unknown>;
@@ -213,6 +221,10 @@ export interface PlayHandResponse extends ActionResponse {
 
 export interface BuyUpgradeResponse extends ActionResponse {
   price?: number;
+}
+
+export interface ContinueFromShopResponse extends ActionResponse {
+  waiting_players?: string[];
 }
 
 export interface MetaProgressResponse extends MetaProgress {

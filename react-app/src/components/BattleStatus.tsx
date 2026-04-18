@@ -13,7 +13,6 @@ interface BattleStatusProps {
   currentTurn: string | null;
   battleMoment: BattleMoment | null;
   playerGold: number;
-  selectedCount: number;
   playerId: string | null;
   shopOpen: boolean;
   onLeaveLobby: () => Promise<void>;
@@ -24,7 +23,6 @@ export function BattleStatus({
   currentTurn,
   battleMoment,
   playerGold,
-  selectedCount,
   playerId,
   shopOpen,
   onLeaveLobby,
@@ -66,7 +64,6 @@ export function BattleStatus({
         </div>
         <div className="battle-metrics battle-status-actions">
           <span>Gold: {playerGold}</span>
-          <span>Selected: {selectedCount}/5</span>
           <button type="button" className="secondary" onClick={() => void onLeaveLobby()}>
             Leave lobby
           </button>

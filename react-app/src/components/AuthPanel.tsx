@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import {
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
@@ -53,6 +53,7 @@ interface AuthPanelProps {
   guestMode: boolean;
   currentView: AccountView;
   metaProgress: MetaProgress | null;
+  onOpenProgression: () => void;
   onAccountIconClick?: () => void;
   onNavigate: (view: Exclude<AccountView, "game">) => void | Promise<void>;
   onGuestModeChange: (guestMode: boolean) => void;
@@ -63,6 +64,7 @@ export function AuthPanel({
   guestMode,
   currentView,
   metaProgress,
+  onOpenProgression,
   onAccountIconClick,
   onNavigate,
   onGuestModeChange,
@@ -75,12 +77,30 @@ export function AuthPanel({
   const [busy, setBusy] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [message, setMessage] = useState("");
+  const accountMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setMenuOpen(false);
     setMessage("");
     setPassword("");
   }, [currentUser]);
+
+  useEffect(() => {
+    if (!menuOpen) {
+      return;
+    }
+
+    function handlePointerDown(event: MouseEvent) {
+      if (!accountMenuRef.current?.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+    };
+  }, [menuOpen]);
 
   async function handleAuthAction() {
     if (!email.trim() || !password.trim()) {
@@ -155,74 +175,110 @@ export function AuthPanel({
   return (
     <>
       {currentUser ? (
-        <div className="account-chip" title={currentUser.email ?? "Signed in"}>
-          <span className="account-chip-balance" title="Talent points">
-            ✦ {metaProgress?.available_talent_points ?? "..."}
-          </span>
-          <span className="account-chip-balance" title="Current level">
-            Lv. {metaProgress?.level ?? "..."}
-          </span>
-          <div className="account-menu">
-            <button
-              type="button"
-              className="account-chip-button"
-              onClick={() => {
-                onAccountIconClick?.();
-                setMenuOpen((current) => !current);
-              }}
-              aria-label="Open account menu"
-              aria-expanded={menuOpen}
-              title={currentUser.email ?? "Signed in"}
-            >
-              {currentUser.photoURL ?? "👤"}
-            </button>
-            {menuOpen ? (
-              <div className="account-dropdown">
-                {currentView !== "lobby" && currentView !== "game" ? (
+        <div className="account-hud" title={currentUser.email ?? "Signed in"}>
+          <div className="account-chip">
+            <span className="account-chip-balance" title="Talent points">
+              ✦ {metaProgress?.available_talent_points ?? "..."}
+            </span>
+            <span className="account-chip-balance" title="Current ELO">
+              Elo {metaProgress?.elo_rating ?? "..."}
+            </span>
+            <span className="account-chip-balance" title="Current level">
+              Lv. {metaProgress?.level ?? "..."}
+            </span>
+            <div className="account-menu" ref={accountMenuRef}>
+              <button
+                type="button"
+                className="account-chip-button"
+                onClick={() => {
+                  onAccountIconClick?.();
+                  setMenuOpen((current) => !current);
+                }}
+                aria-label="Open account menu"
+                aria-expanded={menuOpen}
+                title={currentUser.email ?? "Signed in"}
+              >
+                {currentUser.photoURL ?? "👤"}
+              </button>
+              {menuOpen ? (
+                <div className="account-dropdown">
+                  {currentView !== "lobby" && currentView !== "game" ? (
+                    <button
+                      type="button"
+                      className="account-dropdown-item"
+                      onClick={() => {
+                        void onNavigate("lobby");
+                        setMenuOpen(false);
+                      }}
+                    >
+                      Join lobby
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     className="account-dropdown-item"
                     onClick={() => {
-                      void onNavigate("lobby");
+                      void onNavigate("achievements");
                       setMenuOpen(false);
                     }}
                   >
-                    Join lobby
+                    Achievements
                   </button>
-                ) : null}
-                <button
-                  type="button"
-                  className="account-dropdown-item"
-                  onClick={() => {
-                    void onNavigate("achievements");
-                    setMenuOpen(false);
-                  }}
-                >
-                  Achievements
-                </button>
-                <button
-                  type="button"
-                  className="account-dropdown-item"
-                  onClick={() => {
-                    void onNavigate("talents");
-                    setMenuOpen(false);
-                  }}
-                >
-                  Talent tree
-                </button>
-                <button
-                  type="button"
-                  className="account-dropdown-item"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    void handleSignOut();
-                  }}
-                >
-                  Sign out
-                </button>
-              </div>
-            ) : null}
+                  <button
+                    type="button"
+                    className="account-dropdown-item"
+                    onClick={() => {
+                      void onNavigate("talents");
+                      setMenuOpen(false);
+                    }}
+                  >
+                    Talent tree
+                  </button>
+                  <button
+                    type="button"
+                    className="account-dropdown-item"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      void handleSignOut();
+                    }}
+                  >
+                    Sign out
+                  </button>
+                </div>
+              ) : null}
+            </div>
           </div>
+
+          {currentView !== "game" ? (
+            <button
+              type="button"
+              className="account-xp-bar"
+              onClick={onOpenProgression}
+              title="Open level progression"
+            >
+              <span className="account-xp-label">
+                XP {metaProgress?.experience_in_level ?? "..."}/
+                {metaProgress?.experience_for_next_level ?? "..."}
+              </span>
+              <span className="account-xp-shell" aria-hidden="true">
+                <span
+                  className="account-xp-fill"
+                  style={{
+                    width: `${
+                      metaProgress
+                        ? Math.min(
+                            100,
+                            (metaProgress.experience_in_level /
+                              Math.max(1, metaProgress.experience_for_next_level)) *
+                              100,
+                          )
+                        : 0
+                    }%`,
+                  }}
+                />
+              </span>
+            </button>
+          ) : null}
         </div>
       ) : null}
 
@@ -254,7 +310,13 @@ export function AuthPanel({
             </div>
           </div>
 
-          <div className="auth-form">
+          <form
+            className="auth-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void handleAuthAction();
+            }}
+          >
             <div className="button-row">
               <button
                 type="button"
@@ -330,7 +392,7 @@ export function AuthPanel({
             </label>
 
             <div className="button-row">
-              <button type="button" disabled={busy} onClick={() => void handleAuthAction()}>
+              <button type="submit" disabled={busy}>
                 {busy ? "Working..." : mode === "sign-in" ? "Sign in" : "Create account"}
               </button>
               <button
@@ -351,7 +413,7 @@ export function AuthPanel({
             >
               Continue as guest
             </button>
-          </div>
+          </form>
           {message ? <p className="auth-message">{message}</p> : null}
         </section>
       ) : null}

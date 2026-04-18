@@ -8,8 +8,9 @@ interface UpgradePanelProps {
   visible: boolean;
   busy: boolean;
   onBuyUpgrade: (upgrade: Upgrade) => Promise<void>;
-  onContinue: () => void;
+  onContinue: () => Promise<void>;
   shopStatusText: string;
+  shopWaitingOnYou: boolean;
   onLeaveLobby: () => Promise<void>;
 }
 
@@ -176,6 +177,7 @@ export function UpgradePanel({
   onBuyUpgrade,
   onContinue,
   shopStatusText,
+  shopWaitingOnYou,
   onLeaveLobby,
 }: UpgradePanelProps) {
   if (!visible) {
@@ -229,24 +231,39 @@ export function UpgradePanel({
             onClick={() => void onBuyUpgrade(upgrade)}
             disabled={busy}
           >
-            <span className="upgrade-ornament ornament-top" aria-hidden="true" />
-            <span className="upgrade-ornament ornament-bottom" aria-hidden="true" />
-            <span className="upgrade-price">{upgrade.cost} gold</span>
-            <span className="upgrade-emoji" aria-hidden="true">
-              {upgradeEmojis[upgrade.name] ?? "✨"}
+            <span className="upgrade-pack-shell" aria-hidden="true">
+              <span className="upgrade-pack-half upgrade-pack-half-top" />
+              <span className="upgrade-pack-half upgrade-pack-half-bottom" />
+              <span className="upgrade-pack-burst" />
             </span>
-            <strong>{upgrade.name}</strong>
-            <span>{upgrade.effect}</span>
-            <span className="upgrade-rarity-label">{upgrade.rarity}</span>
+            <div className="upgrade-card-content">
+              <span className="upgrade-frame-corner upgrade-frame-corner-tl" aria-hidden="true" />
+              <span className="upgrade-frame-corner upgrade-frame-corner-tr" aria-hidden="true" />
+              <span className="upgrade-frame-corner upgrade-frame-corner-bl" aria-hidden="true" />
+              <span className="upgrade-frame-corner upgrade-frame-corner-br" aria-hidden="true" />
+              <span className="upgrade-frame-crest" aria-hidden="true" />
+              <span className="upgrade-frame-medallion" aria-hidden="true" />
+              <span className="upgrade-ornament ornament-top" aria-hidden="true" />
+              <span className="upgrade-ornament ornament-bottom" aria-hidden="true" />
+              <span className="upgrade-price">{upgrade.cost} gold</span>
+              <span className="upgrade-emoji" aria-hidden="true">
+                {upgradeEmojis[upgrade.name] ?? "✨"}
+              </span>
+              <strong>{upgrade.name}</strong>
+              <span>{upgrade.effect}</span>
+              <span className="upgrade-rarity-label">{upgrade.rarity}</span>
+            </div>
           </button>
         ))}
       </div>
       <div className="shop-actions">
-        <span className="shop-status-text">{shopStatusText}</span>
+        <span className={`shop-status-text ${shopWaitingOnYou ? "shop-status-text-urgent" : ""}`}>
+          {shopStatusText}
+        </span>
         <button type="button" className="secondary" onClick={() => void onLeaveLobby()}>
           Leave lobby
         </button>
-        <button type="button" className="shop-continue-button" onClick={onContinue}>
+        <button type="button" className="shop-continue-button" onClick={() => void onContinue()}>
           Continue to next game
         </button>
       </div>

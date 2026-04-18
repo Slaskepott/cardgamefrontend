@@ -10,6 +10,7 @@ import type { User } from "firebase/auth";
 import { makeCardKey } from "../components/GameBoard";
 import {
   buyUpgrade,
+  continueFromShop,
   createGame,
   discardCards,
   endTurn,
@@ -31,6 +32,7 @@ import type {
   NewHandMessage,
   OpenStoreMessage,
   PlayersUpdatedMessage,
+  ShopStatusMessage,
   Upgrade,
 } from "../types/game";
 
@@ -83,6 +85,12 @@ function isApplyUpgradesMessage(
   return "type" in message && message.type === "apply_upgrades";
 }
 
+function isShopStatusMessage(
+  message: GameSocketMessage,
+): message is ShopStatusMessage {
+  return "type" in message && message.type === "shop_status";
+}
+
 function clearWindowTimeout(timeoutRef: MutableRefObject<number | null>) {
   if (timeoutRef.current !== null) {
     window.clearTimeout(timeoutRef.current);
@@ -112,6 +120,7 @@ export function useGameSession(currentUser: User | null) {
   const [discardMoment, setDiscardMoment] = useState<DiscardMoment | null>(null);
   const [shopOpen, setShopOpen] = useState(false);
   const [shopUpgrades, setShopUpgrades] = useState<Upgrade[]>([]);
+  const [shopWaitingPlayers, setShopWaitingPlayers] = useState<string[]>([]);
   const [ownedUpgrades, setOwnedUpgrades] = useState<Upgrade[]>([]);
   const [websocketConnected, setWebsocketConnected] = useState(false);
   const [feedEntries, setFeedEntries] = useState<string[]>([
@@ -323,7 +332,11 @@ export function useGameSession(currentUser: User | null) {
           }
         }
         if (isOpenStoreMessage(message) && message.player === nextPlayerId) {
+          setShopWaitingPlayers(message.waiting_players ?? []);
           scheduleShopOpen(message.upgrades, 1400);
+        }
+        if (isShopStatusMessage(message)) {
+          setShopWaitingPlayers(message.waiting_players);
         }
         if (isApplyUpgradesMessage(message)) {
           setPlayerHealth((current) => ({
@@ -533,9 +546,25 @@ export function useGameSession(currentUser: User | null) {
     }
   }
 
-  function handleContinueFromShop() {
-    setShopOpen(false);
-    pushFeedEntry("Continuing from the upgrade shop.");
+  async function handleContinueFromShop() {
+    if (!gameId || !playerId) {
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const response = await continueFromShop(gameId, playerId);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      setShopWaitingPlayers(response.waiting_players ?? []);
+      setShopOpen(false);
+      pushFeedEntry("Ready for the next game.");
+    } catch (error) {
+      pushFeedEntry(error instanceof Error ? error.message : "Failed to continue from shop.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function handleLeaveLobby() {
@@ -574,6 +603,7 @@ export function useGameSession(currentUser: User | null) {
       clearWindowTimeout(shopOpenTimeoutRef);
       setShopOpen(false);
       setShopUpgrades([]);
+      setShopWaitingPlayers([]);
       setOwnedUpgrades([]);
       setWebsocketConnected(false);
       setFeedEntries(["Returned to lobby."]);
@@ -595,11 +625,15 @@ export function useGameSession(currentUser: User | null) {
     maxHealth: playerMaxHealth[name] ?? 100,
     wins: playerWins[name] ?? 0,
   }));
-  const shopOtherPlayers = battlePlayers
-    .map((player) => player.id)
-    .filter((id) => id !== playerId);
-  const shopStatusText =
-    shopOtherPlayers.length > 0
+  const shopOtherPlayers = shopWaitingPlayers.filter((id) => id !== playerId);
+  const shopWaitingOnYou = Boolean(
+    playerId &&
+      shopWaitingPlayers.includes(playerId) &&
+      shopOtherPlayers.length === 0,
+  );
+  const shopStatusText = shopWaitingOnYou
+    ? "The game is waiting on you"
+    : shopOtherPlayers.length > 0
       ? `Waiting for these players: ${shopOtherPlayers.join(", ")}`
       : "Waiting for other players";
 
@@ -637,6 +671,7 @@ export function useGameSession(currentUser: User | null) {
     canEndTurn,
     isPlayersTurn,
     shopStatusText,
+    shopWaitingOnYou,
     setDraftPlayerId: setDraftPlayerId as DraftSetter,
     handleDraftGameIdChange,
     handleCreateGame,

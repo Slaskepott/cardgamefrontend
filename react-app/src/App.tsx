@@ -10,6 +10,7 @@ import { EventFeed } from "./components/EventFeed";
 import { GameBoard } from "./components/GameBoard";
 import { GameSetupForm } from "./components/GameSetupForm";
 import { LevelUpToast } from "./components/LevelUpToast";
+import { LevelProgressionModal } from "./components/LevelProgressionModal";
 import { StatusPanel } from "./components/StatusPanel";
 import { TalentTreePage } from "./components/TalentTreePage";
 import { UpgradePanel } from "./components/UpgradePanel";
@@ -39,6 +40,7 @@ export default function App() {
   const [activeAchievement, setActiveAchievement] = useState<MetaAchievement | null>(null);
   const [levelUpQueue, setLevelUpQueue] = useState<LevelUpEvent[]>([]);
   const [activeLevelUp, setActiveLevelUp] = useState<LevelUpEvent | null>(null);
+  const [progressionModalOpen, setProgressionModalOpen] = useState(false);
 
   const session = useGameSession(currentUser);
   const { setDraftPlayerId } = session;
@@ -332,12 +334,19 @@ export default function App() {
         <AchievementUnlockToast achievement={activeAchievement} />
       ) : null}
       {activeLevelUp ? <LevelUpToast level={activeLevelUp.level} unlocks={activeLevelUp.unlocks} /> : null}
+      {progressionModalOpen ? (
+        <LevelProgressionModal
+          metaProgress={metaProgress}
+          onClose={() => setProgressionModalOpen(false)}
+        />
+      ) : null}
 
       <AuthPanel
         currentUser={currentUser}
         guestMode={guestMode}
         currentView={view}
         metaProgress={metaProgress}
+        onOpenProgression={() => setProgressionModalOpen(true)}
         onAccountIconClick={handleAccountIconClick}
         onNavigate={handleAccountNavigate}
         onGuestModeChange={setGuestMode}
@@ -394,7 +403,10 @@ export default function App() {
         </section>
       ) : hasChosenAccess && view === "achievements" ? (
         <section className="content-grid account-grid">
-          <AchievementsPage metaProgress={metaProgress} />
+          <AchievementsPage
+            metaProgress={metaProgress}
+            onOpenProgression={() => setProgressionModalOpen(true)}
+          />
         </section>
       ) : hasChosenAccess && view === "talents" ? (
         <section className="content-grid account-grid">
@@ -412,7 +424,6 @@ export default function App() {
               currentTurn={session.currentTurn}
               battleMoment={session.battleMoment}
               playerGold={session.playerGold}
-              selectedCount={session.selectedCards.length}
               playerId={session.playerId}
               shopOpen={session.shopOpen}
               onLeaveLobby={async () => {
@@ -428,6 +439,9 @@ export default function App() {
               discardMoment={session.discardMoment}
               cosmeticRewards={metaProgress?.unlocked_level_rewards ?? []}
               selectedCardKeys={session.selectedCardKeys}
+              ownedUpgrades={session.ownedUpgrades}
+              metaProgress={metaProgress}
+              unlockedLevelRewards={metaProgress?.unlocked_level_rewards ?? []}
               onToggleCard={session.handleToggleCard}
               onPlayHand={session.handlePlayHand}
               onDiscard={session.handleDiscard}
@@ -439,21 +453,22 @@ export default function App() {
               disabled={!session.isPlayersTurn}
             />
           ) : null}
-          <UpgradePanel
-            upgrades={session.shopUpgrades}
-            ownedUpgrades={session.ownedUpgrades}
-            playerGold={session.playerGold}
-            goldAttentionActive={session.goldAttentionActive}
-            visible={session.shopOpen}
-            busy={session.busy}
-            onBuyUpgrade={session.handleBuyUpgrade}
-            onContinue={session.handleContinueFromShop}
-            shopStatusText={session.shopStatusText}
-            onLeaveLobby={async () => {
-              await session.handleLeaveLobby();
-              setView("lobby");
-            }}
-          />
+            <UpgradePanel
+              upgrades={session.shopUpgrades}
+              ownedUpgrades={session.ownedUpgrades}
+              playerGold={session.playerGold}
+              goldAttentionActive={session.goldAttentionActive}
+              visible={session.shopOpen}
+              busy={session.busy}
+              onBuyUpgrade={session.handleBuyUpgrade}
+              onContinue={session.handleContinueFromShop}
+              shopStatusText={session.shopStatusText}
+              shopWaitingOnYou={session.shopWaitingOnYou}
+              onLeaveLobby={async () => {
+                await session.handleLeaveLobby();
+                setView("lobby");
+              }}
+            />
           {debugVisible ? (
             <section className="debug-stack">
               <StatusPanel

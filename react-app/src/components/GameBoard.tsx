@@ -1,10 +1,15 @@
 import type { BattleMoment, Card, DiscardMoment, Suit } from "../types/game";
+import type { MetaProgress, Upgrade } from "../types/game";
+import { buildHandPreview } from "../lib/handPreview";
 
 interface GameBoardProps {
   cards: Card[];
   battleMoment: BattleMoment | null;
   discardMoment: DiscardMoment | null;
   selectedCardKeys: string[];
+  ownedUpgrades: Upgrade[];
+  metaProgress: MetaProgress | null;
+  unlockedLevelRewards?: string[];
   onToggleCard: (card: Card, index: number) => void;
   onPlayHand: () => Promise<void>;
   onDiscard: () => Promise<void>;
@@ -72,6 +77,9 @@ export function GameBoard({
   battleMoment,
   discardMoment,
   selectedCardKeys,
+  ownedUpgrades,
+  metaProgress,
+  unlockedLevelRewards = [],
   onToggleCard,
   onPlayHand,
   onDiscard,
@@ -87,6 +95,15 @@ export function GameBoard({
     .map((card, index) => ({ card, index }))
     .sort((left, right) => rankOrder[left.card.rank] - rankOrder[right.card.rank]);
   const cosmeticClasses = getCosmeticClasses(cosmeticRewards);
+  const selectedPreviewCards = sortedCards
+    .filter(({ card, index }) => selectedCardKeys.includes(makeCardKey(card, index)))
+    .map(({ card }) => card);
+  const handPreview = buildHandPreview(
+    selectedPreviewCards,
+    ownedUpgrades,
+    metaProgress,
+    unlockedLevelRewards,
+  );
 
   return (
     <section className="panel game-board">
@@ -180,6 +197,37 @@ export function GameBoard({
             </button>
           </div>
         </div>
+
+        <section
+          className={`hand-preview-panel${handPreview ? " active" : ""}`}
+          aria-hidden={handPreview ? undefined : true}
+        >
+          {handPreview ? (
+            <>
+              <div className="hand-preview-copy">
+                <span className="hand-preview-label">Selected hand preview</span>
+                <strong>
+                  {handPreview.handType.replace(/\b\w/g, (letter) => letter.toUpperCase())}{" "}
+                  <span className="hand-preview-inline-multiplier">
+                    (Multiplier x{handPreview.multiplier})
+                  </span>
+                </strong>
+                <span>
+                  {selectedPreviewCards.length} card{selectedPreviewCards.length === 1 ? "" : "s"}{" "}
+                  selected
+                </span>
+              </div>
+              <div className="hand-preview-metrics">
+                <span>Deals {handPreview.damage} damage</span>
+              </div>
+            </>
+          ) : (
+            <div className="hand-preview-copy hand-preview-copy-idle">
+              <span className="hand-preview-label">Selected hand preview</span>
+              <strong>Select cards to preview your hand</strong>
+            </div>
+          )}
+        </section>
 
         <div className="card-grid">
           {sortedCards.length === 0 ? (

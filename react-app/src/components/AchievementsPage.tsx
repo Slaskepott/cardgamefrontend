@@ -2,6 +2,7 @@ import type { MetaProgress } from "../types/game";
 
 interface AchievementsPageProps {
   metaProgress: MetaProgress | null;
+  onOpenProgression: () => void;
 }
 
 const statLabels: Record<string, string> = {
@@ -20,7 +21,10 @@ const statLabels: Record<string, string> = {
   upgrades_bought: "Upgrades bought",
 };
 
-export function AchievementsPage({ metaProgress }: AchievementsPageProps) {
+export function AchievementsPage({
+  metaProgress,
+  onOpenProgression,
+}: AchievementsPageProps) {
   if (!metaProgress) {
     return (
       <section className="panel account-page-panel">
@@ -37,11 +41,6 @@ export function AchievementsPage({ metaProgress }: AchievementsPageProps) {
   const spotlightStats = Object.entries(metaProgress.stats)
     .filter(([key, value]) => key !== "experience_total" && value > 0)
     .slice(0, 6);
-  const levelProgressPercent = Math.min(
-    100,
-    (metaProgress.experience_in_level / Math.max(1, metaProgress.experience_for_next_level)) * 100,
-  );
-
   return (
     <section className="panel account-page-panel achievements-page-panel">
       <div className="section-header">
@@ -60,32 +59,18 @@ export function AchievementsPage({ metaProgress }: AchievementsPageProps) {
         </div>
       </div>
 
-      <section className="level-progression-panel">
+      <section className="level-progression-summary">
         <div className="level-progression-copy">
           <p className="eyebrow">Level progression</p>
-          <h3>Account level {metaProgress.level}</h3>
+          <h3>Level {metaProgress.level}</h3>
           <p className="panel-copy compact-copy">
             {metaProgress.experience_in_level} / {metaProgress.experience_for_next_level} XP toward
             the next level.
           </p>
         </div>
-        <div className="level-progress-shell">
-          <div className="level-progress-fill" style={{ width: `${levelProgressPercent}%` }} />
-        </div>
-        <div className="level-milestone-grid">
-          {metaProgress.level_milestones.map((milestone) => (
-            <article
-              key={milestone.id}
-              className={`level-milestone-card${milestone.unlocked ? " unlocked" : ""}`}
-            >
-              <div className="meta-achievement-head">
-                <strong>{milestone.name}</strong>
-                <span>Lv. {milestone.level}</span>
-              </div>
-              <p>{milestone.description}</p>
-            </article>
-          ))}
-        </div>
+        <button type="button" onClick={onOpenProgression}>
+          View rewards
+        </button>
       </section>
 
       <div className="achievement-stats-row">

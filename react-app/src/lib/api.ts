@@ -2,6 +2,7 @@ import { apiBaseUrl } from "./config";
 import type {
   ActionResponse,
   BuyUpgradeResponse,
+  ContinueFromShopResponse,
   CreateGameResponse,
   DiscardResponse,
   JoinGameResponse,
@@ -122,6 +123,15 @@ export function endTurn(gameId: string, playerId: string) {
 export function buyUpgrade(gameId: string, playerId: string, upgradeId: number) {
   return requestJson<BuyUpgradeResponse>(
     `/game/${gameId}/${playerId}/buyupgrade/${upgradeId}`,
+    {
+      method: "POST",
+    },
+  );
+}
+
+export function continueFromShop(gameId: string, playerId: string) {
+  return requestJson<ContinueFromShopResponse>(
+    `/game/${gameId}/shop/continue?player_id=${encodeURIComponent(playerId)}`,
     {
       method: "POST",
     },
