@@ -115,6 +115,35 @@ export interface ShopStatusMessage {
   waiting_players: string[];
 }
 
+export interface MatchStateMessage {
+  type: "match_state";
+  phase: "waiting" | "battle" | "shop" | "match_over";
+  current_turn: string | null;
+  battle_deadline_at: number | null;
+  shop_deadlines: Record<string, number>;
+  waiting_players: string[];
+  wins_to_clinch: number;
+  best_of: number;
+  match_winner: string | null;
+  match_end_reason: string | null;
+}
+
+export interface EloChange {
+  before: number | null;
+  after: number | null;
+  delta: number | null;
+}
+
+export interface MatchOverMessage {
+  type: "match_over";
+  winner: string;
+  loser: string | null;
+  reason: string;
+  scores: Record<string, number>;
+  avatars: Record<string, string>;
+  elo_changes: Record<string, EloChange>;
+}
+
 export interface HandPlayedMessage {
   type: "hand_played";
   player: string;
@@ -165,6 +194,8 @@ export type GameSocketMessage =
   | HandUpdatedMessage
   | OpenStoreMessage
   | ShopStatusMessage
+  | MatchStateMessage
+  | MatchOverMessage
   | ApplyUpgradesMessage
   | TurnEndedMessage
   | Record<string, unknown>;
@@ -183,6 +214,9 @@ export interface PlayersResponse {
   players?: string[];
   next_player?: string | null;
   avatars?: Record<string, string>;
+  phase?: "waiting" | "battle" | "shop" | "match_over";
+  battle_deadline_at?: number | null;
+  shop_deadlines?: Record<string, number>;
   error?: string;
 }
 
@@ -225,6 +259,11 @@ export interface BuyUpgradeResponse extends ActionResponse {
 
 export interface ContinueFromShopResponse extends ActionResponse {
   waiting_players?: string[];
+}
+
+export interface HeartbeatResponse extends ActionResponse {
+  phase?: "waiting" | "battle" | "shop" | "match_over";
+  resolved?: boolean;
 }
 
 export interface MetaProgressResponse extends MetaProgress {

@@ -15,7 +15,20 @@ interface BattleStatusProps {
   playerGold: number;
   playerId: string | null;
   shopOpen: boolean;
+  battleTimerSeconds: number | null;
+  winsToClinch?: number;
   onLeaveLobby: () => Promise<void>;
+}
+
+function formatTimer(seconds: number | null) {
+  if (seconds === null) {
+    return null;
+  }
+
+  const safeSeconds = Math.max(0, seconds);
+  const minutes = Math.floor(safeSeconds / 60);
+  const remainingSeconds = safeSeconds % 60;
+  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
 }
 
 export function BattleStatus({
@@ -25,6 +38,8 @@ export function BattleStatus({
   playerGold,
   playerId,
   shopOpen,
+  battleTimerSeconds,
+  winsToClinch = 5,
   onLeaveLobby,
 }: BattleStatusProps) {
   const matchReady = players.length > 1;
@@ -55,6 +70,8 @@ export function BattleStatus({
     detail = "Watch the board and get ready for your next move.";
   }
 
+  const timerLabel = formatTimer(battleTimerSeconds);
+
   return (
     <section className="panel battle-status-panel">
       <div className="battle-status-top">
@@ -64,6 +81,8 @@ export function BattleStatus({
         </div>
         <div className="battle-metrics battle-status-actions">
           <span>Gold: {playerGold}</span>
+          {timerLabel ? <span>Turn timer: {timerLabel}</span> : null}
+          <span>First to {winsToClinch}</span>
           <button type="button" className="secondary" onClick={() => void onLeaveLobby()}>
             Leave lobby
           </button>

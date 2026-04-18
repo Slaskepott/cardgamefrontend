@@ -5,6 +5,7 @@ import type {
   ContinueFromShopResponse,
   CreateGameResponse,
   DiscardResponse,
+  HeartbeatResponse,
   JoinGameResponse,
   LeaveGameResponse,
   LobbiesResponse,
@@ -141,6 +142,15 @@ export function continueFromShop(gameId: string, playerId: string) {
 export function leaveGame(gameId: string, playerId: string) {
   return requestJson<LeaveGameResponse>(
     `/game/${gameId}/leave?player_id=${encodeURIComponent(playerId)}`,
+    {
+      method: "POST",
+    },
+  );
+}
+
+export function sendHeartbeat(gameId: string, playerId: string) {
+  return requestJson<HeartbeatResponse>(
+    `/game/${gameId}/heartbeat/${encodeURIComponent(playerId)}`,
     {
       method: "POST",
     },

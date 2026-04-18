@@ -18,6 +18,7 @@ import {
   joinGame,
   leaveGame,
   playHand,
+  sendHeartbeat,
 } from "../lib/api";
 import { generateLobbyId, generatePlayerName } from "../lib/nameGenerator";
 import { connectToGameSocket } from "../lib/ws";
@@ -29,6 +30,8 @@ import type {
   GameSocketMessage,
   HandPlayedMessage,
   HandUpdatedMessage,
+  MatchOverMessage,
+  MatchStateMessage,
   NewHandMessage,
   OpenStoreMessage,
   PlayersUpdatedMessage,
@@ -91,6 +94,18 @@ function isShopStatusMessage(
   return "type" in message && message.type === "shop_status";
 }
 
+function isMatchStateMessage(
+  message: GameSocketMessage,
+): message is MatchStateMessage {
+  return "type" in message && message.type === "match_state";
+}
+
+function isMatchOverMessage(
+  message: GameSocketMessage,
+): message is MatchOverMessage {
+  return "type" in message && message.type === "match_over";
+}
+
 function clearWindowTimeout(timeoutRef: MutableRefObject<number | null>) {
   if (timeoutRef.current !== null) {
     window.clearTimeout(timeoutRef.current);
@@ -122,6 +137,11 @@ export function useGameSession(currentUser: User | null) {
   const [shopUpgrades, setShopUpgrades] = useState<Upgrade[]>([]);
   const [shopWaitingPlayers, setShopWaitingPlayers] = useState<string[]>([]);
   const [ownedUpgrades, setOwnedUpgrades] = useState<Upgrade[]>([]);
+  const [phase, setPhase] = useState<"waiting" | "battle" | "shop" | "match_over">("waiting");
+  const [battleDeadlineAt, setBattleDeadlineAt] = useState<number | null>(null);
+  const [shopDeadlines, setShopDeadlines] = useState<Record<string, number>>({});
+  const [matchResult, setMatchResult] = useState<MatchOverMessage | null>(null);
+  const [nowSeconds, setNowSeconds] = useState(() => Date.now() / 1000);
   const [websocketConnected, setWebsocketConnected] = useState(false);
   const [feedEntries, setFeedEntries] = useState<string[]>([
     "React migration shell is ready.",
@@ -142,6 +162,46 @@ export function useGameSession(currentUser: User | null) {
       clearWindowTimeout(shopOpenTimeoutRef);
     };
   }, []);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setNowSeconds(Date.now() / 1000);
+    }, 1000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!gameId || !playerId || phase === "match_over") {
+      return;
+    }
+
+    const activeGameId = gameId;
+    const activePlayerId = playerId;
+    let cancelled = false;
+
+    async function heartbeat() {
+      try {
+        await sendHeartbeat(activeGameId, activePlayerId);
+      } catch {
+        if (!cancelled) {
+          pushFeedEntry("Heartbeat failed.");
+        }
+      }
+    }
+
+    void heartbeat();
+    const intervalId = window.setInterval(() => {
+      void heartbeat();
+    }, 10000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [gameId, phase, playerId]);
 
   function pushFeedEntry(entry: string) {
     setFeedEntries((current) => [
@@ -240,6 +300,14 @@ export function useGameSession(currentUser: User | null) {
     }, delayMs);
   }
 
+  function applyMatchState(message: MatchStateMessage) {
+    setPhase(message.phase);
+    setCurrentTurn(message.current_turn);
+    setBattleDeadlineAt(message.battle_deadline_at);
+    setShopDeadlines(message.shop_deadlines ?? {});
+    setShopWaitingPlayers(message.waiting_players ?? []);
+  }
+
   function syncPlayers(nextPlayers: string[], nextAvatars?: Record<string, string>) {
     setPlayers(nextPlayers);
     if (nextAvatars) {
@@ -272,6 +340,9 @@ export function useGameSession(currentUser: User | null) {
     const response = await getPlayers(nextGameId);
     syncPlayers(response.players ?? [], response.avatars ?? {});
     setCurrentTurn(response.next_player ?? null);
+    setPhase(response.phase ?? "waiting");
+    setBattleDeadlineAt(response.battle_deadline_at ?? null);
+    setShopDeadlines(response.shop_deadlines ?? {});
   }
 
   function openSocket(nextGameId: string, nextPlayerId: string) {
@@ -296,6 +367,9 @@ export function useGameSession(currentUser: User | null) {
         if (isPlayersUpdatedMessage(message)) {
           syncPlayers(message.players, message.avatars ?? {});
           setCurrentTurn(message.next_player ?? null);
+        }
+        if (isMatchStateMessage(message)) {
+          applyMatchState(message);
         }
         if (isNewHandMessage(message) && message.player === nextPlayerId) {
           setPlayerHand(message.cards);
@@ -338,6 +412,23 @@ export function useGameSession(currentUser: User | null) {
         if (isShopStatusMessage(message)) {
           setShopWaitingPlayers(message.waiting_players);
         }
+        if (isMatchOverMessage(message)) {
+          setMatchResult(message);
+          setPhase("match_over");
+          setShopOpen(false);
+          setShopUpgrades([]);
+          setShopWaitingPlayers([]);
+          setCurrentTurn(null);
+          setPlayerWins((current) => ({
+            ...current,
+            ...message.scores,
+          }));
+          setPlayerAvatars((current) => ({
+            ...current,
+            ...message.avatars,
+          }));
+          pushFeedEntry(`${message.winner} wins the match.`);
+        }
         if (isApplyUpgradesMessage(message)) {
           setPlayerHealth((current) => ({
             ...current,
@@ -371,6 +462,7 @@ export function useGameSession(currentUser: User | null) {
 
       setGameId(normalizedGameId);
       setPlayerId(normalizedPlayerId);
+      setMatchResult(null);
       pushFeedEntry(response.message ?? `Joined ${normalizedGameId}.`);
       await refreshPlayers(normalizedGameId);
       openSocket(normalizedGameId, normalizedPlayerId);
@@ -600,6 +692,10 @@ export function useGameSession(currentUser: User | null) {
       setGoldAttentionActive(false);
       setBattleMoment(null);
       setDiscardMoment(null);
+      setPhase("waiting");
+      setBattleDeadlineAt(null);
+      setShopDeadlines({});
+      setMatchResult(null);
       clearWindowTimeout(shopOpenTimeoutRef);
       setShopOpen(false);
       setShopUpgrades([]);
@@ -614,7 +710,7 @@ export function useGameSession(currentUser: User | null) {
   const selectedCardKeys = selectedCards.map((card) => card.key);
   const isMatchReady = players.length > 1;
   const isPlayersTurn = Boolean(
-    isMatchReady && currentTurn && playerId && currentTurn === playerId,
+    phase === "battle" && isMatchReady && currentTurn && playerId && currentTurn === playerId,
   );
   const canPlayActions = isPlayersTurn && selectedCards.length > 0;
   const canEndTurn = isPlayersTurn;
@@ -636,6 +732,13 @@ export function useGameSession(currentUser: User | null) {
     : shopOtherPlayers.length > 0
       ? `Waiting for these players: ${shopOtherPlayers.join(", ")}`
       : "Waiting for other players";
+
+  const battleTimerSeconds =
+    phase === "battle" && battleDeadlineAt ? Math.max(0, Math.ceil(battleDeadlineAt - nowSeconds)) : null;
+  const shopTimerSeconds =
+    phase === "shop" && playerId && shopDeadlines[playerId]
+      ? Math.max(0, Math.ceil(shopDeadlines[playerId] - nowSeconds))
+      : null;
 
   function handleDraftGameIdChange(value: string) {
     setDraftGameId(value);
@@ -661,6 +764,10 @@ export function useGameSession(currentUser: User | null) {
     shopOpen,
     shopUpgrades,
     ownedUpgrades,
+    phase,
+    battleDeadlineAt,
+    shopDeadlines,
+    matchResult,
     websocketConnected,
     feedEntries,
     selectedCards,
@@ -670,6 +777,8 @@ export function useGameSession(currentUser: User | null) {
     canPlayActions,
     canEndTurn,
     isPlayersTurn,
+    battleTimerSeconds,
+    shopTimerSeconds,
     shopStatusText,
     shopWaitingOnYou,
     setDraftPlayerId: setDraftPlayerId as DraftSetter,

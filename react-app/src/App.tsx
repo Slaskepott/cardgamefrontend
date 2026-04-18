@@ -11,6 +11,7 @@ import { GameBoard } from "./components/GameBoard";
 import { GameSetupForm } from "./components/GameSetupForm";
 import { LevelUpToast } from "./components/LevelUpToast";
 import { LevelProgressionModal } from "./components/LevelProgressionModal";
+import { MatchResultOverlay } from "./components/MatchResultOverlay";
 import { StatusPanel } from "./components/StatusPanel";
 import { TalentTreePage } from "./components/TalentTreePage";
 import { UpgradePanel } from "./components/UpgradePanel";
@@ -334,6 +335,16 @@ export default function App() {
         <AchievementUnlockToast achievement={activeAchievement} />
       ) : null}
       {activeLevelUp ? <LevelUpToast level={activeLevelUp.level} unlocks={activeLevelUp.unlocks} /> : null}
+      {session.matchResult ? (
+        <MatchResultOverlay
+          matchResult={session.matchResult}
+          playerId={session.playerId}
+          onLeaveLobby={async () => {
+            await session.handleLeaveLobby();
+            setView("lobby");
+          }}
+        />
+      ) : null}
       {progressionModalOpen ? (
         <LevelProgressionModal
           metaProgress={metaProgress}
@@ -426,6 +437,7 @@ export default function App() {
               playerGold={session.playerGold}
               playerId={session.playerId}
               shopOpen={session.shopOpen}
+              battleTimerSeconds={session.battleTimerSeconds}
               onLeaveLobby={async () => {
                 await session.handleLeaveLobby();
                 setView("lobby");
@@ -464,6 +476,7 @@ export default function App() {
               onContinue={session.handleContinueFromShop}
               shopStatusText={session.shopStatusText}
               shopWaitingOnYou={session.shopWaitingOnYou}
+              shopTimerSeconds={session.shopTimerSeconds}
               onLeaveLobby={async () => {
                 await session.handleLeaveLobby();
                 setView("lobby");

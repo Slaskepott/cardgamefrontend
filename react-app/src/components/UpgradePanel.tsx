@@ -11,7 +11,19 @@ interface UpgradePanelProps {
   onContinue: () => Promise<void>;
   shopStatusText: string;
   shopWaitingOnYou: boolean;
+  shopTimerSeconds: number | null;
   onLeaveLobby: () => Promise<void>;
+}
+
+function formatTimer(seconds: number | null) {
+  if (seconds === null) {
+    return null;
+  }
+
+  const safeSeconds = Math.max(0, seconds);
+  const minutes = Math.floor(safeSeconds / 60);
+  const remainingSeconds = safeSeconds % 60;
+  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
 }
 
 const upgradeEmojis: Record<string, string> = {
@@ -178,6 +190,7 @@ export function UpgradePanel({
   onContinue,
   shopStatusText,
   shopWaitingOnYou,
+  shopTimerSeconds,
   onLeaveLobby,
 }: UpgradePanelProps) {
   if (!visible) {
@@ -257,9 +270,14 @@ export function UpgradePanel({
         ))}
       </div>
       <div className="shop-actions">
-        <span className={`shop-status-text ${shopWaitingOnYou ? "shop-status-text-urgent" : ""}`}>
-          {shopStatusText}
-        </span>
+        <div className="shop-status-stack">
+          <span className={`shop-status-text ${shopWaitingOnYou ? "shop-status-text-urgent" : ""}`}>
+            {shopStatusText}
+          </span>
+          {formatTimer(shopTimerSeconds) ? (
+            <span className="shop-status-timer">Shop timer: {formatTimer(shopTimerSeconds)}</span>
+          ) : null}
+        </div>
         <button type="button" className="secondary" onClick={() => void onLeaveLobby()}>
           Leave lobby
         </button>
