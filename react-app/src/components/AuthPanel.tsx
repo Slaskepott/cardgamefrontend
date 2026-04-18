@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import {
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
@@ -7,8 +7,43 @@ import {
   updateProfile,
   type User,
 } from "firebase/auth";
-import { getSlaskecoins } from "../lib/api";
 import { auth } from "../lib/firebase";
+import type { MetaProgress } from "../types/game";
+
+const avatarOptions = [
+  "🧙",
+  "🧝",
+  "🧛",
+  "🧞",
+  "🥷",
+  "🦊",
+  "🐸",
+  "🐼",
+  "🦁",
+  "🐺",
+  "🐻",
+  "🐙",
+  "🐉",
+  "🦄",
+  "🦋",
+  "🔥",
+  "🌙",
+  "⭐",
+  "⚡",
+  "🌈",
+  "🍀",
+  "🪐",
+  "☄️",
+  "🌊",
+  "🌿",
+  "🧠",
+  "😎",
+  "🤠",
+  "🥳",
+  "👑",
+  "💀",
+  "🎭",
+];
 
 type AuthMode = "sign-in" | "sign-up";
 type AccountView = "lobby" | "achievements" | "talents" | "game";
@@ -17,7 +52,9 @@ interface AuthPanelProps {
   currentUser: User | null;
   guestMode: boolean;
   currentView: AccountView;
-  onNavigate: (view: Exclude<AccountView, "game">) => void;
+  metaProgress: MetaProgress | null;
+  onAccountIconClick?: () => void;
+  onNavigate: (view: Exclude<AccountView, "game">) => void | Promise<void>;
   onGuestModeChange: (guestMode: boolean) => void;
 }
 
@@ -25,6 +62,8 @@ export function AuthPanel({
   currentUser,
   guestMode,
   currentView,
+  metaProgress,
+  onAccountIconClick,
   onNavigate,
   onGuestModeChange,
 }: AuthPanelProps) {
@@ -32,24 +71,15 @@ export function AuthPanel({
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [avatar, setAvatar] = useState("😎");
   const [busy, setBusy] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [message, setMessage] = useState("");
-  const [slaskecoins, setSlaskecoins] = useState<number | null>(null);
 
   useEffect(() => {
     setMenuOpen(false);
     setMessage("");
     setPassword("");
-
-    if (!currentUser?.email) {
-      setSlaskecoins(null);
-      return;
-    }
-
-    void getSlaskecoins(currentUser.email)
-      .then((coins) => setSlaskecoins(coins))
-      .catch(() => setSlaskecoins(0));
   }, [currentUser]);
 
   async function handleAuthAction() {
@@ -74,7 +104,10 @@ export function AuthPanel({
           email.trim(),
           password,
         );
-        await updateProfile(credential.user, { displayName: username.trim() });
+        await updateProfile(credential.user, {
+          displayName: username.trim(),
+          photoURL: avatar,
+        });
         setMessage("Account created.");
       }
       onGuestModeChange(false);
@@ -123,17 +156,25 @@ export function AuthPanel({
     <>
       {currentUser ? (
         <div className="account-chip" title={currentUser.email ?? "Signed in"}>
-          <span className="account-chip-balance">💰 {slaskecoins ?? "..."}</span>
+          <span className="account-chip-balance" title="Talent points">
+            ✦ {metaProgress?.available_talent_points ?? "..."}
+          </span>
+          <span className="account-chip-balance" title="Current level">
+            Lv. {metaProgress?.level ?? "..."}
+          </span>
           <div className="account-menu">
             <button
               type="button"
               className="account-chip-button"
-              onClick={() => setMenuOpen((current) => !current)}
+              onClick={() => {
+                onAccountIconClick?.();
+                setMenuOpen((current) => !current);
+              }}
               aria-label="Open account menu"
               aria-expanded={menuOpen}
               title={currentUser.email ?? "Signed in"}
             >
-              👤
+              {currentUser.photoURL ?? "👤"}
             </button>
             {menuOpen ? (
               <div className="account-dropdown">
@@ -142,37 +183,33 @@ export function AuthPanel({
                     type="button"
                     className="account-dropdown-item"
                     onClick={() => {
-                      onNavigate("lobby");
+                      void onNavigate("lobby");
                       setMenuOpen(false);
                     }}
                   >
                     Join lobby
                   </button>
                 ) : null}
-                {currentView !== "game" ? (
-                  <>
-                    <button
-                      type="button"
-                      className="account-dropdown-item"
-                      onClick={() => {
-                        onNavigate("achievements");
-                        setMenuOpen(false);
-                      }}
-                    >
-                      Achievements
-                    </button>
-                    <button
-                      type="button"
-                      className="account-dropdown-item"
-                      onClick={() => {
-                        onNavigate("talents");
-                        setMenuOpen(false);
-                      }}
-                    >
-                      Talent tree
-                    </button>
-                  </>
-                ) : null}
+                <button
+                  type="button"
+                  className="account-dropdown-item"
+                  onClick={() => {
+                    void onNavigate("achievements");
+                    setMenuOpen(false);
+                  }}
+                >
+                  Achievements
+                </button>
+                <button
+                  type="button"
+                  className="account-dropdown-item"
+                  onClick={() => {
+                    void onNavigate("talents");
+                    setMenuOpen(false);
+                  }}
+                >
+                  Talent tree
+                </button>
                 <button
                   type="button"
                   className="account-dropdown-item"
@@ -195,7 +232,10 @@ export function AuthPanel({
             <button
               type="button"
               className="account-chip-button"
-              onClick={() => onGuestModeChange(false)}
+              onClick={() => {
+                onAccountIconClick?.();
+                onGuestModeChange(false);
+              }}
               aria-label="Open sign in"
               title="Open sign in"
             >
@@ -245,17 +285,36 @@ export function AuthPanel({
             </label>
 
             {mode === "sign-up" ? (
-              <label>
-                Username
-                <input
-                  type="text"
-                  name="username"
-                  autoComplete="nickname"
-                  value={username}
-                  onChange={(event) => setUsername(event.target.value)}
-                  placeholder="Choose a username"
-                />
-              </label>
+              <>
+                <label>
+                  Username
+                  <input
+                    type="text"
+                    name="username"
+                    autoComplete="nickname"
+                    value={username}
+                    onChange={(event) => setUsername(event.target.value)}
+                    placeholder="Choose a username"
+                  />
+                </label>
+                <div className="avatar-picker">
+                  <span className="locked-player-label">Choose an avatar</span>
+                  <div className="avatar-grid">
+                    {avatarOptions.map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        className={`avatar-option${avatar === option ? " selected" : ""}`}
+                        onClick={() => setAvatar(option)}
+                        aria-pressed={avatar === option}
+                        title={`Choose ${option} as your avatar`}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
             ) : null}
 
             <label>

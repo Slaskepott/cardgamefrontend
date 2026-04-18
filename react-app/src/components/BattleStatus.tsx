@@ -1,7 +1,8 @@
-import type { BattleMoment, Suit } from "../types/game";
+import type { BattleMoment } from "../types/game";
 
 interface PlayerStatus {
   id: string;
+  avatar: string;
   health: number;
   maxHealth: number;
   wins: number;
@@ -16,17 +17,6 @@ interface BattleStatusProps {
   playerId: string | null;
   shopOpen: boolean;
   onLeaveLobby: () => Promise<void>;
-}
-
-const suitFlavor: Record<Suit, { label: string; emoji: string }> = {
-  Fire: { label: "fire surge", emoji: "🔥" },
-  Air: { label: "air burst", emoji: "💨" },
-  Earth: { label: "earth crush", emoji: "🌿" },
-  Water: { label: "water crash", emoji: "💧" },
-};
-
-function formatHandType(handType: string) {
-  return handType.replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 export function BattleStatus({
@@ -88,26 +78,39 @@ export function BattleStatus({
         {players.map((player) => {
           const percentage =
             player.maxHealth > 0 ? Math.max(0, (player.health / player.maxHealth) * 100) : 0;
+          const defeatedThisRound = battleMoment?.winner && battleMoment.target === player.id;
           return (
             <article
               key={player.id}
               className={`health-card${
                 battleMoment?.target === player.id ? " health-card-damaged" : ""
-              }${battleMoment?.attacker === player.id ? " health-card-attacker" : ""}`}
+              }${battleMoment?.attacker === player.id ? " health-card-attacker" : ""}${
+                defeatedThisRound ? " health-card-defeated" : ""
+              }`}
             >
               <div className="health-meta">
-                <strong>{player.id}</strong>
+                <strong className="health-player-name">
+                  <span className="player-avatar-badge health-avatar">{player.avatar}</span>
+                  {player.id}
+                </strong>
                 <span>{player.wins} wins</span>
               </div>
               <div className="health-bar-shell">
                 <div className="health-bar-fill" style={{ width: `${percentage}%` }} />
               </div>
               <div className="health-meta health-meta-bottom">
-                <span>{player.health} / {player.maxHealth}</span>
+                <span>
+                  {player.health} / {player.maxHealth}
+                </span>
               </div>
               {battleMoment?.target === player.id ? (
                 <span className="damage-burst" aria-hidden="true">
                   -{battleMoment.damage}
+                </span>
+              ) : null}
+              {defeatedThisRound ? (
+                <span className="defeat-burst" aria-hidden="true">
+                  cracked
                 </span>
               ) : null}
             </article>

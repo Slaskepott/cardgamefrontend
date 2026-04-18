@@ -35,12 +35,20 @@ export function createGame(gameId: string) {
   });
 }
 
-export function joinGame(gameId: string, playerId: string, email?: string | null) {
+export function joinGame(
+  gameId: string,
+  playerId: string,
+  email?: string | null,
+  avatar?: string | null,
+) {
   const searchParams = new URLSearchParams({
     player_id: playerId,
   });
   if (email) {
     searchParams.set("email", email);
+  }
+  if (avatar) {
+    searchParams.set("avatar", avatar);
   }
   return requestJson<JoinGameResponse>(
     `/game/join/${gameId}?${searchParams.toString()}`,

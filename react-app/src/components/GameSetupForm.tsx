@@ -1,7 +1,8 @@
-interface GameSetupFormProps {
+﻿interface GameSetupFormProps {
   gameId: string;
   gameIdError?: string | null;
   playerId: string;
+  lockedPlayerAvatar?: string | null;
   lockedPlayerName?: string | null;
   onGameIdChange: (value: string) => void;
   onPlayerIdChange: (value: string) => void;
@@ -14,6 +15,7 @@ export function GameSetupForm({
   gameId,
   gameIdError,
   playerId,
+  lockedPlayerAvatar,
   lockedPlayerName,
   onGameIdChange,
   onPlayerIdChange,
@@ -59,7 +61,10 @@ export function GameSetupForm({
         {lockedPlayerName ? (
           <div className="locked-player-name">
             <span className="locked-player-label">Playing as</span>
-            <strong>{lockedPlayerName}</strong>
+            <strong className="locked-player-identity">
+              <span className="player-avatar-badge">{lockedPlayerAvatar ?? "👤"}</span>
+              {lockedPlayerName}
+            </strong>
           </div>
         ) : (
           <label>
@@ -93,3 +98,6 @@ export function GameSetupForm({
     </section>
   );
 }
+
+
+

@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import type { MetaProgress, MetaSpecialization, MetaTalent } from "../types/game";
 
+const TALENT_TREE_COLUMNS = 4;
+const TALENT_TREE_ROWS = 5;
+
 interface TalentTreePageProps {
   metaProgress: MetaProgress | null;
   busy: boolean;
@@ -27,6 +30,30 @@ function groupTalentsBySpec(talents: MetaTalent[]) {
     acc[talent.specialization].push(talent);
     return acc;
   }, {});
+}
+
+function getNodeCenter(column: number, row: number) {
+  return {
+    x: ((column + 0.5) / TALENT_TREE_COLUMNS) * 100,
+    y: ((row + 0.5) / TALENT_TREE_ROWS) * 100,
+  };
+}
+
+function buildConnectorPath(from: MetaTalent, to: MetaTalent) {
+  const startCenter = getNodeCenter(from.column, from.row);
+  const endCenter = getNodeCenter(to.column, to.row);
+  const start = {
+    x: startCenter.x,
+    y: ((from.row + 1) / TALENT_TREE_ROWS) * 100 - 2.8,
+  };
+  const end = {
+    x: endCenter.x,
+    y: (to.row / TALENT_TREE_ROWS) * 100 + 2.8,
+  };
+  const travel = Math.max(end.y - start.y, 0);
+  const curve = Math.max(travel * 0.55, 4.5);
+
+  return `M ${start.x} ${start.y} C ${start.x} ${start.y + curve}, ${end.x} ${end.y - curve}, ${end.x} ${end.y}`;
 }
 
 export function TalentTreePage({
@@ -63,6 +90,30 @@ export function TalentTreePage({
       ? activeSpec
       : metaProgress.selected_specialization ?? metaProgress.specializations[0]?.id ?? null;
   const visibleTalents = selectedSpec ? specMap[selectedSpec] ?? [] : [];
+  const visibleTalentMap = useMemo(
+    () => new Map(visibleTalents.map((talent) => [talent.id, talent])),
+    [visibleTalents],
+  );
+  const dependencyLines = useMemo(
+    () =>
+      visibleTalents.flatMap((talent) =>
+        talent.requires.flatMap((requiredId) => {
+          const requiredTalent = visibleTalentMap.get(requiredId);
+          if (!requiredTalent) {
+            return [];
+          }
+
+          return [
+            {
+              id: `${requiredId}->${talent.id}`,
+              path: buildConnectorPath(requiredTalent, talent),
+              active: requiredTalent.current_rank > 0,
+            },
+          ];
+        }),
+      ),
+    [visibleTalentMap, visibleTalents],
+  );
   const isLockedToAnotherSpec =
     Boolean(metaProgress.selected_specialization) &&
     metaProgress.selected_specialization !== selectedSpec;
@@ -117,23 +168,53 @@ export function TalentTreePage({
 
       {selectedSpec ? (
         <div className="talent-tree">
+          {dependencyLines.length > 0 ? (
+            <svg
+              className="talent-tree-lines"
+              viewBox={`0 0 100 100`}
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              {dependencyLines.map((line) => (
+                <path
+                  key={line.id}
+                  className={`talent-tree-line${line.active ? " active" : ""}`}
+                  d={line.path}
+                />
+              ))}
+            </svg>
+          ) : null}
           {visibleTalents.map((talent) => (
             <button
               key={talent.id}
               type="button"
               className={`talent-node${
-                talent.unlocked ? " unlocked" : talent.available ? " available" : ""
-              }${talent.row === 3 ? " capstone" : ""}`}
+                talent.available
+                  ? " available"
+                  : talent.current_rank > 0
+                    ? " unlocked"
+                    : " locked"
+              }${talent.current_rank >= talent.max_ranks ? " maxed" : ""}${
+                talent.id.endsWith("capstone") ? " capstone" : ""
+              }`}
               style={{
                 gridRow: talent.row + 1,
                 gridColumn: talent.column + 1,
               }}
-              disabled={busy || talent.unlocked || !talent.available}
-              onClick={() => void onUnlockTalent(talent.id)}
+              disabled={busy}
+              onClick={() => {
+                if (busy || !talent.available) {
+                  return;
+                }
+                void onUnlockTalent(talent.id);
+              }}
+              aria-disabled={!talent.available}
             >
               <div className="meta-talent-head">
                 <strong>{talent.name}</strong>
-                <span>{talent.cost} pt</span>
+                <span>
+                  {talent.current_rank}/{talent.max_ranks}
+                </span>
               </div>
               <p>{talent.description}</p>
               {talent.requires.length > 0 ? (
@@ -147,7 +228,9 @@ export function TalentTreePage({
                 </span>
               ) : (
                 <span className="meta-talent-requires">
-                  {metaProgress.selected_specialization
+                  {talent.current_rank >= talent.max_ranks
+                    ? "Max rank reached"
+                    : metaProgress.selected_specialization
                     ? "Unlocked branch"
                     : "Choosing this talent also chooses this specialization"}
                 </span>

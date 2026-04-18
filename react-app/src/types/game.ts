@@ -1,4 +1,4 @@
-export type Suit = "Fire" | "Air" | "Earth" | "Water";
+export type Suit = "Fire" | "Air" | "Earth" | "Water" | "Plasma" | "Wild";
 
 export interface Card {
   rank: string;
@@ -35,6 +35,7 @@ export interface MetaAchievement {
   description: string;
   progress: number;
   target: number;
+  points: number;
   unlocked: boolean;
 }
 
@@ -47,6 +48,8 @@ export interface MetaTalent {
   requires: string[];
   row: number;
   column: number;
+  max_ranks: number;
+  current_rank: number;
   unlocked: boolean;
   available: boolean;
 }
@@ -57,7 +60,19 @@ export interface MetaSpecialization {
   description: string;
 }
 
+export interface LevelMilestone {
+  id: string;
+  level: number;
+  name: string;
+  description: string;
+  unlocked: boolean;
+}
+
 export interface MetaProgress {
+  level: number;
+  experience_total: number;
+  experience_in_level: number;
+  experience_for_next_level: number;
   achievement_points: number;
   available_talent_points: number;
   achievement_count: number;
@@ -67,6 +82,8 @@ export interface MetaProgress {
   specializations: MetaSpecialization[];
   selected_specialization: string | null;
   talent_bonuses: Record<string, number>;
+  level_milestones: LevelMilestone[];
+  unlocked_level_rewards: string[];
 }
 
 export interface HealthUpdate {
@@ -112,6 +129,7 @@ export interface PlayersUpdatedMessage {
   type: "players_updated";
   players: string[];
   next_player?: string | null;
+  avatars?: Record<string, string>;
 }
 
 export interface NewHandMessage {
@@ -156,6 +174,7 @@ export interface JoinGameResponse {
 export interface PlayersResponse {
   players?: string[];
   next_player?: string | null;
+  avatars?: Record<string, string>;
   error?: string;
 }
 

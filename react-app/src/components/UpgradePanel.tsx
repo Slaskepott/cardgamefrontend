@@ -1,4 +1,4 @@
-import type { Upgrade } from "../types/game";
+﻿import type { Upgrade } from "../types/game";
 
 interface UpgradePanelProps {
   upgrades: Upgrade[];
@@ -22,6 +22,16 @@ const upgradeEmojis: Record<string, string> = {
   "Increase Fire Damage": "🔥",
   "Increase Water Damage": "💧",
   "Increase Air Damage": "💨",
+  "Increase Earth Draw": "🪨",
+  "Increase Fire Draw": "🔥",
+  "Increase Water Draw": "🌊",
+  "Increase Air Draw": "🌬️",
+  "Low Cards Specialist": "🃏",
+  "High Cards Specialist": "🎯",
+  "Low Draw Specialist": "🎲",
+  "High Draw Specialist": "🎯",
+  "Royal Invitation": "👑",
+  "Tiny Troublemakers": "😈",
 };
 
 interface UpgradeSummarySection {
@@ -41,7 +51,17 @@ function summarizeOwnedUpgrades(upgrades: Upgrade[]): UpgradeSummarySection[] {
   let bonusDamagePercent = 0;
   let lowCardDamagePercent = 0;
   let highCardDamagePercent = 0;
+  let lowCardDrawPercent = 0;
+  let highCardDrawPercent = 0;
+  let royalDrawPercent = 0;
+  let tinyDrawPercent = 0;
   const elementalDamage: Record<string, number> = {
+    earth: 0,
+    fire: 0,
+    water: 0,
+    air: 0,
+  };
+  const elementalDraw: Record<string, number> = {
     earth: 0,
     fire: 0,
     water: 0,
@@ -69,6 +89,18 @@ function summarizeOwnedUpgrades(upgrades: Upgrade[]): UpgradeSummarySection[] {
       case "High Cards Specialist":
         highCardDamagePercent += amount;
         break;
+      case "Low Draw Specialist":
+        lowCardDrawPercent += amount;
+        break;
+      case "High Draw Specialist":
+        highCardDrawPercent += amount;
+        break;
+      case "Royal Invitation":
+        royalDrawPercent += amount;
+        break;
+      case "Tiny Troublemakers":
+        tinyDrawPercent += amount;
+        break;
       case "Increase Earth Damage":
         elementalDamage.earth += amount;
         break;
@@ -80,6 +112,18 @@ function summarizeOwnedUpgrades(upgrades: Upgrade[]): UpgradeSummarySection[] {
         break;
       case "Increase Air Damage":
         elementalDamage.air += amount;
+        break;
+      case "Increase Earth Draw":
+        elementalDraw.earth += amount;
+        break;
+      case "Increase Fire Draw":
+        elementalDraw.fire += amount;
+        break;
+      case "Increase Water Draw":
+        elementalDraw.water += amount;
+        break;
+      case "Increase Air Draw":
+        elementalDraw.air += amount;
         break;
       default:
         break;
@@ -99,6 +143,16 @@ function summarizeOwnedUpgrades(upgrades: Upgrade[]): UpgradeSummarySection[] {
   if (bonusHealth > 0) defensive.push(`+${bonusHealth} health`);
   if (bonusHealthPercent > 0) defensive.push(`+${bonusHealthPercent}% health`);
 
+  const draw: string[] = [];
+  if (lowCardDrawPercent > 0) draw.push(`+${lowCardDrawPercent}% low card draw chance`);
+  if (highCardDrawPercent > 0) draw.push(`+${highCardDrawPercent}% high card draw chance`);
+  if (royalDrawPercent > 0) draw.push(`+${royalDrawPercent}% queen, king, and ace draw chance`);
+  if (tinyDrawPercent > 0) draw.push(`+${tinyDrawPercent}% 2 and 3 draw chance`);
+  if (elementalDraw.earth > 0) draw.push(`+${elementalDraw.earth}% earth draw chance`);
+  if (elementalDraw.fire > 0) draw.push(`+${elementalDraw.fire}% fire draw chance`);
+  if (elementalDraw.water > 0) draw.push(`+${elementalDraw.water}% water draw chance`);
+  if (elementalDraw.air > 0) draw.push(`+${elementalDraw.air}% air draw chance`);
+
   const game: string[] = [];
   if (bonusDiscards > 0) {
     game.push(`+${bonusDiscards} discard${bonusDiscards === 1 ? "" : "s"}`);
@@ -107,6 +161,7 @@ function summarizeOwnedUpgrades(upgrades: Upgrade[]): UpgradeSummarySection[] {
   return [
     { title: "Offensive", lines: offensive },
     { title: "Defensive", lines: defensive },
+    { title: "Draw", lines: draw },
     { title: "Game", lines: game },
   ].filter((section) => section.lines.length > 0);
 }

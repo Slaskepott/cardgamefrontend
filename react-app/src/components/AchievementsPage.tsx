@@ -7,8 +7,10 @@ interface AchievementsPageProps {
 const statLabels: Record<string, string> = {
   hands_played: "Hands played",
   games_won: "Games won",
+  games_lost: "Games lost",
   damage_dealt: "Damage dealt",
   cards_discarded: "Cards discarded",
+  full_hand_of_a_kind_draws: "Full hands of a kind",
   earth_flushes: "Earth flushes",
   fire_flushes: "Fire flushes",
   water_flushes: "Water flushes",
@@ -33,24 +35,58 @@ export function AchievementsPage({ metaProgress }: AchievementsPageProps) {
     (left, right) => Number(right.unlocked) - Number(left.unlocked),
   );
   const spotlightStats = Object.entries(metaProgress.stats)
-    .filter(([, value]) => value > 0)
+    .filter(([key, value]) => key !== "experience_total" && value > 0)
     .slice(0, 6);
+  const levelProgressPercent = Math.min(
+    100,
+    (metaProgress.experience_in_level / Math.max(1, metaProgress.experience_for_next_level)) * 100,
+  );
 
   return (
-    <section className="panel account-page-panel">
+    <section className="panel account-page-panel achievements-page-panel">
       <div className="section-header">
         <div>
           <p className="eyebrow">Account</p>
           <h2>Achievements</h2>
           <p className="panel-copy">
-            Mostly grindy goals, a few flashy milestones, and a steady drip of talent points.
+            Grind progress, stack account experience, and chase the weird cards waiting at later
+            level milestones.
           </p>
         </div>
         <div className="battle-metrics">
+          <span>Level {metaProgress.level}</span>
           <span>{metaProgress.achievement_count} unlocked</span>
           <span>{metaProgress.available_talent_points} talent points ready</span>
         </div>
       </div>
+
+      <section className="level-progression-panel">
+        <div className="level-progression-copy">
+          <p className="eyebrow">Level progression</p>
+          <h3>Account level {metaProgress.level}</h3>
+          <p className="panel-copy compact-copy">
+            {metaProgress.experience_in_level} / {metaProgress.experience_for_next_level} XP toward
+            the next level.
+          </p>
+        </div>
+        <div className="level-progress-shell">
+          <div className="level-progress-fill" style={{ width: `${levelProgressPercent}%` }} />
+        </div>
+        <div className="level-milestone-grid">
+          {metaProgress.level_milestones.map((milestone) => (
+            <article
+              key={milestone.id}
+              className={`level-milestone-card${milestone.unlocked ? " unlocked" : ""}`}
+            >
+              <div className="meta-achievement-head">
+                <strong>{milestone.name}</strong>
+                <span>Lv. {milestone.level}</span>
+              </div>
+              <p>{milestone.description}</p>
+            </article>
+          ))}
+        </div>
+      </section>
 
       <div className="achievement-stats-row">
         {spotlightStats.length > 0 ? (
@@ -81,7 +117,7 @@ export function AchievementsPage({ metaProgress }: AchievementsPageProps) {
               <div className="meta-achievement-head">
                 <strong>{achievement.name}</strong>
                 <span>
-                  {achievement.progress}/{achievement.target}
+                  {achievement.progress}/{achievement.target} • {achievement.points} pt
                 </span>
               </div>
               <p>{achievement.description}</p>

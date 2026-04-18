@@ -14,6 +14,7 @@ interface GameBoardProps {
   remainingDiscards: number;
   busy: boolean;
   disabled: boolean;
+  cosmeticRewards?: string[];
 }
 
 const suitFlavor: Record<Suit, { label: string; emoji: string }> = {
@@ -21,6 +22,8 @@ const suitFlavor: Record<Suit, { label: string; emoji: string }> = {
   Air: { label: "air burst", emoji: "💨" },
   Earth: { label: "earth crush", emoji: "🌿" },
   Water: { label: "water crash", emoji: "💧" },
+  Plasma: { label: "plasma burst", emoji: "⚡" },
+  Wild: { label: "wild twist", emoji: "🃏" },
 };
 
 const suitSymbols: Record<Card["suit"], string> = {
@@ -28,6 +31,8 @@ const suitSymbols: Record<Card["suit"], string> = {
   Air: "💨",
   Earth: "🌿",
   Water: "💧",
+  Plasma: "⚡",
+  Wild: "🃏",
 };
 
 const rankOrder: Record<string, number> = {
@@ -44,10 +49,22 @@ const rankOrder: Record<string, number> = {
   Q: 12,
   K: 13,
   A: 14,
+  Joker: 15,
+  Flame: 15,
+  "15": 16,
 };
 
 export function makeCardKey(card: Card, index: number) {
   return `${card.rank}-${card.suit}-${index}`;
+}
+
+function getCosmeticClasses(cosmeticRewards: string[] | undefined) {
+  const rewardSet = new Set(cosmeticRewards ?? []);
+  return [
+    rewardSet.has("starlit_edges") ? " card-theme-starlit" : "",
+    rewardSet.has("duelist_lacquer") ? " card-theme-lacquer" : "",
+    rewardSet.has("constellation_foil") ? " card-theme-foil" : "",
+  ].join("");
 }
 
 export function GameBoard({
@@ -64,10 +81,12 @@ export function GameBoard({
   remainingDiscards,
   busy,
   disabled,
+  cosmeticRewards,
 }: GameBoardProps) {
   const sortedCards = [...cards]
     .map((card, index) => ({ card, index }))
     .sort((left, right) => rankOrder[left.card.rank] - rankOrder[right.card.rank]);
+  const cosmeticClasses = getCosmeticClasses(cosmeticRewards);
 
   return (
     <section className="panel game-board">
@@ -75,7 +94,7 @@ export function GameBoard({
         <div className="board-impact-banner-shell">
           <section
             className={`battle-impact-banner board-impact-banner${
-            battleMoment.accentSuit ? ` impact-${battleMoment.accentSuit.toLowerCase()}` : ""
+              battleMoment.accentSuit ? ` impact-${battleMoment.accentSuit.toLowerCase()}` : ""
             }`}
           >
             <div className="battle-impact-copy">
@@ -173,7 +192,7 @@ export function GameBoard({
               <button
                 type="button"
                 key={cardKey}
-                className={`card-tile suit-${card.suit.toLowerCase()}${selected ? " selected" : ""}`}
+                className={`card-tile suit-${card.suit.toLowerCase()}${cosmeticClasses}${selected ? " selected" : ""}`}
                 onClick={() => onToggleCard(card, index)}
                 disabled={disabled}
               >
