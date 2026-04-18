@@ -20,7 +20,7 @@ const RANK_VALUES: Record<string, number> = {
 const HAND_MULTIPLIERS: Record<string, number> = {
   "high card": 1,
   pair: 2,
-  "two pair": 2,
+  "two pair": 3,
   "three of a kind": 3,
   straight: 4,
   flush: 4,
