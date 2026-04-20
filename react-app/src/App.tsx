@@ -50,6 +50,7 @@ export default function App() {
   const previousLevelRef = useRef<number | null>(null);
   const previousLevelRewardsRef = useRef<Set<string>>(new Set());
   const accountIconClickCountRef = useRef(0);
+  const accountIconClickTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -108,6 +109,14 @@ export default function App() {
       }
     });
   }, [setDraftPlayerId]);
+
+  useEffect(() => {
+    return () => {
+      if (accountIconClickTimeoutRef.current !== null) {
+        window.clearTimeout(accountIconClickTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (view !== "lobby") {
@@ -241,22 +250,22 @@ export default function App() {
   }, [activeAchievement, metaProgress]);
 
   useEffect(() => {
-    if (activeAchievement || achievementQueue.length === 0) {
+    if (activeAchievement || activeLevelUp || achievementQueue.length === 0) {
       return;
     }
 
     setActiveAchievement(achievementQueue[0]);
     setAchievementQueue((current) => current.slice(1));
-  }, [activeAchievement, achievementQueue]);
+  }, [activeAchievement, activeLevelUp, achievementQueue]);
 
   useEffect(() => {
-    if (activeLevelUp || levelUpQueue.length === 0) {
+    if (activeAchievement || activeLevelUp || levelUpQueue.length === 0) {
       return;
     }
 
     setActiveLevelUp(levelUpQueue[0]);
     setLevelUpQueue((current) => current.slice(1));
-  }, [activeLevelUp, levelUpQueue]);
+  }, [activeAchievement, activeLevelUp, levelUpQueue]);
 
   useEffect(() => {
     if (!activeAchievement) {
@@ -310,11 +319,22 @@ export default function App() {
   }
 
   function handleAccountIconClick() {
+    if (accountIconClickTimeoutRef.current !== null) {
+      window.clearTimeout(accountIconClickTimeoutRef.current);
+    }
+
     accountIconClickCountRef.current += 1;
     if (accountIconClickCountRef.current >= 10) {
       setDebugVisible((current) => !current);
       accountIconClickCountRef.current = 0;
+      accountIconClickTimeoutRef.current = null;
+      return;
     }
+
+    accountIconClickTimeoutRef.current = window.setTimeout(() => {
+      accountIconClickCountRef.current = 0;
+      accountIconClickTimeoutRef.current = null;
+    }, 2200);
   }
 
   const hasChosenAccess = Boolean(currentUser || guestMode);
@@ -327,14 +347,22 @@ export default function App() {
     <main className="app-shell">
       {view !== "game" ? (
         <header className="simple-header">
-          <h1>Slaskecards</h1>
+          <button
+            type="button"
+            className="logo-home-button"
+            onClick={() => setView("lobby")}
+            aria-label="Go to join lobby"
+          >
+            <h1>Slaskecards</h1>
+          </button>
         </header>
       ) : null}
 
       {activeAchievement ? (
         <AchievementUnlockToast achievement={activeAchievement} />
+      ) : activeLevelUp ? (
+        <LevelUpToast level={activeLevelUp.level} unlocks={activeLevelUp.unlocks} />
       ) : null}
-      {activeLevelUp ? <LevelUpToast level={activeLevelUp.level} unlocks={activeLevelUp.unlocks} /> : null}
       {session.matchResult ? (
         <MatchResultOverlay
           matchResult={session.matchResult}

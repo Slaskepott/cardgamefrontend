@@ -173,6 +173,7 @@ export interface NewHandMessage {
   player: string;
   cards: Card[];
   next_player?: string | null;
+  remaining_discards?: number;
 }
 
 export interface HandUpdatedMessage {

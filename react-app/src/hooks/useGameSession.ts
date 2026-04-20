@@ -373,6 +373,9 @@ export function useGameSession(currentUser: User | null) {
         }
         if (isNewHandMessage(message) && message.player === nextPlayerId) {
           setPlayerHand(message.cards);
+          if (typeof message.remaining_discards === "number") {
+            setRemainingDiscards(message.remaining_discards);
+          }
           setShopOpen(false);
           setSelectedCards([]);
         }

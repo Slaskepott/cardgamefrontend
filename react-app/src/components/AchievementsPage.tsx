@@ -19,6 +19,7 @@ const statLabels: Record<string, string> = {
   straight_flushes_played: "Straight flushes",
   royal_flushes_played: "Royal flushes",
   upgrades_bought: "Upgrades bought",
+  elo_rating: "Elo rating",
 };
 
 export function AchievementsPage({
@@ -39,7 +40,7 @@ export function AchievementsPage({
     (left, right) => Number(right.unlocked) - Number(left.unlocked),
   );
   const spotlightStats = Object.entries(metaProgress.stats)
-    .filter(([key, value]) => key !== "experience_total" && value > 0)
+    .filter(([key, value]) => key !== "experience_total" && key !== "elo_rating" && value > 0)
     .slice(0, 6);
   return (
     <section className="panel account-page-panel achievements-page-panel">
@@ -67,6 +68,11 @@ export function AchievementsPage({
             {metaProgress.experience_in_level} / {metaProgress.experience_for_next_level} XP toward
             the next level.
           </p>
+        </div>
+        <div className="ranked-summary-card">
+          <span className="ranked-summary-label">Ranked</span>
+          <strong>Elo {metaProgress.elo_rating}</strong>
+          <span className="ranked-summary-subtitle">Climb the ladder and unlock ranked achievements.</span>
         </div>
         <button type="button" onClick={onOpenProgression}>
           View rewards
