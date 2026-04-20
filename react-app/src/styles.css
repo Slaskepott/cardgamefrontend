@@ -941,6 +941,7 @@ input {
 }
 
 .lobby-card {
+  width: 100%;
   border-radius: 18px;
   border: 1px solid rgba(255, 240, 214, 0.12);
   background: rgba(255, 240, 214, 0.06);
@@ -955,6 +956,180 @@ input {
 .lobby-card-title {
   font-size: 1.05rem;
   font-weight: 800;
+}
+
+.tutorial-entry-card {
+  margin-top: 0.75rem;
+  margin-bottom: 1rem;
+  text-align: left;
+  background:
+    radial-gradient(circle at top, rgba(148, 216, 255, 0.16), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02)),
+    rgba(9, 18, 33, 0.82);
+  border-color: rgba(136, 192, 255, 0.24);
+}
+
+.tutorial-page {
+  display: grid;
+  gap: 1.2rem;
+}
+
+.tutorial-stepper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+}
+
+.tutorial-step-pill {
+  padding: 0.5rem 0.85rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(136, 192, 255, 0.12);
+  color: rgba(214, 230, 255, 0.68);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.tutorial-step-pill.active {
+  background:
+    radial-gradient(circle at top, rgba(255, 214, 122, 0.18), transparent 42%),
+    rgba(53, 39, 14, 0.88);
+  border-color: rgba(255, 214, 122, 0.34);
+  color: #ffe8a7;
+}
+
+.tutorial-step-pill.complete {
+  color: #9ce0ff;
+}
+
+.tutorial-stage {
+  display: grid;
+  gap: 1rem;
+}
+
+.tutorial-copy-block h3 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.tutorial-hand-grid {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.tutorial-hand-card,
+.tutorial-summary-card {
+  padding: 1rem;
+  border-radius: 22px;
+  display: grid;
+  gap: 0.4rem;
+  align-content: start;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015)),
+    rgba(9, 18, 33, 0.72);
+  border: 1px solid rgba(136, 192, 255, 0.12);
+}
+
+.tutorial-hand-head {
+  display: grid;
+  gap: 0.15rem;
+  margin-bottom: 0.8rem;
+}
+
+.tutorial-hand-rewards {
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.8rem;
+}
+
+.tutorial-hand-rewards span {
+  padding: 0.38rem 0.7rem;
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02)),
+    rgba(11, 23, 40, 0.82);
+  border: 1px solid rgba(136, 192, 255, 0.12);
+  color: rgba(239, 246, 255, 0.86);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.tutorial-hand-head span,
+.tutorial-summary-card span {
+  display: block;
+  color: rgba(214, 230, 255, 0.72);
+}
+
+.tutorial-mini-cards,
+.tutorial-card-row {
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.tutorial-card {
+  width: 74px;
+  min-height: 96px;
+  padding: 0.7rem 0.5rem;
+  border-radius: 18px;
+  display: grid;
+  align-content: space-between;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(242, 247, 255, 0.86));
+  border: 1px solid rgba(178, 220, 255, 0.26);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 10px 22px rgba(2, 9, 19, 0.2);
+  color: #1c2430;
+}
+
+.tutorial-card-rank {
+  font-weight: 900;
+  font-size: 1.2rem;
+}
+
+.tutorial-card-suit {
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.tutorial-duel-strip {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(220px, 280px) 1fr;
+  align-items: start;
+}
+
+.tutorial-health-card {
+  min-height: 0;
+}
+
+.tutorial-preview-panel {
+  margin-top: 0;
+}
+
+.tutorial-shop-grid,
+.tutorial-summary-grid {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.tutorial-shop-card {
+  min-height: 0;
+}
+
+.tutorial-shop-card-bought {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    0 0 0 4px rgba(145, 255, 183, 0.24),
+    0 18px 32px rgba(4, 12, 28, 0.28),
+    0 0 26px rgba(111, 255, 130, 0.24);
+}
+
+.tutorial-finish-stage {
+  text-align: left;
 }
 
 .meta-panel {

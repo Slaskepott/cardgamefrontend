@@ -4,17 +4,29 @@ interface AvailableLobbiesProps {
   lobbies: LobbySummary[];
   busy: boolean;
   onJoinLobby: (gameId: string) => Promise<void>;
+  onStartTutorial: () => void;
 }
 
 export function AvailableLobbies({
   lobbies,
   busy,
   onJoinLobby,
+  onStartTutorial,
 }: AvailableLobbiesProps) {
   return (
     <section className="panel lobby-panel">
       <p className="eyebrow">Available lobbies</p>
       <h2>Join game</h2>
+
+      <button
+        type="button"
+        className="lobby-card tutorial-entry-card"
+        onClick={onStartTutorial}
+        disabled={busy}
+      >
+        <span className="lobby-card-title">Play tutorial</span>
+        <span>Learn hands, attacking, discarding, and the shop in a couple of minutes.</span>
+      </button>
 
       <div className="lobby-list">
         {lobbies.length === 0 ? (

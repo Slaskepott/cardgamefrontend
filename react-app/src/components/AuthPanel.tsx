@@ -46,7 +46,7 @@ const avatarOptions = [
 ];
 
 type AuthMode = "sign-in" | "sign-up";
-type AccountView = "lobby" | "achievements" | "talents" | "game";
+type AccountView = "lobby" | "achievements" | "talents" | "tutorial" | "game";
 
 interface AuthPanelProps {
   currentUser: User | null;

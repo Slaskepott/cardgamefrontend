@@ -14,6 +14,7 @@ import { LevelProgressionModal } from "./components/LevelProgressionModal";
 import { MatchResultOverlay } from "./components/MatchResultOverlay";
 import { StatusPanel } from "./components/StatusPanel";
 import { TalentTreePage } from "./components/TalentTreePage";
+import { TutorialPage } from "./components/TutorialPage";
 import { UpgradePanel } from "./components/UpgradePanel";
 import { apiBaseUrl } from "./lib/config";
 import { getMetaProgress, listLobbies, unlockTalent } from "./lib/api";
@@ -30,7 +31,7 @@ export default function App() {
   const [bootProgress, setBootProgress] = useState(0);
   const [bootComplete, setBootComplete] = useState(false);
   const [debugVisible, setDebugVisible] = useState(false);
-  const [view, setView] = useState<"lobby" | "achievements" | "talents" | "game">("lobby");
+  const [view, setView] = useState<"lobby" | "achievements" | "talents" | "tutorial" | "game">("lobby");
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [guestMode, setGuestMode] = useState(false);
   const [availableLobbies, setAvailableLobbies] = useState<
@@ -311,7 +312,7 @@ export default function App() {
     }
   }
 
-  async function handleAccountNavigate(nextView: "lobby" | "achievements" | "talents") {
+  async function handleAccountNavigate(nextView: "lobby" | "achievements" | "talents" | "tutorial") {
     if (view === "game" && nextView !== "lobby") {
       await session.handleLeaveLobby();
     }
@@ -420,6 +421,7 @@ export default function App() {
           <AvailableLobbies
             lobbies={availableLobbies}
             busy={session.busy}
+            onStartTutorial={() => setView("tutorial")}
             onJoinLobby={async (selectedGameId) => {
               session.handleDraftGameIdChange(selectedGameId);
               if (await session.handleJoinGame(selectedGameId, session.draftPlayerId)) {
@@ -454,6 +456,10 @@ export default function App() {
             busy={session.busy}
             onUnlockTalent={handleUnlockTalent}
           />
+        </section>
+      ) : hasChosenAccess && view === "tutorial" ? (
+        <section className="content-grid account-grid">
+          <TutorialPage onBackToLobby={() => setView("lobby")} />
         </section>
       ) : hasChosenAccess ? (
         <section className="content-grid">
