@@ -12,6 +12,7 @@ export function LevelProgressionModal({
 }: LevelProgressionModalProps) {
   const trackRef = useRef<HTMLDivElement | null>(null);
   const activeCardRef = useRef<HTMLElement | null>(null);
+  const lastCenteredLevelRef = useRef<number | null>(null);
   const levelProgressPercent = metaProgress
     ? Math.min(
         100,
@@ -22,6 +23,14 @@ export function LevelProgressionModal({
     : 0;
 
   useEffect(() => {
+    if (!metaProgress) {
+      return;
+    }
+
+    if (lastCenteredLevelRef.current === metaProgress.level) {
+      return;
+    }
+
     const track = trackRef.current;
     const card = activeCardRef.current;
     if (!track || !card) {
@@ -34,7 +43,8 @@ export function LevelProgressionModal({
       left: Math.max(0, nextLeft),
       behavior: "auto",
     });
-  }, [metaProgress]);
+    lastCenteredLevelRef.current = metaProgress.level;
+  }, [metaProgress?.level]);
 
   return (
     <div className="modal-backdrop" onClick={onClose} role="presentation">
