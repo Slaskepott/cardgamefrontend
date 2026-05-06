@@ -126,7 +126,7 @@ export function setTalentElement(email: string, talentId: string, element: strin
 
 export function resetTalents(email: string) {
   return requestJson<MetaProgressResponse>(
-    `/meta/${encodeURIComponent(email)}/talents/reset-all`,
+    `/meta/${encodeURIComponent(email)}/talents/actions/reset-all`,
     {
       method: "POST",
     },
