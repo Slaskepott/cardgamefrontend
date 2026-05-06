@@ -3,6 +3,8 @@
 interface UpgradePanelProps {
   upgrades: Upgrade[];
   ownedUpgrades: Upgrade[];
+  enemyUpgrades: Upgrade[];
+  enemyPlayerName?: string | null;
   playerGold: number;
   goldAttentionActive: boolean;
   rerollsRemaining: number;
@@ -31,6 +33,7 @@ function formatTimer(seconds: number | null) {
 const upgradeEmojis: Record<string, string> = {
   "Increase Health": "❤️",
   "Increase Health %": "💖",
+  "Increase Armor": "🛡️",
   "Increase Discards": "↻",
   "Increase Damage": "⚔️",
   "Increase Earth Damage": "🌿",
@@ -62,6 +65,7 @@ function parseLeadingNumber(effect: string) {
 function summarizeOwnedUpgrades(upgrades: Upgrade[]): UpgradeSummarySection[] {
   let bonusHealth = 0;
   let bonusHealthPercent = 0;
+  let armor = 0;
   let bonusDiscards = 0;
   let bonusDamagePercent = 0;
   let lowCardDamagePercent = 0;
@@ -91,6 +95,9 @@ function summarizeOwnedUpgrades(upgrades: Upgrade[]): UpgradeSummarySection[] {
         break;
       case "Increase Health %":
         bonusHealthPercent += amount;
+        break;
+      case "Increase Armor":
+        armor += amount;
         break;
       case "Increase Discards":
         bonusDiscards += amount;
@@ -157,6 +164,7 @@ function summarizeOwnedUpgrades(upgrades: Upgrade[]): UpgradeSummarySection[] {
   const defensive: string[] = [];
   if (bonusHealth > 0) defensive.push(`+${bonusHealth} health`);
   if (bonusHealthPercent > 0) defensive.push(`+${bonusHealthPercent}% health`);
+  if (armor > 0) defensive.push(`+${armor} armor`);
 
   const draw: string[] = [];
   if (lowCardDrawPercent > 0) draw.push(`+${lowCardDrawPercent}% low card draw chance`);
@@ -184,6 +192,8 @@ function summarizeOwnedUpgrades(upgrades: Upgrade[]): UpgradeSummarySection[] {
 export function UpgradePanel({
   upgrades,
   ownedUpgrades,
+  enemyUpgrades,
+  enemyPlayerName,
   playerGold,
   goldAttentionActive,
   rerollsRemaining,
@@ -199,26 +209,52 @@ export function UpgradePanel({
 }: UpgradePanelProps) {
   if (!visible) {
     const summarySections = summarizeOwnedUpgrades(ownedUpgrades);
+    const enemySummarySections = summarizeOwnedUpgrades(enemyUpgrades);
 
     return (
       <section className="panel">
         <p className="eyebrow">Upgrades</p>
         <h2>Player stats</h2>
-        <div className="upgrade-summary">
-          {summarySections.length === 0 ? (
-            <p className="panel-copy">No upgrades purchased yet.</p>
-          ) : (
-            summarySections.map((section) => (
-              <section key={section.title} className="summary-section">
-                <h3>{section.title}</h3>
-                <ul>
-                  {section.lines.map((line) => (
-                    <li key={line}>{line}</li>
-                  ))}
-                </ul>
-              </section>
-            ))
-          )}
+        <div className="upgrade-comparison">
+          <div className="upgrade-summary">
+            <div className="upgrade-summary-heading">
+              <h3>My upgrades</h3>
+            </div>
+            {summarySections.length === 0 ? (
+              <p className="panel-copy">No upgrades purchased yet.</p>
+            ) : (
+              summarySections.map((section) => (
+                <section key={section.title} className="summary-section">
+                  <h3>{section.title}</h3>
+                  <ul>
+                    {section.lines.map((line) => (
+                      <li key={line}>{line}</li>
+                    ))}
+                  </ul>
+                </section>
+              ))
+            )}
+          </div>
+          <div className="upgrade-summary">
+            <div className="upgrade-summary-heading">
+              <h3>Enemy upgrades</h3>
+              {enemyPlayerName ? <span>{enemyPlayerName}</span> : null}
+            </div>
+            {enemySummarySections.length === 0 ? (
+              <p className="panel-copy">No enemy upgrades revealed yet.</p>
+            ) : (
+              enemySummarySections.map((section) => (
+                <section key={`enemy-${section.title}`} className="summary-section">
+                  <h3>{section.title}</h3>
+                  <ul>
+                    {section.lines.map((line) => (
+                      <li key={`enemy-${line}`}>{line}</li>
+                    ))}
+                  </ul>
+                </section>
+              ))
+            )}
+          </div>
         </div>
       </section>
     );

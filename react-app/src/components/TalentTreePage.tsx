@@ -70,10 +70,21 @@ export function TalentTreePage({
   );
 
   useEffect(() => {
-    setActiveSpec(
-      metaProgress?.selected_specialization ?? metaProgress?.specializations[0]?.id ?? null,
-    );
-  }, [metaProgress]);
+    const lockedSpec = metaProgress?.selected_specialization ?? null;
+    const availableSpecs = metaProgress?.specializations ?? [];
+
+    setActiveSpec((current) => {
+      if (lockedSpec) {
+        return lockedSpec;
+      }
+
+      if (current && availableSpecs.some((specialization) => specialization.id === current)) {
+        return current;
+      }
+
+      return availableSpecs[0]?.id ?? null;
+    });
+  }, [metaProgress?.selected_specialization, metaProgress?.specializations]);
 
   if (!metaProgress) {
     return (

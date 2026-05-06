@@ -6,6 +6,8 @@ interface PlayerStatus {
   health: number;
   maxHealth: number;
   wins: number;
+  armor: number;
+  armorReductionPct: number;
 }
 
 interface BattleStatusProps {
@@ -117,6 +119,12 @@ export function BattleStatus({
               <div className="health-meta health-meta-bottom">
                 <span>
                   {player.health} / {player.maxHealth}
+                </span>
+                <span
+                  className="armor-chip"
+                  title={`${player.armorReductionPct}% damage reduction from armor`}
+                >
+                  🛡️ {player.armor}
                 </span>
               </div>
               {battleMoment?.target === player.id ? (

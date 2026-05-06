@@ -502,6 +502,8 @@ export default function App() {
             <UpgradePanel
               upgrades={session.shopUpgrades}
               ownedUpgrades={session.ownedUpgrades}
+              enemyUpgrades={session.enemyUpgrades}
+              enemyPlayerName={session.enemyPlayerId}
               playerGold={session.playerGold}
               goldAttentionActive={session.goldAttentionActive}
               rerollsRemaining={session.shopRerollsRemaining}

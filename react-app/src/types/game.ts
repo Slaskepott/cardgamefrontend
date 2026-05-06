@@ -101,6 +101,9 @@ export interface ApplyUpgradesMessage {
   health: number;
   max_health: number;
   max_discards: number;
+  armor: number;
+  armor_reduction_pct: number;
+  upgrades: Upgrade[];
 }
 
 export interface OpenStoreMessage {

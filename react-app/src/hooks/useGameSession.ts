@@ -129,6 +129,11 @@ export function useGameSession(currentUser: User | null) {
   const [playerHealth, setPlayerHealth] = useState<Record<string, number>>({});
   const [playerMaxHealth, setPlayerMaxHealth] = useState<Record<string, number>>({});
   const [playerWins, setPlayerWins] = useState<Record<string, number>>({});
+  const [playerArmor, setPlayerArmor] = useState<Record<string, number>>({});
+  const [playerArmorReductionPct, setPlayerArmorReductionPct] = useState<Record<string, number>>(
+    {},
+  );
+  const [playerUpgrades, setPlayerUpgrades] = useState<Record<string, Upgrade[]>>({});
   const [remainingDiscards, setRemainingDiscards] = useState(1);
   const [playerGold, setPlayerGold] = useState(0);
   const [goldAttentionActive, setGoldAttentionActive] = useState(false);
@@ -138,7 +143,6 @@ export function useGameSession(currentUser: User | null) {
   const [shopUpgrades, setShopUpgrades] = useState<Upgrade[]>([]);
   const [shopRerollsRemaining, setShopRerollsRemaining] = useState(0);
   const [shopWaitingPlayers, setShopWaitingPlayers] = useState<string[]>([]);
-  const [ownedUpgrades, setOwnedUpgrades] = useState<Upgrade[]>([]);
   const [phase, setPhase] = useState<"waiting" | "battle" | "shop" | "match_over">("waiting");
   const [battleDeadlineAt, setBattleDeadlineAt] = useState<number | null>(null);
   const [shopDeadlines, setShopDeadlines] = useState<Record<string, number>>({});
@@ -344,6 +348,27 @@ export function useGameSession(currentUser: User | null) {
       });
       return next;
     });
+    setPlayerArmor((current) => {
+      const next = { ...current };
+      nextPlayers.forEach((name) => {
+        next[name] ??= 0;
+      });
+      return next;
+    });
+    setPlayerArmorReductionPct((current) => {
+      const next = { ...current };
+      nextPlayers.forEach((name) => {
+        next[name] ??= 0;
+      });
+      return next;
+    });
+    setPlayerUpgrades((current) => {
+      const next = { ...current };
+      nextPlayers.forEach((name) => {
+        next[name] ??= [];
+      });
+      return next;
+    });
   }
 
   async function refreshPlayers(nextGameId: string) {
@@ -455,6 +480,18 @@ export function useGameSession(currentUser: User | null) {
           if (message.player === nextPlayerId) {
             setRemainingDiscards(message.max_discards);
           }
+          setPlayerArmor((current) => ({
+            ...current,
+            [message.player]: message.armor,
+          }));
+          setPlayerArmorReductionPct((current) => ({
+            ...current,
+            [message.player]: message.armor_reduction_pct,
+          }));
+          setPlayerUpgrades((current) => ({
+            ...current,
+            [message.player]: message.upgrades,
+          }));
         }
       },
     });
@@ -639,7 +676,10 @@ export function useGameSession(currentUser: User | null) {
         pushFeedEntry("Not enough gold for that upgrade.");
         return;
       }
-      setOwnedUpgrades((current) => [...current, upgrade]);
+      setPlayerUpgrades((current) => ({
+        ...current,
+        [playerId]: [...(current[playerId] ?? []), upgrade],
+      }));
       setShopUpgrades((current) => current.filter((entry) => entry.id !== upgrade.id));
       setPlayerGold((current) =>
         typeof response.price === "number" ? current - response.price : current,
@@ -725,6 +765,9 @@ export function useGameSession(currentUser: User | null) {
       setPlayerHealth({});
       setPlayerMaxHealth({});
       setPlayerWins({});
+      setPlayerArmor({});
+      setPlayerArmorReductionPct({});
+      setPlayerUpgrades({});
       setRemainingDiscards(1);
       setPlayerGold(0);
       setGoldAttentionActive(false);
@@ -739,7 +782,6 @@ export function useGameSession(currentUser: User | null) {
       setShopUpgrades([]);
       setShopRerollsRemaining(0);
       setShopWaitingPlayers([]);
-      setOwnedUpgrades([]);
       setWebsocketConnected(false);
       setFeedEntries(["Returned to lobby."]);
       setBusy(false);
@@ -753,12 +795,18 @@ export function useGameSession(currentUser: User | null) {
   );
   const canPlayActions = isPlayersTurn && selectedCards.length > 0;
   const canEndTurn = isPlayersTurn;
+  const enemyPlayerId =
+    playerId && players.length > 1 ? players.find((name) => name !== playerId) ?? null : null;
+  const ownedUpgrades = playerId ? playerUpgrades[playerId] ?? [] : [];
+  const enemyUpgrades = enemyPlayerId ? playerUpgrades[enemyPlayerId] ?? [] : [];
   const battlePlayers = players.map((name) => ({
     id: name,
     avatar: playerAvatars[name] ?? "ðŸ‘¤",
     health: playerHealth[name] ?? 100,
     maxHealth: playerMaxHealth[name] ?? 100,
     wins: playerWins[name] ?? 0,
+    armor: playerArmor[name] ?? 0,
+    armorReductionPct: playerArmorReductionPct[name] ?? 0,
   }));
   const shopOtherPlayers = shopWaitingPlayers.filter((id) => id !== playerId);
   const shopWaitingOnYou = Boolean(
@@ -804,6 +852,8 @@ export function useGameSession(currentUser: User | null) {
     shopUpgrades,
     shopRerollsRemaining,
     ownedUpgrades,
+    enemyUpgrades,
+    enemyPlayerId,
     phase,
     battleDeadlineAt,
     shopDeadlines,

@@ -1877,6 +1877,27 @@ input {
 .health-meta-bottom {
   margin-top: 0.28rem;
   margin-bottom: 0;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.armor-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  background:
+    linear-gradient(135deg, rgba(166, 214, 255, 0.22), rgba(97, 157, 255, 0.12)),
+    rgba(12, 24, 41, 0.82);
+  border: 1px solid rgba(152, 210, 255, 0.24);
+  color: rgba(220, 239, 255, 0.96);
+  font-size: 0.82rem;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 8px 18px rgba(17, 56, 104, 0.18);
+  cursor: help;
 }
 
 .health-bar-shell {
@@ -1937,6 +1958,29 @@ input {
   gap: 1rem;
 }
 
+.upgrade-comparison {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.upgrade-summary-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.upgrade-summary-heading h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.upgrade-summary-heading span {
+  color: rgba(193, 217, 242, 0.7);
+  font-size: 0.88rem;
+}
+
 .summary-section {
   padding: 0.95rem 1rem;
   border-radius: 18px;
@@ -1953,6 +1997,12 @@ input {
   padding-left: 1rem;
   display: grid;
   gap: 0.3rem;
+}
+
+@media (max-width: 900px) {
+  .upgrade-comparison {
+    grid-template-columns: 1fr;
+  }
 }
 
 .shop-panel-expanded {
