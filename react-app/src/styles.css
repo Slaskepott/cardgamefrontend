@@ -1596,6 +1596,11 @@ input {
   box-shadow: 0 10px 18px rgba(4, 10, 24, 0.26);
 }
 
+.talent-element-option.inactive {
+  opacity: 0.38;
+  filter: saturate(0.55);
+}
+
 .talent-element-option.fire {
   background: linear-gradient(180deg, rgba(255, 121, 93, 0.2), rgba(92, 26, 22, 0.5));
   border-color: rgba(255, 140, 94, 0.42);
@@ -1617,31 +1622,36 @@ input {
 }
 
 .talent-node-fire {
-  border-color: rgba(255, 136, 98, 0.22);
+  border-color: rgba(255, 136, 98, 0.38);
   background:
-    radial-gradient(circle at top, rgba(255, 123, 92, 0.14), transparent 34%),
-    rgba(255, 240, 214, 0.08);
+    radial-gradient(circle at top, rgba(255, 123, 92, 0.22), transparent 36%),
+    linear-gradient(180deg, rgba(91, 29, 24, 0.92), rgba(44, 17, 15, 0.96));
 }
 
 .talent-node-air {
-  border-color: rgba(143, 224, 255, 0.22);
+  border-color: rgba(143, 224, 255, 0.38);
   background:
-    radial-gradient(circle at top, rgba(137, 223, 255, 0.14), transparent 34%),
-    rgba(255, 240, 214, 0.08);
+    radial-gradient(circle at top, rgba(137, 223, 255, 0.22), transparent 36%),
+    linear-gradient(180deg, rgba(18, 52, 84, 0.92), rgba(13, 28, 48, 0.96));
 }
 
 .talent-node-earth {
-  border-color: rgba(137, 208, 154, 0.22);
+  border-color: rgba(137, 208, 154, 0.38);
   background:
-    radial-gradient(circle at top, rgba(134, 211, 140, 0.14), transparent 34%),
-    rgba(255, 240, 214, 0.08);
+    radial-gradient(circle at top, rgba(134, 211, 140, 0.2), transparent 36%),
+    linear-gradient(180deg, rgba(24, 61, 40, 0.92), rgba(15, 34, 23, 0.96));
 }
 
 .talent-node-water {
-  border-color: rgba(116, 166, 255, 0.22);
+  border-color: rgba(116, 166, 255, 0.38);
   background:
-    radial-gradient(circle at top, rgba(122, 175, 255, 0.14), transparent 34%),
-    rgba(255, 240, 214, 0.08);
+    radial-gradient(circle at top, rgba(122, 175, 255, 0.22), transparent 36%),
+    linear-gradient(180deg, rgba(24, 42, 89, 0.92), rgba(14, 25, 53, 0.96));
+}
+
+.modal-button-row {
+  justify-content: flex-end;
+  margin-top: 1rem;
 }
 
 .debug-stack {

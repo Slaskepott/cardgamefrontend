@@ -40,21 +40,33 @@ function groupTalentsBySpec(talents: MetaTalent[]) {
   }, {});
 }
 
-function getTalentElementClass(talent: MetaTalent) {
-  const descriptor = `${talent.id} ${talent.name} ${talent.description}`.toLowerCase();
-  if (descriptor.includes("fire") || descriptor.includes("ember")) {
+function getTalentElementClass(selectedElement: string | null) {
+  const normalizedSelectedElement = selectedElement?.toLowerCase();
+  if (normalizedSelectedElement === "fire") {
     return " talent-node-fire";
   }
-  if (descriptor.includes("air") || descriptor.includes("gale") || descriptor.includes("tempest")) {
+  if (normalizedSelectedElement === "air") {
     return " talent-node-air";
   }
-  if (descriptor.includes("earth") || descriptor.includes("stone")) {
+  if (normalizedSelectedElement === "earth") {
     return " talent-node-earth";
   }
-  if (descriptor.includes("water") || descriptor.includes("tide")) {
+  if (normalizedSelectedElement === "water") {
     return " talent-node-water";
   }
   return "";
+}
+
+function buildTalentDescription(talent: MetaTalent, selectedElement: string | null) {
+  if (!talent.element_options.length || !selectedElement) {
+    return talent.description;
+  }
+
+  const elementName = selectedElement.toLowerCase();
+  return talent.description
+    .replace("Choose an element. ", "")
+    .replace(/elemental damage/g, `${elementName} damage`)
+    .replace(/elemental draw chance/g, `${elementName} draw chance`);
 }
 
 function getNodeCenter(column: number, row: number) {
@@ -252,7 +264,7 @@ export function TalentTreePage({
                     : " locked"
               }${talent.current_rank >= talent.max_ranks ? " maxed" : ""}${
                 talent.id.endsWith("capstone") ? " capstone" : ""
-              }${getTalentElementClass(talent)}`}
+              }${getTalentElementClass(getSelectedElement(talent))}`}
               style={{
                 gridRow: talent.row + 1,
                 gridColumn: talent.column + 1,
@@ -282,7 +294,7 @@ export function TalentTreePage({
                   {talent.current_rank}/{talent.max_ranks}
                 </span>
               </div>
-              <p>{talent.description}</p>
+              <p>{buildTalentDescription(talent, getSelectedElement(talent))}</p>
               {talent.element_options.length > 0 ? (
                 <div className="talent-element-picker">
                   {talent.element_options.map((element) => {
@@ -294,7 +306,8 @@ export function TalentTreePage({
                         type="button"
                         className={`talent-element-option ${ui?.className ?? ""}${
                           isActive ? " active" : ""
-                        }`}
+                        }${!isActive ? " inactive" : ""}`}
+                        aria-label={`Select ${element} for ${talent.name}`}
                         onClick={(event) => {
                           event.stopPropagation();
                           setDraftElements((current) => ({

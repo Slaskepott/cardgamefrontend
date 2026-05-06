@@ -34,6 +34,7 @@ interface LevelUpEvent {
 }
 
 export default function App() {
+  type AccountViewTarget = "lobby" | "achievements" | "talents" | "tutorial";
   const [bootProgress, setBootProgress] = useState(0);
   const [bootComplete, setBootComplete] = useState(false);
   const [debugVisible, setDebugVisible] = useState(false);
@@ -49,6 +50,7 @@ export default function App() {
   const [levelUpQueue, setLevelUpQueue] = useState<LevelUpEvent[]>([]);
   const [activeLevelUp, setActiveLevelUp] = useState<LevelUpEvent | null>(null);
   const [progressionModalOpen, setProgressionModalOpen] = useState(false);
+  const [pendingAccountView, setPendingAccountView] = useState<AccountViewTarget | null>(null);
 
   const session = useGameSession(currentUser);
   const { setDraftPlayerId } = session;
@@ -350,10 +352,22 @@ export default function App() {
     }
   }
 
-  async function handleAccountNavigate(nextView: "lobby" | "achievements" | "talents" | "tutorial") {
+  async function handleAccountNavigate(nextView: AccountViewTarget) {
     if (view === "game" && nextView !== "lobby") {
-      await session.handleLeaveLobby();
+      setPendingAccountView(nextView);
+      return;
     }
+    setView(nextView);
+  }
+
+  async function handleConfirmForfeitNavigation() {
+    if (!pendingAccountView) {
+      return;
+    }
+
+    const nextView = pendingAccountView;
+    setPendingAccountView(null);
+    await session.handleLeaveLobby();
     setView(nextView);
   }
 
@@ -417,6 +431,36 @@ export default function App() {
           metaProgress={metaProgress}
           onClose={() => setProgressionModalOpen(false)}
         />
+      ) : null}
+      {pendingAccountView ? (
+        <div className="modal-backdrop" role="presentation" onClick={() => setPendingAccountView(null)}>
+          <section
+            className="panel modal-panel forfeit-warning-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="forfeit-warning-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="section-header modal-header">
+              <div>
+                <p className="eyebrow">Warning</p>
+                <h2 id="forfeit-warning-title">Leaving now will forfeit the match</h2>
+                <p className="panel-copy compact-copy">
+                  Opening achievements, talents, or the tutorial during a live game counts as
+                  leaving the lobby. Your opponent will be awarded the win.
+                </p>
+              </div>
+            </div>
+            <div className="button-row modal-button-row">
+              <button type="button" className="secondary" onClick={() => setPendingAccountView(null)}>
+                Stay in match
+              </button>
+              <button type="button" onClick={() => void handleConfirmForfeitNavigation()}>
+                Forfeit and continue
+              </button>
+            </div>
+          </section>
+        </div>
       ) : null}
 
       <AuthPanel
