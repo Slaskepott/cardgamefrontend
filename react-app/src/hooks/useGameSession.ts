@@ -18,6 +18,7 @@ import {
   joinGame,
   leaveGame,
   playHand,
+  rerollShop,
   sendHeartbeat,
 } from "../lib/api";
 import { generateLobbyId, generatePlayerName } from "../lib/nameGenerator";
@@ -135,6 +136,7 @@ export function useGameSession(currentUser: User | null) {
   const [discardMoment, setDiscardMoment] = useState<DiscardMoment | null>(null);
   const [shopOpen, setShopOpen] = useState(false);
   const [shopUpgrades, setShopUpgrades] = useState<Upgrade[]>([]);
+  const [shopRerollsRemaining, setShopRerollsRemaining] = useState(0);
   const [shopWaitingPlayers, setShopWaitingPlayers] = useState<string[]>([]);
   const [ownedUpgrades, setOwnedUpgrades] = useState<Upgrade[]>([]);
   const [phase, setPhase] = useState<"waiting" | "battle" | "shop" | "match_over">("waiting");
@@ -306,6 +308,14 @@ export function useGameSession(currentUser: User | null) {
     setBattleDeadlineAt(message.battle_deadline_at);
     setShopDeadlines(message.shop_deadlines ?? {});
     setShopWaitingPlayers(message.waiting_players ?? []);
+    if (message.phase !== "match_over") {
+      setMatchResult(null);
+    }
+    if (message.phase === "battle") {
+      clearWindowTimeout(shopOpenTimeoutRef);
+      setShopOpen(false);
+      setShopUpgrades([]);
+    }
   }
 
   function syncPlayers(nextPlayers: string[], nextAvatars?: Record<string, string>) {
@@ -404,12 +414,13 @@ export function useGameSession(currentUser: User | null) {
             setPlayerGold((current) => current + message.gold);
             setSelectedCards([]);
           }
-          if (message.winner) {
-            pushFeedEntry(`Game over. ${message.winner} wins the round.`);
+          if (message.winner && !message.match_finished) {
+            pushFeedEntry(`Round over. ${message.winner} wins the round.`);
           }
         }
         if (isOpenStoreMessage(message) && message.player === nextPlayerId) {
           setShopWaitingPlayers(message.waiting_players ?? []);
+          setShopRerollsRemaining(message.rerolls_remaining ?? 0);
           scheduleShopOpen(message.upgrades, 1400);
         }
         if (isShopStatusMessage(message)) {
@@ -654,9 +665,33 @@ export function useGameSession(currentUser: User | null) {
       }
       setShopWaitingPlayers(response.waiting_players ?? []);
       setShopOpen(false);
+      setShopRerollsRemaining(0);
       pushFeedEntry("Ready for the next game.");
     } catch (error) {
       pushFeedEntry(error instanceof Error ? error.message : "Failed to continue from shop.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleRerollShop() {
+    if (!gameId || !playerId) {
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const response = await rerollShop(gameId, playerId);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      if (response.upgrades) {
+        setShopUpgrades(response.upgrades);
+      }
+      setShopRerollsRemaining(response.rerolls_remaining ?? 0);
+      pushFeedEntry("Shop rerolled.");
+    } catch (error) {
+      pushFeedEntry(error instanceof Error ? error.message : "Shop reroll failed.");
     } finally {
       setBusy(false);
     }
@@ -702,6 +737,7 @@ export function useGameSession(currentUser: User | null) {
       clearWindowTimeout(shopOpenTimeoutRef);
       setShopOpen(false);
       setShopUpgrades([]);
+      setShopRerollsRemaining(0);
       setShopWaitingPlayers([]);
       setOwnedUpgrades([]);
       setWebsocketConnected(false);
@@ -766,6 +802,7 @@ export function useGameSession(currentUser: User | null) {
     discardMoment,
     shopOpen,
     shopUpgrades,
+    shopRerollsRemaining,
     ownedUpgrades,
     phase,
     battleDeadlineAt,
@@ -793,6 +830,7 @@ export function useGameSession(currentUser: User | null) {
     handlePlayHand,
     handleEndTurn,
     handleBuyUpgrade,
+    handleRerollShop,
     handleContinueFromShop,
     handleLeaveLobby,
   };

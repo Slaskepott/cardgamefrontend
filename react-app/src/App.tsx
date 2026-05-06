@@ -504,9 +504,11 @@ export default function App() {
               ownedUpgrades={session.ownedUpgrades}
               playerGold={session.playerGold}
               goldAttentionActive={session.goldAttentionActive}
+              rerollsRemaining={session.shopRerollsRemaining}
               visible={session.shopOpen}
               busy={session.busy}
               onBuyUpgrade={session.handleBuyUpgrade}
+              onRerollShop={session.handleRerollShop}
               onContinue={session.handleContinueFromShop}
               shopStatusText={session.shopStatusText}
               shopWaitingOnYou={session.shopWaitingOnYou}

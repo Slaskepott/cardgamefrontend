@@ -5,9 +5,11 @@ interface UpgradePanelProps {
   ownedUpgrades: Upgrade[];
   playerGold: number;
   goldAttentionActive: boolean;
+  rerollsRemaining: number;
   visible: boolean;
   busy: boolean;
   onBuyUpgrade: (upgrade: Upgrade) => Promise<void>;
+  onRerollShop: () => Promise<void>;
   onContinue: () => Promise<void>;
   shopStatusText: string;
   shopWaitingOnYou: boolean;
@@ -184,9 +186,11 @@ export function UpgradePanel({
   ownedUpgrades,
   playerGold,
   goldAttentionActive,
+  rerollsRemaining,
   visible,
   busy,
   onBuyUpgrade,
+  onRerollShop,
   onContinue,
   shopStatusText,
   shopWaitingOnYou,
@@ -231,6 +235,14 @@ export function UpgradePanel({
           <span className={goldAttentionActive ? "gold-chip-attention" : undefined}>
             Gold: {playerGold}
           </span>
+          <button
+            type="button"
+            className="shop-reroll-chip"
+            onClick={() => void onRerollShop()}
+            disabled={busy || rerollsRemaining < 1}
+          >
+            Reroll {rerollsRemaining > 0 ? `(${rerollsRemaining})` : "(0)"}
+          </button>
         </div>
       </div>
 

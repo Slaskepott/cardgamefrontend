@@ -12,6 +12,7 @@ import type {
   MetaProgressResponse,
   PlayHandResponse,
   PlayersResponse,
+  RerollShopResponse,
   Card,
 } from "../types/game";
 
@@ -133,6 +134,15 @@ export function buyUpgrade(gameId: string, playerId: string, upgradeId: number) 
 export function continueFromShop(gameId: string, playerId: string) {
   return requestJson<ContinueFromShopResponse>(
     `/game/${gameId}/shop/continue?player_id=${encodeURIComponent(playerId)}`,
+    {
+      method: "POST",
+    },
+  );
+}
+
+export function rerollShop(gameId: string, playerId: string) {
+  return requestJson<RerollShopResponse>(
+    `/game/${gameId}/shop/reroll?player_id=${encodeURIComponent(playerId)}`,
     {
       method: "POST",
     },

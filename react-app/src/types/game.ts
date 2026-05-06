@@ -108,6 +108,7 @@ export interface OpenStoreMessage {
   player: string;
   upgrades: Upgrade[];
   waiting_players?: string[];
+  rerolls_remaining?: number;
 }
 
 export interface ShopStatusMessage {
@@ -157,6 +158,8 @@ export interface HandPlayedMessage {
   new_hand: Card[];
   multiplier: number;
   winner: string | null;
+  round_finished?: boolean;
+  match_finished?: boolean;
   remaining_discards: number;
   gold: number;
 }
@@ -252,6 +255,8 @@ export interface PlayHandResponse extends ActionResponse {
   multiplier?: number;
   new_hand?: Card[];
   winner?: string | null;
+  round_finished?: boolean;
+  match_finished?: boolean;
 }
 
 export interface BuyUpgradeResponse extends ActionResponse {
@@ -260,6 +265,11 @@ export interface BuyUpgradeResponse extends ActionResponse {
 
 export interface ContinueFromShopResponse extends ActionResponse {
   waiting_players?: string[];
+}
+
+export interface RerollShopResponse extends ActionResponse {
+  upgrades?: Upgrade[];
+  rerolls_remaining?: number;
 }
 
 export interface HeartbeatResponse extends ActionResponse {

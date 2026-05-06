@@ -25,9 +25,11 @@ const HAND_MULTIPLIERS: Record<string, number> = {
   straight: 4,
   flush: 4,
   "full house": 4,
+  "flush house": 9,
   "four of a kind": 7,
   "straight flush": 8,
   "royal flush": 10,
+  "five of a kind": 8,
 };
 
 interface PreviewModifiers {
@@ -207,6 +209,8 @@ function evaluateConcreteHand(cards: Card[], modifiers: PreviewModifiers): HandP
   let handType = "high card";
   if (isRoyal) handType = "royal flush";
   else if (isStraight && isFlush) handType = "straight flush";
+  else if (rankFrequencies.includes(5)) handType = "five of a kind";
+  else if (isFlush && rankFrequencies.includes(3) && rankFrequencies.includes(2)) handType = "flush house";
   else if (rankFrequencies.includes(4)) handType = "four of a kind";
   else if (rankFrequencies.includes(3) && rankFrequencies.includes(2)) handType = "full house";
   else if (isFlush) handType = "flush";
@@ -223,10 +227,19 @@ function evaluateConcreteHand(cards: Card[], modifiers: PreviewModifiers): HandP
   if (handType === "straight" || handType === "straight flush" || handType === "royal flush") {
     handTypeModifier *= modifiers.straightDamageModifier;
   }
-  if (handType === "flush" || handType === "straight flush" || handType === "royal flush") {
+  if (
+    handType === "flush" ||
+    handType === "flush house" ||
+    handType === "straight flush" ||
+    handType === "royal flush"
+  ) {
     handTypeModifier *= modifiers.flushDamageModifier;
   }
-  if (handType === "three of a kind" || handType === "full house") {
+  if (
+    handType === "three of a kind" ||
+    handType === "full house" ||
+    handType === "flush house"
+  ) {
     handTypeModifier *= modifiers.fullHouseDamageModifier;
   }
 
