@@ -17,7 +17,13 @@ import { TalentTreePage } from "./components/TalentTreePage";
 import { TutorialPage } from "./components/TutorialPage";
 import { UpgradePanel } from "./components/UpgradePanel";
 import { apiBaseUrl } from "./lib/config";
-import { getMetaProgress, listLobbies, unlockTalent } from "./lib/api";
+import {
+  getMetaProgress,
+  listLobbies,
+  resetTalents,
+  setTalentElement,
+  unlockTalentWithElement,
+} from "./lib/api";
 import { auth } from "./lib/firebase";
 import { useGameSession } from "./hooks/useGameSession";
 import type { LevelMilestone, MetaAchievement, MetaProgress } from "./types/game";
@@ -296,19 +302,51 @@ export default function App() {
     };
   }, [activeLevelUp]);
 
-  async function handleUnlockTalent(talentId: string) {
+  async function handleUnlockTalent(talentId: string, element?: string | null) {
     if (!currentUser?.email) {
       return;
     }
 
     try {
-      const response = await unlockTalent(currentUser.email, talentId);
+      const response = await unlockTalentWithElement(currentUser.email, talentId, element);
       if (response.error) {
         throw new Error(response.error);
       }
       setMetaProgress(response);
     } catch {
       // Keep the current meta snapshot if unlocking fails.
+    }
+  }
+
+  async function handleSetTalentElement(talentId: string, element: string) {
+    if (!currentUser?.email) {
+      return;
+    }
+
+    try {
+      const response = await setTalentElement(currentUser.email, talentId, element);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      setMetaProgress(response);
+    } catch {
+      // Keep the current meta snapshot if updating fails.
+    }
+  }
+
+  async function handleResetTalents() {
+    if (!currentUser?.email) {
+      return;
+    }
+
+    try {
+      const response = await resetTalents(currentUser.email);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      setMetaProgress(response);
+    } catch {
+      // Keep the current meta snapshot if reset fails.
     }
   }
 
@@ -455,6 +493,8 @@ export default function App() {
             metaProgress={metaProgress}
             busy={session.busy}
             onUnlockTalent={handleUnlockTalent}
+            onSetTalentElement={handleSetTalentElement}
+            onResetTalents={handleResetTalents}
           />
         </section>
       ) : hasChosenAccess && view === "tutorial" ? (

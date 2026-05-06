@@ -52,6 +52,8 @@ export interface MetaTalent {
   current_rank: number;
   unlocked: boolean;
   available: boolean;
+  element_options: string[];
+  selected_element: string | null;
 }
 
 export interface MetaSpecialization {

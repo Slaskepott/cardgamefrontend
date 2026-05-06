@@ -93,6 +93,46 @@ export function unlockTalent(email: string, talentId: string) {
   );
 }
 
+export function unlockTalentWithElement(
+  email: string,
+  talentId: string,
+  element?: string | null,
+) {
+  const searchParams = new URLSearchParams();
+  if (element) {
+    searchParams.set("element", element);
+  }
+
+  return requestJson<MetaProgressResponse>(
+    `/meta/${encodeURIComponent(email)}/talents/${encodeURIComponent(talentId)}${
+      searchParams.size > 0 ? `?${searchParams.toString()}` : ""
+    }`,
+    {
+      method: "POST",
+    },
+  );
+}
+
+export function setTalentElement(email: string, talentId: string, element: string) {
+  return requestJson<MetaProgressResponse>(
+    `/meta/${encodeURIComponent(email)}/talents/${encodeURIComponent(
+      talentId,
+    )}/element?element=${encodeURIComponent(element)}`,
+    {
+      method: "POST",
+    },
+  );
+}
+
+export function resetTalents(email: string) {
+  return requestJson<MetaProgressResponse>(
+    `/meta/${encodeURIComponent(email)}/talents/reset`,
+    {
+      method: "POST",
+    },
+  );
+}
+
 export function discardCards(gameId: string, playerId: string, cards: Card[]) {
   return requestJson<DiscardResponse>(`/game/${gameId}/discard`, {
     method: "POST",

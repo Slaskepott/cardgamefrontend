@@ -1567,6 +1567,55 @@ input {
   font-size: 1.14rem;
 }
 
+.talent-element-picker {
+  margin-top: 0.35rem;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.talent-element-option {
+  border: 1px solid rgba(184, 214, 247, 0.18);
+  border-radius: 14px;
+  min-height: 2.2rem;
+  background: rgba(10, 20, 36, 0.56);
+  color: rgba(236, 244, 255, 0.92);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+.talent-element-option.active {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 18px rgba(4, 10, 24, 0.26);
+}
+
+.talent-element-option.fire {
+  background: linear-gradient(180deg, rgba(255, 121, 93, 0.2), rgba(92, 26, 22, 0.5));
+  border-color: rgba(255, 140, 94, 0.42);
+}
+
+.talent-element-option.air {
+  background: linear-gradient(180deg, rgba(122, 222, 255, 0.18), rgba(22, 50, 88, 0.5));
+  border-color: rgba(142, 225, 255, 0.4);
+}
+
+.talent-element-option.earth {
+  background: linear-gradient(180deg, rgba(123, 218, 147, 0.18), rgba(22, 58, 38, 0.5));
+  border-color: rgba(145, 228, 150, 0.38);
+}
+
+.talent-element-option.water {
+  background: linear-gradient(180deg, rgba(112, 154, 255, 0.2), rgba(28, 46, 94, 0.5));
+  border-color: rgba(137, 174, 255, 0.4);
+}
+
 .talent-node-fire {
   border-color: rgba(255, 136, 98, 0.22);
   background:

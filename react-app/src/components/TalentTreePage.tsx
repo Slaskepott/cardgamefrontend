@@ -3,11 +3,19 @@ import type { MetaProgress, MetaSpecialization, MetaTalent } from "../types/game
 
 const TALENT_TREE_COLUMNS = 5;
 const TALENT_TREE_ROWS = 5;
+const ELEMENT_UI = {
+  Fire: { emoji: "🔥", className: "fire" },
+  Air: { emoji: "💨", className: "air" },
+  Earth: { emoji: "🌿", className: "earth" },
+  Water: { emoji: "💧", className: "water" },
+} as const;
 
 interface TalentTreePageProps {
   metaProgress: MetaProgress | null;
   busy: boolean;
-  onUnlockTalent: (talentId: string) => Promise<void>;
+  onUnlockTalent: (talentId: string, element?: string | null) => Promise<void>;
+  onSetTalentElement: (talentId: string, element: string) => Promise<void>;
+  onResetTalents: () => Promise<void>;
 }
 
 function sortSpecOrder(
@@ -77,6 +85,8 @@ export function TalentTreePage({
   metaProgress,
   busy,
   onUnlockTalent,
+  onSetTalentElement,
+  onResetTalents,
 }: TalentTreePageProps) {
   const specMap = useMemo(
     () => groupTalentsBySpec(metaProgress?.talents ?? []),
@@ -85,6 +95,7 @@ export function TalentTreePage({
   const [activeSpec, setActiveSpec] = useState<string | null>(
     metaProgress?.selected_specialization ?? metaProgress?.specializations[0]?.id ?? null,
   );
+  const [draftElements, setDraftElements] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const availableSpecs = metaProgress?.specializations ?? [];
@@ -97,6 +108,22 @@ export function TalentTreePage({
       return availableSpecs[0]?.id ?? null;
     });
   }, [metaProgress?.selected_specialization, metaProgress?.specializations]);
+
+  useEffect(() => {
+    if (!metaProgress) {
+      return;
+    }
+
+    setDraftElements((current) => {
+      const next = { ...current };
+      metaProgress.talents.forEach((talent) => {
+        if (talent.selected_element) {
+          next[talent.id] = talent.selected_element;
+        }
+      });
+      return next;
+    });
+  }, [metaProgress]);
 
   if (!metaProgress) {
     return (
@@ -141,6 +168,10 @@ export function TalentTreePage({
     Boolean(metaProgress.selected_specialization) &&
     metaProgress.selected_specialization !== selectedSpec;
 
+  function getSelectedElement(talent: MetaTalent) {
+    return draftElements[talent.id] ?? talent.selected_element ?? talent.element_options[0] ?? null;
+  }
+
   return (
     <section className="panel account-page-panel talent-page-panel">
       <div className="section-header">
@@ -163,6 +194,9 @@ export function TalentTreePage({
                 }`
               : "No specialization chosen"}
           </span>
+          <button type="button" className="secondary" onClick={() => void onResetTalents()}>
+            Reset talents
+          </button>
         </div>
       </div>
 
@@ -208,9 +242,8 @@ export function TalentTreePage({
             </svg>
           ) : null}
           {visibleTalents.map((talent) => (
-            <button
+            <article
               key={talent.id}
-              type="button"
               className={`talent-node${
                 talent.available
                   ? " available"
@@ -224,12 +257,22 @@ export function TalentTreePage({
                 gridRow: talent.row + 1,
                 gridColumn: talent.column + 1,
               }}
-              disabled={busy}
+              role="button"
+              tabIndex={busy ? -1 : 0}
               onClick={() => {
                 if (busy || !talent.available) {
                   return;
                 }
-                void onUnlockTalent(talent.id);
+                void onUnlockTalent(talent.id, getSelectedElement(talent));
+              }}
+              onKeyDown={(event) => {
+                if (busy || !talent.available) {
+                  return;
+                }
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  void onUnlockTalent(talent.id, getSelectedElement(talent));
+                }
               }}
               aria-disabled={!talent.available}
             >
@@ -240,6 +283,38 @@ export function TalentTreePage({
                 </span>
               </div>
               <p>{talent.description}</p>
+              {talent.element_options.length > 0 ? (
+                <div className="talent-element-picker">
+                  {talent.element_options.map((element) => {
+                    const isActive = getSelectedElement(talent) === element;
+                    const ui = ELEMENT_UI[element as keyof typeof ELEMENT_UI];
+                    return (
+                      <button
+                        key={`${talent.id}-${element}`}
+                        type="button"
+                        className={`talent-element-option ${ui?.className ?? ""}${
+                          isActive ? " active" : ""
+                        }`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setDraftElements((current) => ({
+                            ...current,
+                            [talent.id]: element,
+                          }));
+                          if (talent.current_rank > 0) {
+                            void onSetTalentElement(talent.id, element);
+                          }
+                        }}
+                        disabled={busy}
+                        aria-pressed={isActive}
+                        title={element}
+                      >
+                        <span>{ui?.emoji ?? "✨"}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
               {talent.requires.length > 0 ? (
                 <span className="meta-talent-requires">
                   Requires: {talent.requires
@@ -258,7 +333,7 @@ export function TalentTreePage({
                     : "Choosing this talent also chooses this specialization"}
                 </span>
               )}
-            </button>
+            </article>
           ))}
         </div>
       ) : null}
