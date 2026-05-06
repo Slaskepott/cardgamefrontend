@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { MetaProgress, MetaSpecialization, MetaTalent } from "../types/game";
 
-const TALENT_TREE_COLUMNS = 4;
+const TALENT_TREE_COLUMNS = 5;
 const TALENT_TREE_ROWS = 5;
 
 interface TalentTreePageProps {
