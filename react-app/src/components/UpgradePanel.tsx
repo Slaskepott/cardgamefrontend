@@ -177,7 +177,7 @@ function summarizeOwnedUpgrades(upgrades: Upgrade[]): UpgradeSummarySection[] {
   if (lowCardDrawPercent > 0) draw.push(`+${lowCardDrawPercent}% low card draw chance`);
   if (highCardDrawPercent > 0) draw.push(`+${highCardDrawPercent}% high card draw chance`);
   if (royalDrawPercent > 0) draw.push(`+${royalDrawPercent}% queen, king, and ace draw chance`);
-  if (tinyDrawPercent > 0) draw.push(`+${tinyDrawPercent}% 2 and 3 draw chance`);
+  if (tinyDrawPercent > 0) draw.push(`+${tinyDrawPercent}% chance to draw 2 or 3`);
   if (elementalDraw.earth > 0) draw.push(`+${elementalDraw.earth}% earth draw chance`);
   if (elementalDraw.fire > 0) draw.push(`+${elementalDraw.fire}% fire draw chance`);
   if (elementalDraw.water > 0) draw.push(`+${elementalDraw.water}% water draw chance`);
