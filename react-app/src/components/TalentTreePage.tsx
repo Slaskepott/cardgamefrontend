@@ -32,6 +32,23 @@ function groupTalentsBySpec(talents: MetaTalent[]) {
   }, {});
 }
 
+function getTalentElementClass(talent: MetaTalent) {
+  const descriptor = `${talent.id} ${talent.name} ${talent.description}`.toLowerCase();
+  if (descriptor.includes("fire") || descriptor.includes("ember")) {
+    return " talent-node-fire";
+  }
+  if (descriptor.includes("air") || descriptor.includes("gale") || descriptor.includes("tempest")) {
+    return " talent-node-air";
+  }
+  if (descriptor.includes("earth") || descriptor.includes("stone")) {
+    return " talent-node-earth";
+  }
+  if (descriptor.includes("water") || descriptor.includes("tide")) {
+    return " talent-node-water";
+  }
+  return "";
+}
+
 function getNodeCenter(column: number, row: number) {
   return {
     x: ((column + 0.5) / TALENT_TREE_COLUMNS) * 100,
@@ -70,14 +87,9 @@ export function TalentTreePage({
   );
 
   useEffect(() => {
-    const lockedSpec = metaProgress?.selected_specialization ?? null;
     const availableSpecs = metaProgress?.specializations ?? [];
 
     setActiveSpec((current) => {
-      if (lockedSpec) {
-        return lockedSpec;
-      }
-
       if (current && availableSpecs.some((specialization) => specialization.id === current)) {
         return current;
       }
@@ -207,7 +219,7 @@ export function TalentTreePage({
                     : " locked"
               }${talent.current_rank >= talent.max_ranks ? " maxed" : ""}${
                 talent.id.endsWith("capstone") ? " capstone" : ""
-              }`}
+              }${getTalentElementClass(talent)}`}
               style={{
                 gridRow: talent.row + 1,
                 gridColumn: talent.column + 1,

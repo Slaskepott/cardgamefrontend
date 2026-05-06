@@ -57,6 +57,13 @@ interface UpgradeSummarySection {
   lines: string[];
 }
 
+interface UpgradeSummaryBlockProps {
+  title: string;
+  subtitle?: string | null;
+  sections: UpgradeSummarySection[];
+  emptyText: string;
+}
+
 function parseLeadingNumber(effect: string) {
   const match = effect.match(/([+-]?\d+)/);
   return match ? Number(match[1]) : 0;
@@ -189,6 +196,36 @@ function summarizeOwnedUpgrades(upgrades: Upgrade[]): UpgradeSummarySection[] {
   ].filter((section) => section.lines.length > 0);
 }
 
+function UpgradeSummaryBlock({
+  title,
+  subtitle,
+  sections,
+  emptyText,
+}: UpgradeSummaryBlockProps) {
+  return (
+    <div className="upgrade-summary">
+      <div className="upgrade-summary-heading">
+        <h3>{title}</h3>
+        {subtitle ? <span>{subtitle}</span> : null}
+      </div>
+      {sections.length === 0 ? (
+        <p className="panel-copy">{emptyText}</p>
+      ) : (
+        sections.map((section) => (
+          <section key={`${title}-${section.title}`} className="summary-section">
+            <h3>{section.title}</h3>
+            <ul>
+              {section.lines.map((line) => (
+                <li key={`${title}-${line}`}>{line}</li>
+              ))}
+            </ul>
+          </section>
+        ))
+      )}
+    </div>
+  );
+}
+
 export function UpgradePanel({
   upgrades,
   ownedUpgrades,
@@ -216,49 +253,24 @@ export function UpgradePanel({
         <p className="eyebrow">Upgrades</p>
         <h2>Player stats</h2>
         <div className="upgrade-comparison">
-          <div className="upgrade-summary">
-            <div className="upgrade-summary-heading">
-              <h3>My upgrades</h3>
-            </div>
-            {summarySections.length === 0 ? (
-              <p className="panel-copy">No upgrades purchased yet.</p>
-            ) : (
-              summarySections.map((section) => (
-                <section key={section.title} className="summary-section">
-                  <h3>{section.title}</h3>
-                  <ul>
-                    {section.lines.map((line) => (
-                      <li key={line}>{line}</li>
-                    ))}
-                  </ul>
-                </section>
-              ))
-            )}
-          </div>
-          <div className="upgrade-summary">
-            <div className="upgrade-summary-heading">
-              <h3>Enemy upgrades</h3>
-              {enemyPlayerName ? <span>{enemyPlayerName}</span> : null}
-            </div>
-            {enemySummarySections.length === 0 ? (
-              <p className="panel-copy">No enemy upgrades revealed yet.</p>
-            ) : (
-              enemySummarySections.map((section) => (
-                <section key={`enemy-${section.title}`} className="summary-section">
-                  <h3>{section.title}</h3>
-                  <ul>
-                    {section.lines.map((line) => (
-                      <li key={`enemy-${line}`}>{line}</li>
-                    ))}
-                  </ul>
-                </section>
-              ))
-            )}
-          </div>
+          <UpgradeSummaryBlock
+            title="My upgrades"
+            sections={summarySections}
+            emptyText="No upgrades purchased yet."
+          />
+          <UpgradeSummaryBlock
+            title="Enemy upgrades"
+            subtitle={enemyPlayerName}
+            sections={enemySummarySections}
+            emptyText="No enemy upgrades revealed yet."
+          />
         </div>
       </section>
     );
   }
+
+  const summarySections = summarizeOwnedUpgrades(ownedUpgrades);
+  const enemySummarySections = summarizeOwnedUpgrades(enemyUpgrades);
 
   return (
     <section className={`panel ${visible ? "shop-panel-expanded" : ""}`}>
@@ -316,6 +328,19 @@ export function UpgradePanel({
             </div>
           </button>
         ))}
+      </div>
+      <div className="upgrade-comparison shop-upgrade-comparison">
+        <UpgradeSummaryBlock
+          title="My upgrades"
+          sections={summarySections}
+          emptyText="No upgrades purchased yet."
+        />
+        <UpgradeSummaryBlock
+          title="Enemy upgrades"
+          subtitle={enemyPlayerName}
+          sections={enemySummarySections}
+          emptyText="No enemy upgrades revealed yet."
+        />
       </div>
       <div className="shop-actions">
         <div className="shop-status-stack">

@@ -31,6 +31,7 @@ const HAND_MULTIPLIERS: Record<string, number> = {
   "royal flush": 10,
   "five of a kind": 8,
 };
+const RANK_COMPRESSION_FACTOR = 2;
 
 interface PreviewModifiers {
   damageModifier: number;
@@ -53,6 +54,11 @@ export interface HandPreview {
 function parsePercent(effect: string) {
   const match = effect.match(/([+-]?\d+)/);
   return match ? Number(match[1]) : 0;
+}
+
+function getCompressedRankValue(rank: number) {
+  const midpoint = 8;
+  return midpoint + (rank - midpoint) / RANK_COMPRESSION_FACTOR;
 }
 
 function buildModifiers(
@@ -181,7 +187,8 @@ function evaluateConcreteHand(cards: Card[], modifiers: PreviewModifiers): HandP
 
     const totalModifier =
       (modifiers.elemental[suit] ?? 1) * modifiers.damageModifier * rankModifier;
-    const damageRank = rank + (suit === "Plasma" ? modifiers.plasmaBonusValue : 0);
+    const damageRank =
+      getCompressedRankValue(rank) + (suit === "Plasma" ? modifiers.plasmaBonusValue : 0);
     baseValues.push(damageRank * totalModifier);
   });
 

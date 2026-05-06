@@ -1567,6 +1567,34 @@ input {
   font-size: 1.14rem;
 }
 
+.talent-node-fire {
+  border-color: rgba(255, 136, 98, 0.22);
+  background:
+    radial-gradient(circle at top, rgba(255, 123, 92, 0.14), transparent 34%),
+    rgba(255, 240, 214, 0.08);
+}
+
+.talent-node-air {
+  border-color: rgba(143, 224, 255, 0.22);
+  background:
+    radial-gradient(circle at top, rgba(137, 223, 255, 0.14), transparent 34%),
+    rgba(255, 240, 214, 0.08);
+}
+
+.talent-node-earth {
+  border-color: rgba(137, 208, 154, 0.22);
+  background:
+    radial-gradient(circle at top, rgba(134, 211, 140, 0.14), transparent 34%),
+    rgba(255, 240, 214, 0.08);
+}
+
+.talent-node-water {
+  border-color: rgba(116, 166, 255, 0.22);
+  background:
+    radial-gradient(circle at top, rgba(122, 175, 255, 0.14), transparent 34%),
+    rgba(255, 240, 214, 0.08);
+}
+
 .debug-stack {
   grid-column: 1 / -1;
   display: grid;
@@ -1962,6 +1990,10 @@ input {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
+}
+
+.shop-upgrade-comparison {
+  margin-top: 1.25rem;
 }
 
 .upgrade-summary-heading {
