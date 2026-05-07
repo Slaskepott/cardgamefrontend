@@ -14,9 +14,10 @@ const statLabels: Record<string, string> = {
   cards_discarded: "Cards discarded",
   full_hand_of_a_kind_draws: "Five of a rank draws",
   shop_rerolls_used: "Shop rerolls",
-  max_armor_in_game: "Best armor",
-  max_health_in_game: "Best health",
-  max_single_hand_damage: "Best single-hand damage",
+  max_armor_in_game: "Highest armor in a game",
+  max_health_in_game: "Highest health in a game",
+  max_single_hand_damage: "Highest single-hand damage",
+  max_win_health_remaining_pct: "Win with health remaining",
   earth_flushes: "Earth flushes",
   fire_flushes: "Fire flushes",
   water_flushes: "Water flushes",
@@ -38,6 +39,7 @@ const statIcons: Record<string, string> = {
   max_armor_in_game: "🛡️",
   max_health_in_game: "❤️",
   max_single_hand_damage: "⚔️",
+  max_win_health_remaining_pct: "💚",
   earth_flushes: "🌿",
   fire_flushes: "🔥",
   water_flushes: "💧",
@@ -215,11 +217,17 @@ export function AchievementsPage({
                         ? Math.min(100, (achievement.progress / achievement.target) * 100)
                         : 0;
                     const tierClass = getTierClass(index);
+                    const edgeClass =
+                      index === 0
+                        ? " align-left"
+                        : index === group.achievements.length - 1
+                          ? " align-right"
+                          : "";
                     return (
                       <button
                         key={achievement.id}
                         type="button"
-                        className={`achievement-icon-button ${tierClass}${
+                        className={`achievement-icon-button ${tierClass}${edgeClass}${
                           achievement.unlocked ? " unlocked" : ""
                         }`}
                         onClick={() => setSelectedAchievement(achievement)}
