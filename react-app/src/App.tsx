@@ -14,6 +14,7 @@ import { MarketingHero } from "./components/MarketingHero";
 import { MatchResultOverlay } from "./components/MatchResultOverlay";
 import { PlayHubPanel } from "./components/PlayHubPanel";
 import { RulebookPage } from "./components/RulebookPage";
+import { RelicPanel } from "./components/RelicPanel";
 import { StatusPanel } from "./components/StatusPanel";
 import { TalentTreePage } from "./components/TalentTreePage";
 import { TutorialPage } from "./components/TutorialPage";
@@ -585,7 +586,7 @@ export default function App() {
         </section>
       ) : hasChosenAccess ? (
         <section className="content-grid">
-          {!session.shopOpen ? (
+          {!session.shopOpen && session.phase !== "relic" ? (
             <BattleStatus
               players={session.battlePlayers}
               currentTurn={session.currentTurn}
@@ -600,7 +601,7 @@ export default function App() {
               }}
             />
           ) : null}
-          {!session.shopOpen ? (
+          {!session.shopOpen && session.phase !== "relic" ? (
             <GameBoard
               cards={session.playerHand}
               battleMoment={session.battleMoment}
@@ -621,10 +622,28 @@ export default function App() {
               disabled={!session.isPlayersTurn}
             />
           ) : null}
+          {session.phase === "relic" ? (
+            <RelicPanel
+              relics={session.relicOffers}
+              ownedRelics={session.ownedRelics}
+              enemyRelics={session.enemyRelics}
+              enemyPlayerName={session.enemyPlayerId}
+              busy={session.busy}
+              waitingText={session.relicStatusText}
+              waitingOnYou={session.relicWaitingOnYou}
+              onChooseRelic={session.handleChooseRelic}
+              onLeaveLobby={async () => {
+                await session.handleLeaveLobby();
+                setView("lobby");
+              }}
+            />
+          ) : (
             <UpgradePanel
               upgrades={session.shopUpgrades}
               ownedUpgrades={session.ownedUpgrades}
               enemyUpgrades={session.enemyUpgrades}
+              ownedRelics={session.ownedRelics}
+              enemyRelics={session.enemyRelics}
               enemyPlayerName={session.enemyPlayerId}
               playerGold={session.playerGold}
               goldAttentionActive={session.goldAttentionActive}
@@ -642,6 +661,7 @@ export default function App() {
                 setView("lobby");
               }}
             />
+          )}
           {debugVisible ? (
             <section className="debug-stack">
               <StatusPanel

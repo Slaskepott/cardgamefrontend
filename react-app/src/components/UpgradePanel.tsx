@@ -1,9 +1,11 @@
-﻿import type { Upgrade } from "../types/game";
+import type { Relic, Upgrade } from "../types/game";
 
 interface UpgradePanelProps {
   upgrades: Upgrade[];
   ownedUpgrades: Upgrade[];
   enemyUpgrades: Upgrade[];
+  ownedRelics: Relic[];
+  enemyRelics: Relic[];
   enemyPlayerName?: string | null;
   playerGold: number;
   goldAttentionActive: boolean;
@@ -61,6 +63,7 @@ interface UpgradeSummaryBlockProps {
   title: string;
   subtitle?: string | null;
   sections: UpgradeSummarySection[];
+  relics: Relic[];
   emptyText: string;
 }
 
@@ -200,6 +203,7 @@ function UpgradeSummaryBlock({
   title,
   subtitle,
   sections,
+  relics,
   emptyText,
 }: UpgradeSummaryBlockProps) {
   return (
@@ -208,19 +212,33 @@ function UpgradeSummaryBlock({
         <h3>{title}</h3>
         {subtitle ? <span>{subtitle}</span> : null}
       </div>
-      {sections.length === 0 ? (
+      {sections.length === 0 && relics.length === 0 ? (
         <p className="panel-copy">{emptyText}</p>
       ) : (
-        sections.map((section) => (
-          <section key={`${title}-${section.title}`} className="summary-section">
-            <h3>{section.title}</h3>
-            <ul>
-              {section.lines.map((line) => (
-                <li key={`${title}-${line}`}>{line}</li>
-              ))}
-            </ul>
-          </section>
-        ))
+        <>
+          {sections.map((section) => (
+            <section key={`${title}-${section.title}`} className="summary-section">
+              <h3>{section.title}</h3>
+              <ul>
+                {section.lines.map((line) => (
+                  <li key={`${title}-${line}`}>{line}</li>
+                ))}
+              </ul>
+            </section>
+          ))}
+          {relics.length > 0 ? (
+            <section className="summary-section">
+              <h3>Relics</h3>
+              <ul>
+                {relics.map((relic) => (
+                  <li key={`${title}-${relic.id}`}>
+                    <strong>{relic.name}:</strong> {relic.description}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+        </>
       )}
     </div>
   );
@@ -230,6 +248,8 @@ export function UpgradePanel({
   upgrades,
   ownedUpgrades,
   enemyUpgrades,
+  ownedRelics,
+  enemyRelics,
   enemyPlayerName,
   playerGold,
   goldAttentionActive,
@@ -256,12 +276,14 @@ export function UpgradePanel({
           <UpgradeSummaryBlock
             title="My upgrades"
             sections={summarySections}
+            relics={ownedRelics}
             emptyText="No upgrades purchased yet."
           />
           <UpgradeSummaryBlock
             title="Enemy upgrades"
             subtitle={enemyPlayerName}
             sections={enemySummarySections}
+            relics={enemyRelics}
             emptyText="No enemy upgrades revealed yet."
           />
         </div>
@@ -333,12 +355,14 @@ export function UpgradePanel({
         <UpgradeSummaryBlock
           title="My upgrades"
           sections={summarySections}
+          relics={ownedRelics}
           emptyText="No upgrades purchased yet."
         />
         <UpgradeSummaryBlock
           title="Enemy upgrades"
           subtitle={enemyPlayerName}
           sections={enemySummarySections}
+          relics={enemyRelics}
           emptyText="No enemy upgrades revealed yet."
         />
       </div>

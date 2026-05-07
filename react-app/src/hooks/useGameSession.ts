@@ -10,6 +10,7 @@ import type { User } from "firebase/auth";
 import { makeCardKey } from "../components/GameBoard";
 import {
   buyUpgrade,
+  chooseRelic,
   continueFromShop,
   createGame,
   discardCards,
@@ -35,8 +36,11 @@ import type {
   MatchOverMessage,
   MatchStateMessage,
   NewHandMessage,
+  OpenRelicsMessage,
   OpenStoreMessage,
   PlayersUpdatedMessage,
+  Relic,
+  RelicStatusMessage,
   ShopStatusMessage,
   StartBotGameResponse,
   Upgrade,
@@ -97,6 +101,18 @@ function isShopStatusMessage(
   return "type" in message && message.type === "shop_status";
 }
 
+function isRelicStatusMessage(
+  message: GameSocketMessage,
+): message is RelicStatusMessage {
+  return "type" in message && message.type === "relic_status";
+}
+
+function isOpenRelicsMessage(
+  message: GameSocketMessage,
+): message is OpenRelicsMessage {
+  return "type" in message && message.type === "open_relics";
+}
+
 function isMatchStateMessage(
   message: GameSocketMessage,
 ): message is MatchStateMessage {
@@ -145,7 +161,10 @@ export function useGameSession(currentUser: User | null) {
   const [shopUpgrades, setShopUpgrades] = useState<Upgrade[]>([]);
   const [shopRerollsRemaining, setShopRerollsRemaining] = useState(0);
   const [shopWaitingPlayers, setShopWaitingPlayers] = useState<string[]>([]);
-  const [phase, setPhase] = useState<"waiting" | "battle" | "shop" | "match_over">("waiting");
+  const [relicOffers, setRelicOffers] = useState<Relic[]>([]);
+  const [relicWaitingPlayers, setRelicWaitingPlayers] = useState<string[]>([]);
+  const [playerRelics, setPlayerRelics] = useState<Record<string, Relic[]>>({});
+  const [phase, setPhase] = useState<"waiting" | "battle" | "shop" | "relic" | "match_over">("waiting");
   const [isBotMatch, setIsBotMatch] = useState(false);
   const [battleDeadlineAt, setBattleDeadlineAt] = useState<number | null>(null);
   const [shopDeadlines, setShopDeadlines] = useState<Record<string, number>>({});
@@ -316,6 +335,10 @@ export function useGameSession(currentUser: User | null) {
     setBattleDeadlineAt(message.battle_deadline_at);
     setShopDeadlines(message.shop_deadlines ?? {});
     setShopWaitingPlayers(message.waiting_players ?? []);
+    setRelicWaitingPlayers(message.relic_waiting_players ?? []);
+    if (message.relics_by_player) {
+      setPlayerRelics(message.relics_by_player);
+    }
     if (message.phase !== "match_over") {
       setMatchResult(null);
     }
@@ -323,6 +346,10 @@ export function useGameSession(currentUser: User | null) {
       clearWindowTimeout(shopOpenTimeoutRef);
       setShopOpen(false);
       setShopUpgrades([]);
+      setRelicOffers([]);
+    }
+    if (message.phase !== "relic") {
+      setRelicOffers([]);
     }
   }
 
@@ -383,6 +410,7 @@ export function useGameSession(currentUser: User | null) {
     setIsBotMatch(Boolean(response.is_bot_match));
     setBattleDeadlineAt(response.battle_deadline_at ?? null);
     setShopDeadlines(response.shop_deadlines ?? {});
+    setPlayerRelics(response.relics_by_player ?? {});
   }
 
   function openSocket(nextGameId: string, nextPlayerId: string) {
@@ -468,11 +496,23 @@ export function useGameSession(currentUser: User | null) {
         if (isShopStatusMessage(message)) {
           setShopWaitingPlayers(message.waiting_players);
         }
+        if (isRelicStatusMessage(message)) {
+          setRelicWaitingPlayers(message.waiting_players);
+        }
+        if (isOpenRelicsMessage(message) && message.player === nextPlayerId) {
+          clearWindowTimeout(shopOpenTimeoutRef);
+          setShopOpen(false);
+          setShopUpgrades([]);
+          setRelicOffers(message.relics);
+          setRelicWaitingPlayers(message.waiting_players ?? []);
+        }
         if (isMatchOverMessage(message)) {
           setMatchResult(message);
           setPhase("match_over");
           setShopOpen(false);
           setShopUpgrades([]);
+          setRelicOffers([]);
+          setRelicWaitingPlayers([]);
           setShopWaitingPlayers([]);
           setCurrentTurn(null);
           setPlayerWins((current) => ({
@@ -509,6 +549,26 @@ export function useGameSession(currentUser: User | null) {
             ...current,
             [message.player]: message.upgrades,
           }));
+          if (message.relics) {
+            setPlayerRelics((current) => ({
+              ...current,
+              [message.player]: message.relics ?? [],
+            }));
+          }
+        }
+        if (isHandPlayedMessage(message)) {
+          if (message.armor_update) {
+            setPlayerArmor((current) => ({
+              ...current,
+              ...message.armor_update,
+            }));
+          }
+          if (message.armor_reduction_update) {
+            setPlayerArmorReductionPct((current) => ({
+              ...current,
+              ...message.armor_reduction_update,
+            }));
+          }
         }
       },
     });
@@ -670,6 +730,9 @@ export function useGameSession(currentUser: User | null) {
       if (typeof response.remaining_discards === "number") {
         setRemainingDiscards(response.remaining_discards);
       }
+      if (typeof response.gold === "number") {
+        setPlayerGold(response.gold);
+      }
       setSelectedCards([]);
       pushFeedEntry(`${playerId} discarded cards.`);
     } catch (error) {
@@ -793,6 +856,12 @@ export function useGameSession(currentUser: User | null) {
         setShopUpgrades(response.upgrades);
       }
       setShopRerollsRemaining(response.rerolls_remaining ?? 0);
+      if (typeof response.health === "number" && playerId) {
+        setPlayerHealth((current) => ({
+          ...current,
+          [playerId]: response.health ?? current[playerId] ?? 100,
+        }));
+      }
       pushFeedEntry("Shop rerolled.");
     } catch (error) {
       pushFeedEntry(error instanceof Error ? error.message : "Shop reroll failed.");
@@ -832,6 +901,7 @@ export function useGameSession(currentUser: User | null) {
       setPlayerArmor({});
       setPlayerArmorReductionPct({});
       setPlayerUpgrades({});
+      setPlayerRelics({});
       setRemainingDiscards(1);
       setPlayerGold(0);
       setGoldAttentionActive(false);
@@ -847,8 +917,31 @@ export function useGameSession(currentUser: User | null) {
       setShopUpgrades([]);
       setShopRerollsRemaining(0);
       setShopWaitingPlayers([]);
+      setRelicOffers([]);
+      setRelicWaitingPlayers([]);
       setWebsocketConnected(false);
       setFeedEntries(["Returned to lobby."]);
+      setBusy(false);
+    }
+  }
+
+  async function handleChooseRelic(relicId: string) {
+    if (!gameId || !playerId) {
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const response = await chooseRelic(gameId, playerId, relicId);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      setRelicOffers([]);
+      setRelicWaitingPlayers(response.waiting_players ?? []);
+      pushFeedEntry("Relic chosen.");
+    } catch (error) {
+      pushFeedEntry(error instanceof Error ? error.message : "Relic choice failed.");
+    } finally {
       setBusy(false);
     }
   }
@@ -864,6 +957,8 @@ export function useGameSession(currentUser: User | null) {
     playerId && players.length > 1 ? players.find((name) => name !== playerId) ?? null : null;
   const ownedUpgrades = playerId ? playerUpgrades[playerId] ?? [] : [];
   const enemyUpgrades = enemyPlayerId ? playerUpgrades[enemyPlayerId] ?? [] : [];
+  const ownedRelics = playerId ? playerRelics[playerId] ?? [] : [];
+  const enemyRelics = enemyPlayerId ? playerRelics[enemyPlayerId] ?? [] : [];
   const battlePlayers = players.map((name) => ({
     id: name,
     avatar: playerAvatars[name] ?? "ðŸ‘¤",
@@ -883,6 +978,15 @@ export function useGameSession(currentUser: User | null) {
     ? "The game is waiting on you"
     : shopOtherPlayers.length > 0
       ? `Waiting for these players: ${shopOtherPlayers.join(", ")}`
+      : "Waiting for other players";
+  const relicOtherPlayers = relicWaitingPlayers.filter((id) => id !== playerId);
+  const relicWaitingOnYou = Boolean(
+    playerId && relicWaitingPlayers.includes(playerId) && relicOtherPlayers.length === 0,
+  );
+  const relicStatusText = relicWaitingOnYou
+    ? "The game is waiting on you"
+    : relicOtherPlayers.length > 0
+      ? `Waiting for these players: ${relicOtherPlayers.join(", ")}`
       : "Waiting for other players";
 
   const battleTimerSeconds =
@@ -920,6 +1024,9 @@ export function useGameSession(currentUser: User | null) {
     shopRerollsRemaining,
     ownedUpgrades,
     enemyUpgrades,
+    ownedRelics,
+    enemyRelics,
+    relicOffers,
     enemyPlayerId,
     phase,
     isBotMatch,
@@ -939,6 +1046,8 @@ export function useGameSession(currentUser: User | null) {
     shopTimerSeconds,
     shopStatusText,
     shopWaitingOnYou,
+    relicStatusText,
+    relicWaitingOnYou,
     setDraftPlayerId: setDraftPlayerId as DraftSetter,
     handleDraftGameIdChange,
     handleCreateGame,
@@ -951,6 +1060,7 @@ export function useGameSession(currentUser: User | null) {
     handleBuyUpgrade,
     handleRerollShop,
     handleContinueFromShop,
+    handleChooseRelic,
     handleLeaveLobby,
   };
 }

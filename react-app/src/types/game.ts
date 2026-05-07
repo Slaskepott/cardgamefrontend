@@ -14,6 +14,13 @@ export interface Upgrade {
   cost: number;
 }
 
+export interface Relic {
+  id: string;
+  name: string;
+  theme: string;
+  description: string;
+}
+
 export interface BattleMoment {
   attacker: string;
   target: string | null;
@@ -107,6 +114,7 @@ export interface ApplyUpgradesMessage {
   armor: number;
   armor_reduction_pct: number;
   upgrades: Upgrade[];
+  relics?: Relic[];
 }
 
 export interface OpenStoreMessage {
@@ -124,13 +132,27 @@ export interface ShopStatusMessage {
   waiting_players: string[];
 }
 
+export interface RelicStatusMessage {
+  type: "relic_status";
+  waiting_players: string[];
+}
+
+export interface OpenRelicsMessage {
+  type: "open_relics";
+  player: string;
+  relics: Relic[];
+  waiting_players?: string[];
+}
+
 export interface MatchStateMessage {
   type: "match_state";
-  phase: "waiting" | "battle" | "shop" | "match_over";
+  phase: "waiting" | "battle" | "shop" | "relic" | "match_over";
   current_turn: string | null;
   battle_deadline_at: number | null;
   shop_deadlines: Record<string, number>;
   waiting_players: string[];
+  relic_waiting_players?: string[];
+  relics_by_player?: Record<string, Relic[]>;
   wins_to_clinch: number;
   best_of: number;
   match_winner: string | null;
@@ -163,6 +185,8 @@ export interface HandPlayedMessage {
   damage: number;
   health_update: HealthUpdate;
   max_health_update: HealthUpdate;
+  armor_update?: HealthUpdate;
+  armor_reduction_update?: HealthUpdate;
   score_update: ScoreUpdate;
   next_player: string;
   hand_type: string;
@@ -209,6 +233,8 @@ export type GameSocketMessage =
   | HandUpdatedMessage
   | OpenStoreMessage
   | ShopStatusMessage
+  | RelicStatusMessage
+  | OpenRelicsMessage
   | MatchStateMessage
   | MatchOverMessage
   | ApplyUpgradesMessage
@@ -238,10 +264,11 @@ export interface PlayersResponse {
   players?: string[];
   next_player?: string | null;
   avatars?: Record<string, string>;
-  phase?: "waiting" | "battle" | "shop" | "match_over";
+  phase?: "waiting" | "battle" | "shop" | "relic" | "match_over";
   battle_deadline_at?: number | null;
   shop_deadlines?: Record<string, number>;
   is_bot_match?: boolean;
+  relics_by_player?: Record<string, Relic[]>;
   error?: string;
 }
 
@@ -269,6 +296,7 @@ export interface DiscardResponse extends ActionResponse {
   discarded?: Card[];
   new_hand?: Card[];
   remaining_discards?: number;
+  gold?: number;
 }
 
 export interface PlayHandResponse extends ActionResponse {
@@ -291,11 +319,16 @@ export interface ContinueFromShopResponse extends ActionResponse {
 export interface RerollShopResponse extends ActionResponse {
   upgrades?: Upgrade[];
   rerolls_remaining?: number;
+  health?: number;
 }
 
 export interface HeartbeatResponse extends ActionResponse {
-  phase?: "waiting" | "battle" | "shop" | "match_over";
+  phase?: "waiting" | "battle" | "shop" | "relic" | "match_over";
   resolved?: boolean;
+}
+
+export interface ChooseRelicResponse extends ActionResponse {
+  waiting_players?: string[];
 }
 
 export interface MetaProgressResponse extends MetaProgress {

@@ -5736,3 +5736,107 @@ input::placeholder {
     grid-template-columns: 1fr;
   }
 }
+
+.relic-panel {
+  gap: 1.5rem;
+}
+
+.relic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.relic-card {
+  position: relative;
+  min-height: 220px;
+  padding: 1.4rem 1.2rem;
+  border-radius: 1.35rem;
+  border: 1px solid rgba(156, 194, 255, 0.28);
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.16), transparent 55%),
+    linear-gradient(180deg, rgba(16, 28, 48, 0.96), rgba(10, 18, 34, 0.98));
+  box-shadow:
+    0 18px 50px rgba(5, 10, 22, 0.45),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  color: #eef4ff;
+  display: grid;
+  align-content: start;
+  gap: 0.8rem;
+  text-align: left;
+}
+
+.relic-card strong {
+  font-size: 1.2rem;
+}
+
+.relic-card span:last-child {
+  color: rgba(226, 235, 255, 0.82);
+  line-height: 1.55;
+}
+
+.relic-card-crest {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 999px;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.9), rgba(255, 214, 112, 0.85));
+  box-shadow: 0 0 30px rgba(255, 209, 92, 0.28);
+}
+
+.relic-theme-chaos {
+  border-color: rgba(255, 160, 76, 0.48);
+  box-shadow: 0 18px 50px rgba(5, 10, 22, 0.45), 0 0 42px rgba(255, 145, 71, 0.2);
+}
+
+.relic-theme-bulwark {
+  border-color: rgba(131, 203, 255, 0.46);
+  box-shadow: 0 18px 50px rgba(5, 10, 22, 0.45), 0 0 42px rgba(93, 179, 255, 0.18);
+}
+
+.relic-theme-greed {
+  border-color: rgba(250, 212, 94, 0.46);
+  box-shadow: 0 18px 50px rgba(5, 10, 22, 0.45), 0 0 42px rgba(255, 209, 69, 0.18);
+}
+
+.relic-theme-wild {
+  border-color: rgba(201, 137, 255, 0.5);
+  box-shadow: 0 18px 50px rgba(5, 10, 22, 0.45), 0 0 42px rgba(177, 117, 255, 0.22);
+}
+
+.relic-theme-flow {
+  border-color: rgba(104, 224, 219, 0.5);
+  box-shadow: 0 18px 50px rgba(5, 10, 22, 0.45), 0 0 42px rgba(88, 216, 227, 0.22);
+}
+
+.relic-theme-excess,
+.relic-theme-plasma {
+  border-color: rgba(133, 152, 255, 0.48);
+  box-shadow: 0 18px 50px rgba(5, 10, 22, 0.45), 0 0 42px rgba(123, 134, 255, 0.2);
+}
+
+.relic-summary-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.relic-summary-list li {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.relic-summary-list span,
+.relic-summary-list li {
+  color: rgba(224, 233, 251, 0.84);
+}
+
+.relic-picked-state {
+  display: grid;
+  place-items: center;
+  min-height: 8rem;
+  border-radius: 1rem;
+  border: 1px dashed rgba(146, 175, 234, 0.28);
+  background: rgba(8, 16, 28, 0.45);
+}

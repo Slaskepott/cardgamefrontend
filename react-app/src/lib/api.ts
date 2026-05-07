@@ -3,6 +3,7 @@ import type {
   ActionResponse,
   BuyUpgradeResponse,
   ContinueFromShopResponse,
+  ChooseRelicResponse,
   CreateGameResponse,
   DiscardResponse,
   HeartbeatResponse,
@@ -197,6 +198,17 @@ export function buyUpgrade(gameId: string, playerId: string, upgradeId: number) 
 export function continueFromShop(gameId: string, playerId: string) {
   return requestJson<ContinueFromShopResponse>(
     `/game/${gameId}/shop/continue?player_id=${encodeURIComponent(playerId)}`,
+    {
+      method: "POST",
+    },
+  );
+}
+
+export function chooseRelic(gameId: string, playerId: string, relicId: string) {
+  return requestJson<ChooseRelicResponse>(
+    `/game/${gameId}/relic/choose?player_id=${encodeURIComponent(
+      playerId,
+    )}&relic_id=${encodeURIComponent(relicId)}`,
     {
       method: "POST",
     },
