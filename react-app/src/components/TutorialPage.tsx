@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Card } from "../types/game";
 import { buildHandPreview } from "../lib/handPreview";
+import { launchVictoryConfetti } from "../lib/confetti";
 
 interface TutorialPageProps {
   onBackToLobby: () => void;
@@ -183,6 +184,12 @@ export function TutorialPage({ onBackToLobby }: TutorialPageProps) {
     () => buildHandPreview(discardImproved ? improvedDiscardHand : weakDiscardHand, [], null, []),
     [discardImproved],
   );
+
+  useEffect(() => {
+    if (step === 4) {
+      launchVictoryConfetti();
+    }
+  }, [step]);
 
   return (
     <section className="panel account-page-panel tutorial-page">

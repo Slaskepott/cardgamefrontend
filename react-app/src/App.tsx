@@ -6,13 +6,13 @@ import { BattleStatus } from "./components/BattleStatus";
 import { BootSplash } from "./components/BootSplash";
 import { AvailableLobbies } from "./components/AvailableLobbies";
 import { AuthPanel } from "./components/AuthPanel";
-import { BotMatchPanel } from "./components/BotMatchPanel";
 import { EventFeed } from "./components/EventFeed";
 import { GameBoard } from "./components/GameBoard";
-import { GameSetupForm } from "./components/GameSetupForm";
 import { LevelUpToast } from "./components/LevelUpToast";
 import { LevelProgressionModal } from "./components/LevelProgressionModal";
+import { MarketingHero } from "./components/MarketingHero";
 import { MatchResultOverlay } from "./components/MatchResultOverlay";
+import { PlayHubPanel } from "./components/PlayHubPanel";
 import { RulebookPage } from "./components/RulebookPage";
 import { StatusPanel } from "./components/StatusPanel";
 import { TalentTreePage } from "./components/TalentTreePage";
@@ -37,8 +37,10 @@ interface LevelUpEvent {
 
 export default function App() {
   type AccountViewTarget = "lobby" | "achievements" | "talents" | "tutorial" | "rulebook";
+  type EntryStage = "hero" | "hub";
   const [bootProgress, setBootProgress] = useState(0);
   const [bootComplete, setBootComplete] = useState(false);
+  const [entryStage, setEntryStage] = useState<EntryStage>("hero");
   const [debugVisible, setDebugVisible] = useState(false);
   const [view, setView] = useState<
     "lobby" | "achievements" | "talents" | "tutorial" | "rulebook" | "game"
@@ -400,6 +402,19 @@ export default function App() {
     return <BootSplash progress={bootProgress} />;
   }
 
+  if (entryStage === "hero") {
+    return (
+      <main className="app-shell marketing-shell">
+        <MarketingHero
+          onEnter={() => {
+            setEntryStage("hub");
+            setView("lobby");
+          }}
+        />
+      </main>
+    );
+  }
+
   return (
     <main className="app-shell">
       {view !== "game" ? (
@@ -407,7 +422,10 @@ export default function App() {
           <button
             type="button"
             className="logo-home-button"
-            onClick={() => setView("lobby")}
+            onClick={() => {
+              setEntryStage("hub");
+              setView("lobby");
+            }}
             aria-label="Go to join lobby"
           >
             <h1>Slaskecards</h1>
@@ -479,8 +497,8 @@ export default function App() {
       />
 
       {hasChosenAccess && view === "lobby" ? (
-        <section className="content-grid lobby-grid">
-          <GameSetupForm
+        <section className="content-grid lobby-grid landing-hub-grid">
+          <PlayHubPanel
             gameId={session.draftGameId}
             gameIdError={session.gameIdError}
             playerId={session.draftPlayerId}
@@ -502,6 +520,11 @@ export default function App() {
                 setView("game");
               }
             }}
+            onStartBotMatch={async (difficulty) => {
+              if (await session.handleStartBotMatch(difficulty)) {
+                setView("game");
+              }
+            }}
             busy={session.busy}
           />
           <AvailableLobbies
@@ -511,14 +534,6 @@ export default function App() {
             onJoinLobby={async (selectedGameId) => {
               session.handleDraftGameIdChange(selectedGameId);
               if (await session.handleJoinGame(selectedGameId, session.draftPlayerId)) {
-                setView("game");
-              }
-            }}
-          />
-          <BotMatchPanel
-            busy={session.busy}
-            onStartBotMatch={async (difficulty) => {
-              if (await session.handleStartBotMatch(difficulty)) {
                 setView("game");
               }
             }}

@@ -14,9 +14,9 @@ export function AvailableLobbies({
   onStartTutorial,
 }: AvailableLobbiesProps) {
   return (
-    <section className="panel lobby-panel">
+    <section className="panel lobby-panel available-lobbies-panel">
       <p className="eyebrow">Available lobbies</p>
-      <h2>Join game</h2>
+      <h2>Open lobbies and tutorial</h2>
 
       <button
         type="button"

@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import type { MatchOverMessage } from "../types/game";
+import { launchVictoryConfetti } from "../lib/confetti";
 
 interface MatchResultOverlayProps {
   matchResult: MatchOverMessage;
@@ -19,6 +21,10 @@ export function MatchResultOverlay({
   playerId,
   onLeaveLobby,
 }: MatchResultOverlayProps) {
+  useEffect(() => {
+    launchVictoryConfetti();
+  }, []);
+
   const botMatch = Boolean(matchResult.is_bot_match || matchResult.progression_disabled);
   const playerEntries = Object.entries(matchResult.avatars).map(([name, avatar]) => {
     const elo = matchResult.elo_changes[name] ?? {
