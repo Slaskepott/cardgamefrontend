@@ -1202,6 +1202,52 @@ input {
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
 }
 
+.achievement-group-grid {
+  margin-top: 1.1rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.achievement-group-card {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.achievement-tier-row {
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.achievement-tier-card {
+  padding: 0.85rem 0.9rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 240, 214, 0.1);
+  background: rgba(255, 255, 255, 0.035);
+  display: grid;
+  gap: 0.45rem;
+}
+
+.achievement-tier-card.unlocked {
+  border-color: rgba(255, 214, 122, 0.32);
+  background:
+    radial-gradient(circle at top, rgba(255, 232, 173, 0.14), transparent 34%),
+    rgba(255, 240, 214, 0.07);
+}
+
+.achievement-tier-card p {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 0.92rem;
+}
+
+.achievement-tier-topline {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
 .level-progression-panel,
 .level-progression-summary {
   margin-top: 1.1rem;

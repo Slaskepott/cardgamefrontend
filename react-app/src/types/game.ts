@@ -31,6 +31,7 @@ export interface DiscardMoment {
 
 export interface MetaAchievement {
   id: string;
+  stat: string;
   name: string;
   description: string;
   progress: number;
