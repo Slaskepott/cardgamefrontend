@@ -115,6 +115,8 @@ export interface OpenStoreMessage {
   upgrades: Upgrade[];
   waiting_players?: string[];
   rerolls_remaining?: number;
+  health_update?: HealthUpdate;
+  max_health_update?: HealthUpdate;
 }
 
 export interface ShopStatusMessage {
@@ -133,6 +135,7 @@ export interface MatchStateMessage {
   best_of: number;
   match_winner: string | null;
   match_end_reason: string | null;
+  is_bot_match?: boolean;
 }
 
 export interface EloChange {
@@ -238,6 +241,7 @@ export interface PlayersResponse {
   phase?: "waiting" | "battle" | "shop" | "match_over";
   battle_deadline_at?: number | null;
   shop_deadlines?: Record<string, number>;
+  is_bot_match?: boolean;
   error?: string;
 }
 

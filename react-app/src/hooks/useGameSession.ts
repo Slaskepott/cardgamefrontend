@@ -146,6 +146,7 @@ export function useGameSession(currentUser: User | null) {
   const [shopRerollsRemaining, setShopRerollsRemaining] = useState(0);
   const [shopWaitingPlayers, setShopWaitingPlayers] = useState<string[]>([]);
   const [phase, setPhase] = useState<"waiting" | "battle" | "shop" | "match_over">("waiting");
+  const [isBotMatch, setIsBotMatch] = useState(false);
   const [battleDeadlineAt, setBattleDeadlineAt] = useState<number | null>(null);
   const [shopDeadlines, setShopDeadlines] = useState<Record<string, number>>({});
   const [matchResult, setMatchResult] = useState<MatchOverMessage | null>(null);
@@ -310,6 +311,7 @@ export function useGameSession(currentUser: User | null) {
 
   function applyMatchState(message: MatchStateMessage) {
     setPhase(message.phase);
+    setIsBotMatch(Boolean(message.is_bot_match));
     setCurrentTurn(message.current_turn);
     setBattleDeadlineAt(message.battle_deadline_at);
     setShopDeadlines(message.shop_deadlines ?? {});
@@ -378,6 +380,7 @@ export function useGameSession(currentUser: User | null) {
     syncPlayers(response.players ?? [], response.avatars ?? {});
     setCurrentTurn(response.next_player ?? null);
     setPhase(response.phase ?? "waiting");
+    setIsBotMatch(Boolean(response.is_bot_match));
     setBattleDeadlineAt(response.battle_deadline_at ?? null);
     setShopDeadlines(response.shop_deadlines ?? {});
   }
@@ -448,6 +451,18 @@ export function useGameSession(currentUser: User | null) {
         if (isOpenStoreMessage(message) && message.player === nextPlayerId) {
           setShopWaitingPlayers(message.waiting_players ?? []);
           setShopRerollsRemaining(message.rerolls_remaining ?? 0);
+          if (message.health_update) {
+            setPlayerHealth((current) => ({
+              ...current,
+              ...message.health_update,
+            }));
+          }
+          if (message.max_health_update) {
+            setPlayerMaxHealth((current) => ({
+              ...current,
+              ...message.max_health_update,
+            }));
+          }
           scheduleShopOpen(message.upgrades, 1400);
         }
         if (isShopStatusMessage(message)) {
@@ -515,6 +530,7 @@ export function useGameSession(currentUser: User | null) {
 
       setGameId(normalizedGameId);
       setPlayerId(normalizedPlayerId);
+      setIsBotMatch(false);
       setMatchResult(null);
       pushFeedEntry(response.message ?? `Joined ${normalizedGameId}.`);
       await refreshPlayers(normalizedGameId);
@@ -599,6 +615,7 @@ export function useGameSession(currentUser: User | null) {
         throw new Error(response.error ?? "Failed to start bot match.");
       }
 
+      setIsBotMatch(true);
       return await enterResolvedGame(
         response.game_id,
         response.player_id,
@@ -821,6 +838,7 @@ export function useGameSession(currentUser: User | null) {
       setBattleMoment(null);
       setDiscardMoment(null);
       setPhase("waiting");
+      setIsBotMatch(false);
       setBattleDeadlineAt(null);
       setShopDeadlines({});
       setMatchResult(null);
@@ -868,9 +886,11 @@ export function useGameSession(currentUser: User | null) {
       : "Waiting for other players";
 
   const battleTimerSeconds =
-    phase === "battle" && battleDeadlineAt ? Math.max(0, Math.ceil(battleDeadlineAt - nowSeconds)) : null;
+    phase === "battle" && !isBotMatch && battleDeadlineAt
+      ? Math.max(0, Math.ceil(battleDeadlineAt - nowSeconds))
+      : null;
   const shopTimerSeconds =
-    phase === "shop" && playerId && shopDeadlines[playerId]
+    phase === "shop" && !isBotMatch && playerId && shopDeadlines[playerId]
       ? Math.max(0, Math.ceil(shopDeadlines[playerId] - nowSeconds))
       : null;
 
@@ -902,6 +922,7 @@ export function useGameSession(currentUser: User | null) {
     enemyUpgrades,
     enemyPlayerId,
     phase,
+    isBotMatch,
     battleDeadlineAt,
     shopDeadlines,
     matchResult,
