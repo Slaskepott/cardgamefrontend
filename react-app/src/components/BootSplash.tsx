@@ -24,6 +24,35 @@ function getBootStatus(progress: number) {
 export function BootSplash({ progress }: BootSplashProps) {
   return (
     <section className="boot-splash" aria-live="polite">
+      <div className="marketing-battle-scene boot-battle-scene" aria-hidden="true">
+        <div className="marketing-board-shell boot-board-shell">
+          <div className="marketing-health-lane boot-health-lane">
+            <div className="marketing-health-card enemy">
+              <span className="marketing-avatar">🤖</span>
+              <div className="marketing-health-bars">
+                <span className="marketing-player-name">Clockwork Rival</span>
+                <span className="marketing-health-bar">
+                  <span className="marketing-health-fill enemy-fill" />
+                </span>
+              </div>
+            </div>
+            <div className="marketing-battle-banner boot-battle-banner">
+              <strong>Loading duel</strong>
+              <span>{getBootStatus(progress)}</span>
+            </div>
+            <div className="marketing-health-card you">
+              <span className="marketing-avatar">🧙</span>
+              <div className="marketing-health-bars">
+                <span className="marketing-player-name">You</span>
+                <span className="marketing-health-bar">
+                  <span className="marketing-health-fill you-fill" />
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="boot-splash-stars" aria-hidden="true">
         <span className="boot-star boot-star-1" />
         <span className="boot-star boot-star-2" />
@@ -31,12 +60,6 @@ export function BootSplash({ progress }: BootSplashProps) {
         <span className="boot-star boot-star-4" />
         <span className="boot-star boot-star-5" />
         <span className="boot-star boot-star-6" />
-      </div>
-
-      <div className="boot-splash-rings" aria-hidden="true">
-        <span className="boot-ring boot-ring-1" />
-        <span className="boot-ring boot-ring-2" />
-        <span className="boot-ring boot-ring-3" />
       </div>
 
       <div className="boot-splash-copy">

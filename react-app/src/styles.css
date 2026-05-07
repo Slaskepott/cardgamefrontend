@@ -4251,10 +4251,10 @@ body {
   place-items: center;
   overflow: hidden;
   background:
-    radial-gradient(circle at 20% 20%, rgba(110, 233, 255, 0.22), transparent 24%),
-    radial-gradient(circle at 80% 18%, rgba(255, 131, 203, 0.2), transparent 24%),
-    radial-gradient(circle at 50% 80%, rgba(149, 113, 255, 0.24), transparent 28%),
-    linear-gradient(180deg, #040915 0%, #081325 38%, #0d1a31 100%);
+    radial-gradient(circle at 16% 18%, rgba(114, 220, 255, 0.22), transparent 20%),
+    radial-gradient(circle at 82% 16%, rgba(255, 188, 114, 0.18), transparent 20%),
+    radial-gradient(circle at 50% 82%, rgba(154, 112, 255, 0.22), transparent 26%),
+    linear-gradient(180deg, #061121 0%, #09192f 42%, #101735 100%);
 }
 
 .boot-splash::before,
@@ -4268,42 +4268,40 @@ body {
 .boot-splash::before {
   background:
     conic-gradient(
-      from 90deg,
+      from 180deg,
       transparent 0deg,
-      rgba(140, 219, 255, 0.14) 38deg,
-      transparent 88deg,
-      rgba(255, 190, 118, 0.08) 140deg,
-      transparent 220deg,
-      rgba(192, 153, 255, 0.12) 300deg,
+      rgba(126, 215, 255, 0.08) 38deg,
+      transparent 82deg,
+      rgba(255, 202, 112, 0.06) 154deg,
+      transparent 210deg,
+      rgba(176, 145, 255, 0.08) 308deg,
       transparent 360deg
     );
-  animation: bootSpin 12s linear infinite;
+  animation: marketingSpin 16s linear infinite;
 }
 
 .boot-splash::after {
-  background:
-    radial-gradient(circle, rgba(255, 255, 255, 0.09), transparent 38%);
-  transform: scale(1.2);
-  filter: blur(26px);
-  animation: bootPulse 2.8s ease-in-out infinite;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.08), transparent 42%);
+  transform: scale(1.1);
+  filter: blur(34px);
+  animation: marketingPulse 4.2s ease-in-out infinite;
 }
 
 .boot-splash-copy {
   position: relative;
   z-index: 2;
-  width: min(900px, calc(100% - 2rem));
-  padding: 2.6rem 2rem 2rem;
-  border-radius: 36px;
+  width: min(760px, calc(100% - 2rem));
+  padding: 2.6rem 2.2rem 2.3rem;
+  border-radius: 38px;
   text-align: center;
   background:
-    radial-gradient(circle at top, rgba(255, 255, 255, 0.1), transparent 34%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02)),
-    rgba(8, 18, 33, 0.72);
-  border: 1px solid rgba(159, 218, 255, 0.2);
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 26%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)),
+    rgba(8, 18, 33, 0.76);
+  border: 1px solid rgba(157, 220, 255, 0.16);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    0 30px 70px rgba(2, 7, 18, 0.52),
-    0 0 56px rgba(137, 212, 255, 0.12);
+    0 30px 90px rgba(1, 8, 18, 0.44);
   backdrop-filter: blur(18px);
 }
 
@@ -4319,24 +4317,24 @@ body {
 .boot-splash h1 {
   margin: 0;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(2.9rem, 7.8vw, 5.8rem);
-  letter-spacing: 0.02em;
+  font-size: clamp(2.5rem, 7vw, 5.1rem);
+  letter-spacing: 0.045em;
   text-transform: uppercase;
-  line-height: 0.96;
-  background: linear-gradient(180deg, #ffffff 0%, #ffe39a 32%, #b8deff 72%, #f6b5ff 100%);
+  line-height: 0.92;
+  background: linear-gradient(180deg, #ffffff 0%, #ffe39a 38%, #bce0ff 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   text-shadow:
-    0 0 24px rgba(151, 221, 255, 0.16),
-    0 0 48px rgba(184, 157, 255, 0.14);
+    0 0 30px rgba(151, 220, 255, 0.18),
+    0 0 48px rgba(255, 212, 122, 0.14);
   animation: bootLogoFloat 3.6s ease-in-out infinite;
 }
 
 .boot-splash-tagline {
   margin: 1rem auto 1.6rem;
-  max-width: 34rem;
-  color: rgba(228, 238, 255, 0.78);
+  max-width: 28rem;
+  color: rgba(231, 241, 255, 0.84);
   font-size: 1.02rem;
 }
 
@@ -4346,9 +4344,9 @@ body {
   border-radius: 999px;
   overflow: hidden;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015)),
     rgba(5, 10, 20, 0.82);
-  border: 1px solid rgba(147, 206, 255, 0.18);
+  border: 1px solid rgba(151, 218, 255, 0.16);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.06),
     0 0 20px rgba(112, 194, 255, 0.08);
@@ -4397,6 +4395,22 @@ body {
   pointer-events: none;
 }
 
+.boot-battle-scene {
+  opacity: 0.6;
+}
+
+.boot-board-shell {
+  transform: perspective(1600px) rotateX(10deg) scale(1.04);
+}
+
+.boot-health-lane {
+  margin-bottom: 0;
+}
+
+.boot-battle-banner {
+  min-width: 260px;
+}
+
 .boot-star,
 .boot-ring {
   position: absolute;
@@ -4424,31 +4438,15 @@ body {
 }
 
 .boot-ring-1 {
-  width: 520px;
-  height: 520px;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  animation: bootSpinReverse 20s linear infinite;
+  display: none;
 }
 
 .boot-ring-2 {
-  width: 680px;
-  height: 680px;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  animation: bootSpin 26s linear infinite;
+  display: none;
 }
 
 .boot-ring-3 {
-  width: 860px;
-  height: 860px;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  border-style: dashed;
-  animation: bootSpinReverse 34s linear infinite;
+  display: none;
 }
 
 body::before,
@@ -5589,12 +5587,13 @@ input::placeholder {
   }
 
   .boot-splash-copy {
-    padding: 2.1rem 1.2rem 1.5rem;
+    width: calc(100% - 0.2rem);
+    padding: 2rem 1.2rem 1.6rem;
   }
 
   .boot-splash h1 {
-    font-size: clamp(2.15rem, 10vw, 3.7rem);
-    letter-spacing: 0.015em;
+    font-size: clamp(2.35rem, 12vw, 4rem);
+    letter-spacing: 0.03em;
   }
 
   .boot-progress-meta {
@@ -5602,19 +5601,14 @@ input::placeholder {
     align-items: flex-start;
   }
 
-  .boot-ring-1 {
-    width: 320px;
-    height: 320px;
+  .boot-board-shell {
+    width: calc(100% - 1rem);
+    padding: 1.2rem 1rem 1.6rem;
+    transform: none;
   }
 
-  .boot-ring-2 {
-    width: 440px;
-    height: 440px;
-  }
-
-  .boot-ring-3 {
-    width: 560px;
-    height: 560px;
+  .boot-health-lane {
+    flex-direction: column;
   }
 
   .simple-header h1 {

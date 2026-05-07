@@ -76,15 +76,15 @@ function pickRandom<T>(items: T[]): T {
 
 export function generateLobbyId() {
   const prefix = pickRandom(lobbyPrefixes);
-  const place = pickRandom(lobbyPlaces);
   const mode = pickRandom(lobbyModes);
-  const suffix = Math.floor(100 + Math.random() * 900);
-  return `${prefix}-${place}-${mode}-${suffix}`;
+  const placeOrMode = Math.random() > 0.5 ? pickRandom(lobbyPlaces) : mode;
+  const suffix = Math.floor(10 + Math.random() * 90);
+  return `${prefix}-${placeOrMode}-${suffix}`;
 }
 
 export function generatePlayerName() {
   const title = pickRandom(playerTitles);
   const name = pickRandom(playerNames);
-  const suffix = Math.random() > 0.55 ? `-${pickRandom(playerSuffixes)}` : "";
+  const suffix = Math.random() > 0.78 ? `-${pickRandom(playerSuffixes)}` : "";
   return `${title}-${name}${suffix}`;
 }
