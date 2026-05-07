@@ -5332,8 +5332,8 @@ input::placeholder {
 .marketing-hero-copy h1 {
   margin: 0;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(3rem, 8vw, 6rem);
-  letter-spacing: 0.08em;
+  font-size: clamp(2.5rem, 7vw, 5.1rem);
+  letter-spacing: 0.045em;
   text-transform: uppercase;
   line-height: 0.92;
   background: linear-gradient(180deg, #ffffff 0%, #ffe39a 38%, #bce0ff 100%);
