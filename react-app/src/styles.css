@@ -4400,7 +4400,7 @@ body {
 }
 
 .boot-board-shell {
-  transform: perspective(1600px) rotateX(10deg) scale(1.04);
+  transform: perspective(1600px) rotateX(10deg) scale(1.06);
 }
 
 .boot-health-lane {
@@ -5125,6 +5125,7 @@ input::placeholder {
   place-items: center;
   opacity: 0.92;
   pointer-events: none;
+  animation: marketingSceneReveal 760ms cubic-bezier(0.18, 0.88, 0.24, 1) both;
 }
 
 .marketing-board-shell {
@@ -5140,6 +5141,7 @@ input::placeholder {
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
     0 40px 90px rgba(1, 7, 16, 0.34);
   transform: perspective(1600px) rotateX(10deg) scale(1.02);
+  animation: heroBoardSettle 820ms cubic-bezier(0.18, 0.88, 0.24, 1) both;
 }
 
 .marketing-health-lane {
@@ -5325,6 +5327,7 @@ input::placeholder {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
     0 30px 90px rgba(1, 8, 18, 0.44);
+  animation: heroCopyReveal 720ms cubic-bezier(0.18, 0.88, 0.24, 1) 120ms both;
 }
 
 .marketing-hero-copy h1 {
@@ -5466,6 +5469,39 @@ input::placeholder {
   }
   50% {
     transform: translateY(-3px);
+  }
+}
+
+@keyframes marketingSceneReveal {
+  from {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+  to {
+    opacity: 0.92;
+    transform: scale(1);
+  }
+}
+
+@keyframes heroBoardSettle {
+  from {
+    transform: perspective(1600px) rotateX(10deg) scale(1.08) translateY(18px);
+    filter: blur(4px);
+  }
+  to {
+    transform: perspective(1600px) rotateX(10deg) scale(1.02) translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes heroCopyReveal {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 

@@ -47,3 +47,42 @@ export function launchVictoryConfetti() {
     activeBurstTimer = null;
   }, 280);
 }
+
+export function launchIntroConfetti() {
+  clearBurstTimer();
+
+  confetti({
+    particleCount: 90,
+    spread: 95,
+    startVelocity: 34,
+    gravity: 0.75,
+    ticks: 220,
+    scalar: 0.95,
+    zIndex: 35,
+    origin: { x: 0.5, y: 0.48 },
+  });
+
+  activeBurstTimer = window.setTimeout(() => {
+    confetti({
+      particleCount: 55,
+      spread: 72,
+      startVelocity: 26,
+      gravity: 0.82,
+      ticks: 180,
+      scalar: 0.88,
+      zIndex: 35,
+      origin: { x: 0.28, y: 0.56 },
+    });
+    confetti({
+      particleCount: 55,
+      spread: 72,
+      startVelocity: 26,
+      gravity: 0.82,
+      ticks: 180,
+      scalar: 0.88,
+      zIndex: 35,
+      origin: { x: 0.72, y: 0.56 },
+    });
+    activeBurstTimer = null;
+  }, 180);
+}

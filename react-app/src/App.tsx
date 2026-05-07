@@ -19,6 +19,7 @@ import { TalentTreePage } from "./components/TalentTreePage";
 import { TutorialPage } from "./components/TutorialPage";
 import { UpgradePanel } from "./components/UpgradePanel";
 import { apiBaseUrl } from "./lib/config";
+import { launchIntroConfetti } from "./lib/confetti";
 import {
   getMetaProgress,
   listLobbies,
@@ -110,6 +111,12 @@ export default function App() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (bootComplete && entryStage === "hero") {
+      launchIntroConfetti();
+    }
+  }, [bootComplete, entryStage]);
 
   useEffect(() => {
     return onAuthStateChanged(auth, (user) => {
