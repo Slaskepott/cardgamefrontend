@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import type { MetaAchievement, MetaProgress } from "../types/game";
 
 interface AchievementsPageProps {
@@ -26,6 +27,27 @@ const statLabels: Record<string, string> = {
   elo_rating: "Elo rating",
 };
 
+const statIcons: Record<string, string> = {
+  hands_played: "🃏",
+  games_won: "👑",
+  games_lost: "🪦",
+  damage_dealt: "💥",
+  cards_discarded: "🗑️",
+  full_hand_of_a_kind_draws: "🎲",
+  shop_rerolls_used: "🎁",
+  max_armor_in_game: "🛡️",
+  max_health_in_game: "❤️",
+  max_single_hand_damage: "⚔️",
+  earth_flushes: "🌿",
+  fire_flushes: "🔥",
+  water_flushes: "💧",
+  air_flushes: "💨",
+  straight_flushes_played: "🌈",
+  royal_flushes_played: "👸",
+  upgrades_bought: "✨",
+  elo_rating: "🏆",
+};
+
 const spotlightStatOrder = [
   "hands_played",
   "games_won",
@@ -37,29 +59,40 @@ const spotlightStatOrder = [
   "upgrades_bought",
 ];
 
+function getTierClass(index: number) {
+  if (index === 0) {
+    return "bronze";
+  }
+  if (index === 1) {
+    return "silver";
+  }
+  return "gold";
+}
+
 function groupAchievements(achievements: MetaAchievement[], stats: Record<string, number>) {
   const grouped = new Map<
     string,
     {
       stat: string;
       label: string;
+      icon: string;
       currentValue: number;
       achievements: MetaAchievement[];
     }
   >();
 
   for (const achievement of achievements) {
-    const stat = achievement.stat;
-    const existing = grouped.get(stat);
+    const existing = grouped.get(achievement.stat);
     if (existing) {
       existing.achievements.push(achievement);
       continue;
     }
 
-    grouped.set(stat, {
-      stat,
-      label: statLabels[stat] ?? stat,
-      currentValue: stats[stat] ?? 0,
+    grouped.set(achievement.stat, {
+      stat: achievement.stat,
+      label: statLabels[achievement.stat] ?? achievement.stat,
+      icon: statIcons[achievement.stat] ?? "✨",
+      currentValue: stats[achievement.stat] ?? 0,
       achievements: [achievement],
     });
   }
@@ -83,6 +116,13 @@ export function AchievementsPage({
   metaProgress,
   onOpenProgression,
 }: AchievementsPageProps) {
+  const [selectedAchievement, setSelectedAchievement] = useState<MetaAchievement | null>(null);
+
+  const achievementGroups = useMemo(
+    () => groupAchievements(metaProgress?.achievements ?? [], metaProgress?.stats ?? {}),
+    [metaProgress],
+  );
+
   if (!metaProgress) {
     return (
       <section className="panel account-page-panel">
@@ -93,99 +133,183 @@ export function AchievementsPage({
     );
   }
 
-  const achievementGroups = groupAchievements(metaProgress.achievements, metaProgress.stats);
   const spotlightStats = spotlightStatOrder
     .map((key) => [key, metaProgress.stats[key] ?? 0] as const)
     .filter(([, value]) => value > 0)
     .slice(0, 6);
 
   return (
-    <section className="panel account-page-panel achievements-page-panel">
-      <div className="section-header">
-        <div>
-          <p className="eyebrow">Account</p>
-          <h2>Achievements</h2>
-          <p className="panel-copy">
-            Grind progress, stack account experience, and chase the weird cards waiting at later
-            level milestones.
-          </p>
+    <>
+      <section className="panel account-page-panel achievements-page-panel">
+        <div className="section-header">
+          <div>
+            <p className="eyebrow">Account</p>
+            <h2>Achievements</h2>
+            <p className="panel-copy">
+              Grind progress, stack account experience, and chase the weird cards waiting at later
+              level milestones.
+            </p>
+          </div>
+          <div className="battle-metrics">
+            <span>Level {metaProgress.level}</span>
+            <span>{metaProgress.achievement_count} unlocked</span>
+            <span>{metaProgress.available_talent_points} talent points ready</span>
+          </div>
         </div>
-        <div className="battle-metrics">
-          <span>Level {metaProgress.level}</span>
-          <span>{metaProgress.achievement_count} unlocked</span>
-          <span>{metaProgress.available_talent_points} talent points ready</span>
-        </div>
-      </div>
 
-      <section className="level-progression-summary">
-        <div className="level-progression-copy">
-          <p className="eyebrow">Level progression</p>
-          <h3>Level {metaProgress.level}</h3>
-          <p className="panel-copy compact-copy">
-            {metaProgress.experience_in_level} / {metaProgress.experience_for_next_level} XP toward
-            the next level.
-          </p>
+        <section className="level-progression-summary">
+          <div className="level-progression-copy">
+            <p className="eyebrow">Level progression</p>
+            <h3>Level {metaProgress.level}</h3>
+            <p className="panel-copy compact-copy">
+              {metaProgress.experience_in_level} / {metaProgress.experience_for_next_level} XP
+              toward the next level.
+            </p>
+          </div>
+          <div className="ranked-summary-card">
+            <span className="ranked-summary-label">Ranked</span>
+            <strong>Elo {metaProgress.elo_rating}</strong>
+            <span className="ranked-summary-subtitle">
+              Climb the ladder and unlock ranked achievements.
+            </span>
+          </div>
+          <button type="button" onClick={onOpenProgression}>
+            View rewards
+          </button>
+        </section>
+
+        <div className="achievement-stats-row">
+          {spotlightStats.length > 0 ? (
+            spotlightStats.map(([statKey, value]) => (
+              <div key={statKey} className="achievement-stat-chip">
+                <strong>{value}</strong>
+                <span>{statLabels[statKey] ?? statKey}</span>
+              </div>
+            ))
+          ) : (
+            <p className="panel-copy">
+              Play a few rounds and your account history will start filling in here.
+            </p>
+          )}
         </div>
-        <div className="ranked-summary-card">
-          <span className="ranked-summary-label">Ranked</span>
-          <strong>Elo {metaProgress.elo_rating}</strong>
-          <span className="ranked-summary-subtitle">
-            Climb the ladder and unlock ranked achievements.
-          </span>
+
+        <div className="achievement-overview-grid">
+          {achievementGroups.map((group) => {
+            const completedCount = group.achievements.filter((item) => item.unlocked).length;
+            return (
+              <article key={group.stat} className="meta-achievement-card achievement-track-card">
+                <div className="achievement-track-head">
+                  <div>
+                    <p className="achievement-track-label">{group.label}</p>
+                    <strong>{group.currentValue}</strong>
+                  </div>
+                  <span className="achievement-track-status">
+                    {completedCount}/{group.achievements.length}
+                  </span>
+                </div>
+
+                <div className="achievement-icon-row">
+                  {group.achievements.map((achievement, index) => {
+                    const progressPercent =
+                      achievement.target > 0
+                        ? Math.min(100, (achievement.progress / achievement.target) * 100)
+                        : 0;
+                    const tierClass = getTierClass(index);
+                    return (
+                      <button
+                        key={achievement.id}
+                        type="button"
+                        className={`achievement-icon-button ${tierClass}${
+                          achievement.unlocked ? " unlocked" : ""
+                        }`}
+                        onClick={() => setSelectedAchievement(achievement)}
+                      >
+                        <span className="achievement-icon-emoji">{group.icon}</span>
+                        <span className="achievement-icon-check" aria-hidden="true">
+                          {achievement.unlocked ? "✓" : ""}
+                        </span>
+                        <span className="achievement-hover-card">
+                          <strong>{achievement.name}</strong>
+                          <span>{achievement.description}</span>
+                          <span>
+                            {achievement.progress}/{achievement.target} • {achievement.points} pt
+                          </span>
+                          <span className="achievement-hover-progress">
+                            <span style={{ width: `${progressPercent}%` }} />
+                          </span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </article>
+            );
+          })}
         </div>
-        <button type="button" onClick={onOpenProgression}>
-          View rewards
-        </button>
       </section>
 
-      <div className="achievement-stats-row">
-        {spotlightStats.length > 0 ? (
-          spotlightStats.map(([statKey, value]) => (
-            <div key={statKey} className="achievement-stat-chip">
-              <strong>{value}</strong>
-              <span>{statLabels[statKey] ?? statKey}</span>
+      {selectedAchievement ? (
+        <div className="modal-backdrop" onClick={() => setSelectedAchievement(null)}>
+          <section
+            className="panel modal-panel achievement-modal"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="modal-header">
+              <div className="section-header">
+                <div>
+                  <p className="eyebrow">Achievement</p>
+                  <h2>{selectedAchievement.name}</h2>
+                </div>
+                <button
+                  type="button"
+                  className="secondary modal-close-button"
+                  onClick={() => setSelectedAchievement(null)}
+                >
+                  Close
+                </button>
+              </div>
             </div>
-          ))
-        ) : (
-          <p className="panel-copy">
-            Play a few rounds and your account history will start filling in here.
-          </p>
-        )}
-      </div>
 
-      <div className="achievement-group-grid">
-        {achievementGroups.map((group) => (
-          <article key={group.stat} className="meta-achievement-card achievement-group-card">
-            <div className="meta-achievement-head">
-              <strong>{group.label}</strong>
-              <span>{group.currentValue}</span>
+            <div className="achievement-modal-body">
+              <div
+                className={`achievement-modal-emblem ${getTierClass(
+                  achievementGroups
+                    .find((group) => group.stat === selectedAchievement.stat)
+                    ?.achievements.findIndex((item) => item.id === selectedAchievement.id) ?? 0,
+                )}${selectedAchievement.unlocked ? " unlocked" : ""}`}
+              >
+                {statIcons[selectedAchievement.stat] ?? "✨"}
+              </div>
+
+              <div className="achievement-modal-status">
+                <span
+                  className={`achievement-completion-pill${
+                    selectedAchievement.unlocked ? " unlocked" : ""
+                  }`}
+                >
+                  {selectedAchievement.unlocked ? "Completed" : "In progress"}
+                </span>
+                <strong>
+                  {selectedAchievement.progress}/{selectedAchievement.target}
+                </strong>
+              </div>
+
+              <div className="achievement-modal-progress">
+                <div
+                  style={{
+                    width: `${Math.min(
+                      100,
+                      (selectedAchievement.progress / selectedAchievement.target) * 100,
+                    )}%`,
+                  }}
+                />
+              </div>
+
+              <p className="achievement-modal-description">{selectedAchievement.description}</p>
             </div>
-            <div className="achievement-tier-row">
-              {group.achievements.map((achievement) => {
-                const progressPercent =
-                  achievement.target > 0
-                    ? Math.min(100, (achievement.progress / achievement.target) * 100)
-                    : 0;
-                return (
-                  <div
-                    key={achievement.id}
-                    className={`achievement-tier-card${achievement.unlocked ? " unlocked" : ""}`}
-                  >
-                    <div className="achievement-tier-topline">
-                      <strong>{achievement.target}</strong>
-                      <span>{achievement.points} pt</span>
-                    </div>
-                    <p>{achievement.name}</p>
-                    <div className="meta-progress-bar">
-                      <div style={{ width: `${progressPercent}%` }} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </article>
-        ))}
-      </div>
-    </section>
+          </section>
+        </div>
+      ) : null}
+    </>
   );
 }
