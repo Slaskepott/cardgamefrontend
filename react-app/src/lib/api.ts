@@ -13,6 +13,7 @@ import type {
   PlayHandResponse,
   PlayersResponse,
   RerollShopResponse,
+  StartBotGameResponse,
   Card,
 } from "../types/game";
 
@@ -59,6 +60,28 @@ export function joinGame(
       method: "POST",
     },
   );
+}
+
+export function startBotGame(
+  difficulty: "easy" | "medium" | "hard",
+  playerId: string,
+  email?: string | null,
+  avatar?: string | null,
+) {
+  const searchParams = new URLSearchParams({
+    difficulty,
+    player_id: playerId,
+  });
+  if (email) {
+    searchParams.set("email", email);
+  }
+  if (avatar) {
+    searchParams.set("avatar", avatar);
+  }
+
+  return requestJson<StartBotGameResponse>(`/game/bot/start?${searchParams.toString()}`, {
+    method: "POST",
+  });
 }
 
 export function getPlayers(gameId: string) {

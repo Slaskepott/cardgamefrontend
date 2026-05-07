@@ -4657,6 +4657,12 @@ input::placeholder {
   transform: translateX(120%);
 }
 
+.bot-match-button-stack {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.2rem;
+}
+
 .account-chip-balance {
   color: #fff5d3;
   background:
@@ -5012,6 +5018,10 @@ input::placeholder {
 .match-result-player-head div {
   display: grid;
   gap: 0.12rem;
+}
+
+.match-result-subtitle {
+  margin-top: 0.45rem;
 }
 
 .match-result-avatar {

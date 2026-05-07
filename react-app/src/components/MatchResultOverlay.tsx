@@ -19,6 +19,7 @@ export function MatchResultOverlay({
   playerId,
   onLeaveLobby,
 }: MatchResultOverlayProps) {
+  const botMatch = Boolean(matchResult.is_bot_match || matchResult.progression_disabled);
   const playerEntries = Object.entries(matchResult.avatars).map(([name, avatar]) => {
     const elo = matchResult.elo_changes[name] ?? {
       before: null,
@@ -41,6 +42,11 @@ export function MatchResultOverlay({
         <p className="eyebrow">Match complete</p>
         <h2>{matchResult.winner} wins the match</h2>
         <p className="panel-copy compact-copy">{matchResult.reason}</p>
+        {botMatch ? (
+          <p className="panel-copy compact-copy match-result-subtitle">
+            Practice match versus a bot. No rating or progression changes.
+          </p>
+        ) : null}
 
         <div className="match-result-player-grid">
           {playerEntries.map((entry) => (
@@ -59,16 +65,22 @@ export function MatchResultOverlay({
                 </div>
               </div>
               <div className="match-result-elo-block">
-                <span className="match-result-elo-total">
-                  {entry.elo.after !== null ? `Elo ${entry.elo.after}` : "Guest account"}
-                </span>
-                <span
-                  className={`match-result-elo-delta${
-                    (entry.elo.delta ?? 0) >= 0 ? " positive" : " negative"
-                  }`}
-                >
-                  {formatEloDelta(entry.elo.delta)}
-                </span>
+                {botMatch ? (
+                  <span className="match-result-elo-total">No rating changes</span>
+                ) : (
+                  <>
+                    <span className="match-result-elo-total">
+                      {entry.elo.after !== null ? `Elo ${entry.elo.after}` : "Guest account"}
+                    </span>
+                    <span
+                      className={`match-result-elo-delta${
+                        (entry.elo.delta ?? 0) >= 0 ? " positive" : " negative"
+                      }`}
+                    >
+                      {formatEloDelta(entry.elo.delta)}
+                    </span>
+                  </>
+                )}
               </div>
             </article>
           ))}

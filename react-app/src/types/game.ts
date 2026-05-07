@@ -149,6 +149,8 @@ export interface MatchOverMessage {
   scores: Record<string, number>;
   avatars: Record<string, string>;
   elo_changes: Record<string, EloChange>;
+  is_bot_match?: boolean;
+  progression_disabled?: boolean;
 }
 
 export interface HandPlayedMessage {
@@ -218,6 +220,15 @@ export interface CreateGameResponse {
 export interface JoinGameResponse {
   message?: string;
   error?: string;
+}
+
+export interface StartBotGameResponse {
+  message?: string;
+  error?: string;
+  game_id?: string;
+  player_id?: string;
+  bot_player_id?: string;
+  difficulty?: "easy" | "medium" | "hard";
 }
 
 export interface PlayersResponse {

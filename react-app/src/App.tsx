@@ -6,6 +6,7 @@ import { BattleStatus } from "./components/BattleStatus";
 import { BootSplash } from "./components/BootSplash";
 import { AvailableLobbies } from "./components/AvailableLobbies";
 import { AuthPanel } from "./components/AuthPanel";
+import { BotMatchPanel } from "./components/BotMatchPanel";
 import { EventFeed } from "./components/EventFeed";
 import { GameBoard } from "./components/GameBoard";
 import { GameSetupForm } from "./components/GameSetupForm";
@@ -403,33 +404,14 @@ export default function App() {
     <main className="app-shell">
       {view !== "game" ? (
         <header className="simple-header">
-          <div className="header-shell">
-            <button
-              type="button"
-              className="logo-home-button"
-              onClick={() => setView("lobby")}
-              aria-label="Go to join lobby"
-            >
-              <h1>Slaskecards</h1>
-            </button>
-            {view !== "rulebook" ? (
-              <button
-                type="button"
-                className="secondary header-nav-button"
-                onClick={() => setView("rulebook")}
-              >
-                Rulebook
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="secondary header-nav-button"
-                onClick={() => setView("lobby")}
-              >
-                Join lobby
-              </button>
-            )}
-          </div>
+          <button
+            type="button"
+            className="logo-home-button"
+            onClick={() => setView("lobby")}
+            aria-label="Go to join lobby"
+          >
+            <h1>Slaskecards</h1>
+          </button>
         </header>
       ) : null}
 
@@ -529,6 +511,14 @@ export default function App() {
             onJoinLobby={async (selectedGameId) => {
               session.handleDraftGameIdChange(selectedGameId);
               if (await session.handleJoinGame(selectedGameId, session.draftPlayerId)) {
+                setView("game");
+              }
+            }}
+          />
+          <BotMatchPanel
+            busy={session.busy}
+            onStartBotMatch={async (difficulty) => {
+              if (await session.handleStartBotMatch(difficulty)) {
                 setView("game");
               }
             }}

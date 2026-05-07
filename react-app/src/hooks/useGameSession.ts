@@ -20,6 +20,7 @@ import {
   playHand,
   rerollShop,
   sendHeartbeat,
+  startBotGame,
 } from "../lib/api";
 import { generateLobbyId, generatePlayerName } from "../lib/nameGenerator";
 import { connectToGameSocket } from "../lib/ws";
@@ -37,6 +38,7 @@ import type {
   OpenStoreMessage,
   PlayersUpdatedMessage,
   ShopStatusMessage,
+  StartBotGameResponse,
   Upgrade,
 } from "../types/game";
 
@@ -531,6 +533,22 @@ export function useGameSession(currentUser: User | null) {
     }
   }
 
+  async function enterResolvedGame(
+    normalizedGameId: string,
+    normalizedPlayerId: string,
+    successMessage?: string,
+  ) {
+    setGameId(normalizedGameId);
+    setPlayerId(normalizedPlayerId);
+    setMatchResult(null);
+    if (successMessage) {
+      pushFeedEntry(successMessage);
+    }
+    await refreshPlayers(normalizedGameId);
+    openSocket(normalizedGameId, normalizedPlayerId);
+    return true;
+  }
+
   async function handleCreateGame(nextGameId: string, nextPlayerId: string) {
     const { normalizedGameId, normalizedPlayerId } = resolveLobbyDetails(
       nextGameId,
@@ -563,6 +581,35 @@ export function useGameSession(currentUser: User | null) {
       nextPlayerId,
     );
     return joinResolvedGame(normalizedGameId, normalizedPlayerId);
+  }
+
+  async function handleStartBotMatch(difficulty: "easy" | "medium" | "hard") {
+    const { normalizedPlayerId } = resolveLobbyDetails("", draftPlayerId);
+
+    setBusy(true);
+    setGameIdError(null);
+    try {
+      const response: StartBotGameResponse = await startBotGame(
+        difficulty,
+        normalizedPlayerId,
+        currentUser?.email ?? null,
+        currentUser?.photoURL ?? null,
+      );
+      if (response.error || !response.game_id || !response.player_id) {
+        throw new Error(response.error ?? "Failed to start bot match.");
+      }
+
+      return await enterResolvedGame(
+        response.game_id,
+        response.player_id,
+        response.message ?? `Started ${difficulty} bot match.`,
+      );
+    } catch (error) {
+      pushFeedEntry(error instanceof Error ? error.message : "Failed to start bot match.");
+      return false;
+    } finally {
+      setBusy(false);
+    }
   }
 
   function handleToggleCard(card: Card, index: number) {
@@ -875,6 +922,7 @@ export function useGameSession(currentUser: User | null) {
     handleDraftGameIdChange,
     handleCreateGame,
     handleJoinGame,
+    handleStartBotMatch,
     handleToggleCard,
     handleDiscard,
     handlePlayHand,
