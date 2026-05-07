@@ -12,6 +12,7 @@ import { GameSetupForm } from "./components/GameSetupForm";
 import { LevelUpToast } from "./components/LevelUpToast";
 import { LevelProgressionModal } from "./components/LevelProgressionModal";
 import { MatchResultOverlay } from "./components/MatchResultOverlay";
+import { RulebookPage } from "./components/RulebookPage";
 import { StatusPanel } from "./components/StatusPanel";
 import { TalentTreePage } from "./components/TalentTreePage";
 import { TutorialPage } from "./components/TutorialPage";
@@ -34,11 +35,13 @@ interface LevelUpEvent {
 }
 
 export default function App() {
-  type AccountViewTarget = "lobby" | "achievements" | "talents" | "tutorial";
+  type AccountViewTarget = "lobby" | "achievements" | "talents" | "tutorial" | "rulebook";
   const [bootProgress, setBootProgress] = useState(0);
   const [bootComplete, setBootComplete] = useState(false);
   const [debugVisible, setDebugVisible] = useState(false);
-  const [view, setView] = useState<"lobby" | "achievements" | "talents" | "tutorial" | "game">("lobby");
+  const [view, setView] = useState<
+    "lobby" | "achievements" | "talents" | "tutorial" | "rulebook" | "game"
+  >("lobby");
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [guestMode, setGuestMode] = useState(false);
   const [availableLobbies, setAvailableLobbies] = useState<
@@ -400,14 +403,33 @@ export default function App() {
     <main className="app-shell">
       {view !== "game" ? (
         <header className="simple-header">
-          <button
-            type="button"
-            className="logo-home-button"
-            onClick={() => setView("lobby")}
-            aria-label="Go to join lobby"
-          >
-            <h1>Slaskecards</h1>
-          </button>
+          <div className="header-shell">
+            <button
+              type="button"
+              className="logo-home-button"
+              onClick={() => setView("lobby")}
+              aria-label="Go to join lobby"
+            >
+              <h1>Slaskecards</h1>
+            </button>
+            {view !== "rulebook" ? (
+              <button
+                type="button"
+                className="secondary header-nav-button"
+                onClick={() => setView("rulebook")}
+              >
+                Rulebook
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="secondary header-nav-button"
+                onClick={() => setView("lobby")}
+              >
+                Join lobby
+              </button>
+            )}
+          </div>
         </header>
       ) : null}
 
@@ -446,8 +468,8 @@ export default function App() {
                 <p className="eyebrow">Warning</p>
                 <h2 id="forfeit-warning-title">Leaving now will forfeit the match</h2>
                 <p className="panel-copy compact-copy">
-                  Opening achievements, talents, or the tutorial during a live game counts as
-                  leaving the lobby. Your opponent will be awarded the win.
+                  Opening achievements, talents, the rulebook, or the tutorial during a live game
+                  counts as leaving the lobby. Your opponent will be awarded the win.
                 </p>
               </div>
             </div>
@@ -544,6 +566,10 @@ export default function App() {
       ) : hasChosenAccess && view === "tutorial" ? (
         <section className="content-grid account-grid">
           <TutorialPage onBackToLobby={() => setView("lobby")} />
+        </section>
+      ) : view === "rulebook" ? (
+        <section className="content-grid account-grid">
+          <RulebookPage onBackToLobby={() => setView("lobby")} />
         </section>
       ) : hasChosenAccess ? (
         <section className="content-grid">
