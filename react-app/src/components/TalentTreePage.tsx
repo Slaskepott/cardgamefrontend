@@ -257,12 +257,10 @@ export function TalentTreePage({
             <article
               key={talent.id}
               className={`talent-node${
-                talent.available
-                  ? " available"
-                  : talent.current_rank > 0
-                    ? " unlocked"
-                    : " locked"
-              }${talent.current_rank >= talent.max_ranks ? " maxed" : ""}${
+                talent.current_rank > 0 ? " unlocked" : " locked"
+              }${talent.available ? " available" : ""}${
+                talent.current_rank >= talent.max_ranks ? " maxed" : ""
+              }${
                 talent.id.endsWith("capstone") ? " capstone" : ""
               }${getTalentElementClass(getSelectedElement(talent))}`}
               style={{
