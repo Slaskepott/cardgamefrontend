@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import type { MetaProgress, MetaSpecialization, MetaTalent } from "../types/game";
 
 const TALENT_TREE_COLUMNS = 5;
-const TALENT_TREE_ROWS = 5;
 const ELEMENT_UI = {
   Fire: { emoji: "🔥", className: "fire" },
   Air: { emoji: "💨", className: "air" },
@@ -69,23 +68,23 @@ function buildTalentDescription(talent: MetaTalent, selectedElement: string | nu
     .replace(/elemental draw chance/g, `${elementName} draw chance`);
 }
 
-function getNodeCenter(column: number, row: number) {
+function getNodeCenter(column: number, row: number, totalRows: number) {
   return {
     x: ((column + 0.5) / TALENT_TREE_COLUMNS) * 100,
-    y: ((row + 0.5) / TALENT_TREE_ROWS) * 100,
+    y: ((row + 0.5) / totalRows) * 100,
   };
 }
 
-function buildConnectorPath(from: MetaTalent, to: MetaTalent) {
-  const startCenter = getNodeCenter(from.column, from.row);
-  const endCenter = getNodeCenter(to.column, to.row);
+function buildConnectorPath(from: MetaTalent, to: MetaTalent, totalRows: number) {
+  const startCenter = getNodeCenter(from.column, from.row, totalRows);
+  const endCenter = getNodeCenter(to.column, to.row, totalRows);
   const start = {
     x: startCenter.x,
-    y: ((from.row + 1) / TALENT_TREE_ROWS) * 100 - 2.8,
+    y: ((from.row + 1) / totalRows) * 100 - 2.8,
   };
   const end = {
     x: endCenter.x,
-    y: (to.row / TALENT_TREE_ROWS) * 100 + 2.8,
+    y: (to.row / totalRows) * 100 + 2.8,
   };
   const travel = Math.max(end.y - start.y, 0);
   const curve = Math.max(travel * 0.55, 4.5);
@@ -152,6 +151,10 @@ export function TalentTreePage({
       ? activeSpec
       : metaProgress.selected_specialization ?? metaProgress.specializations[0]?.id ?? null;
   const visibleTalents = selectedSpec ? specMap[selectedSpec] ?? [] : [];
+  const treeRows = useMemo(
+    () => Math.max(5, ...visibleTalents.map((talent) => talent.row + 1), 0),
+    [visibleTalents],
+  );
   const visibleTalentMap = useMemo(
     () => new Map(visibleTalents.map((talent) => [talent.id, talent])),
     [visibleTalents],
@@ -168,13 +171,13 @@ export function TalentTreePage({
           return [
             {
               id: `${requiredId}->${talent.id}`,
-              path: buildConnectorPath(requiredTalent, talent),
+              path: buildConnectorPath(requiredTalent, talent, treeRows),
               active: requiredTalent.current_rank > 0,
             },
           ];
         }),
       ),
-    [visibleTalentMap, visibleTalents],
+    [treeRows, visibleTalentMap, visibleTalents],
   );
   const isLockedToAnotherSpec =
     Boolean(metaProgress.selected_specialization) &&
@@ -236,7 +239,10 @@ export function TalentTreePage({
       </div>
 
       {selectedSpec ? (
-        <div className="talent-tree">
+        <div
+          className="talent-tree"
+          style={{ gridTemplateRows: `repeat(${treeRows}, minmax(150px, auto))` }}
+        >
           {dependencyLines.length > 0 ? (
             <svg
               className="talent-tree-lines"
