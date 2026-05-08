@@ -1,5 +1,5 @@
 import type { BattleMoment, Card, DiscardMoment, Suit } from "../types/game";
-import type { MetaProgress, Upgrade } from "../types/game";
+import type { MetaProgress, Relic, Upgrade } from "../types/game";
 import { buildHandPreview } from "../lib/handPreview";
 
 interface GameBoardProps {
@@ -8,6 +8,7 @@ interface GameBoardProps {
   discardMoment: DiscardMoment | null;
   selectedCardKeys: string[];
   ownedUpgrades: Upgrade[];
+  ownedRelics: Relic[];
   metaProgress: MetaProgress | null;
   unlockedLevelRewards?: string[];
   onToggleCard: (card: Card, index: number) => void;
@@ -78,6 +79,7 @@ export function GameBoard({
   discardMoment,
   selectedCardKeys,
   ownedUpgrades,
+  ownedRelics,
   metaProgress,
   unlockedLevelRewards = [],
   onToggleCard,
@@ -101,6 +103,7 @@ export function GameBoard({
   const handPreview = buildHandPreview(
     selectedPreviewCards,
     ownedUpgrades,
+    ownedRelics,
     metaProgress,
     unlockedLevelRewards,
   );

@@ -609,6 +609,7 @@ export default function App() {
               cosmeticRewards={metaProgress?.unlocked_level_rewards ?? []}
               selectedCardKeys={session.selectedCardKeys}
               ownedUpgrades={session.ownedUpgrades}
+              ownedRelics={session.ownedRelics}
               metaProgress={metaProgress}
               unlockedLevelRewards={metaProgress?.unlocked_level_rewards ?? []}
               onToggleCard={session.handleToggleCard}

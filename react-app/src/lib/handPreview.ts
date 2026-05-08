@@ -1,4 +1,4 @@
-import type { Card, MetaProgress, Suit, Upgrade } from "../types/game";
+import type { Card, MetaProgress, Relic, Suit, Upgrade } from "../types/game";
 
 const RANK_VALUES: Record<string, number> = {
   "2": 2,
@@ -38,10 +38,12 @@ interface PreviewModifiers {
   elemental: Record<string, number>;
   lowCardDamageModifier: number;
   highCardDamageModifier: number;
+  tinyRankDamageMultiplier: number;
   pairDamageModifier: number;
   straightDamageModifier: number;
   flushDamageModifier: number;
   fullHouseDamageModifier: number;
+  repeatedSuitDamageBonusPct: number;
   plasmaBonusValue: number;
 }
 
@@ -63,6 +65,7 @@ function getCompressedRankValue(rank: number) {
 
 function buildModifiers(
   upgrades: Upgrade[],
+  relics: Relic[],
   metaProgress: MetaProgress | null,
   unlockedLevelRewards: string[],
 ): PreviewModifiers {
@@ -88,10 +91,12 @@ function buildModifiers(
     },
     lowCardDamageModifier: 1 + Number(talentBonuses.low_card_damage_pct ?? 0) / 100,
     highCardDamageModifier: 1 + Number(talentBonuses.high_card_damage_pct ?? 0) / 100,
+    tinyRankDamageMultiplier: 1,
     pairDamageModifier: 1 + Number(talentBonuses.pair_damage_pct ?? 0) / 100,
     straightDamageModifier: 1 + Number(talentBonuses.straight_damage_pct ?? 0) / 100,
     flushDamageModifier: 1 + Number(talentBonuses.flush_damage_pct ?? 0) / 100,
     fullHouseDamageModifier: 1 + Number(talentBonuses.full_house_damage_pct ?? 0) / 100,
+    repeatedSuitDamageBonusPct: 0,
     plasmaBonusValue: unlocked.has("singularity_engine") ? 2 : 0,
   };
 
@@ -112,6 +117,25 @@ function buildModifiers(
     if (upgrade.name.startsWith("Increase ") && upgrade.name.endsWith(" Damage")) {
       const element = upgrade.name.split(" ")[1];
       modifiers.elemental[element] = (modifiers.elemental[element] ?? 1) + amount;
+    }
+  });
+
+  relics.forEach((relic) => {
+    switch (relic.id) {
+      case "tiny_tyrants":
+        modifiers.tinyRankDamageMultiplier = 3;
+        break;
+      case "tidal_memory":
+        modifiers.repeatedSuitDamageBonusPct += 18;
+        break;
+      case "plasma_lattice":
+        modifiers.elemental.Plasma = (modifiers.elemental.Plasma ?? 1) + 0.4;
+        break;
+      case "overflow_chamber":
+        modifiers.damageModifier = Math.max(0.4, modifiers.damageModifier - 0.2);
+        break;
+      default:
+        break;
     }
   });
 
@@ -177,6 +201,11 @@ function evaluateConcreteHand(cards: Card[], modifiers: PreviewModifiers): HandP
     rankCounts.set(rank, (rankCounts.get(rank) ?? 0) + 1);
     suitCounts.set(suit, (suitCounts.get(suit) ?? 0) + 1);
     ranks.push(rank);
+  });
+
+  cards.forEach((card) => {
+    const rank = RANK_VALUES[card.rank];
+    const suit = card.suit;
 
     let rankModifier = 1;
     if (rank <= 7) {
@@ -184,9 +213,16 @@ function evaluateConcreteHand(cards: Card[], modifiers: PreviewModifiers): HandP
     } else if (rank >= 10) {
       rankModifier *= modifiers.highCardDamageModifier;
     }
+    if (rank === 2 || rank === 3 || rank === 4) {
+      rankModifier *= modifiers.tinyRankDamageMultiplier;
+    }
 
-    const totalModifier =
+    let totalModifier =
       (modifiers.elemental[suit] ?? 1) * modifiers.damageModifier * rankModifier;
+    const repeatCount = Math.max(0, (suitCounts.get(suit) ?? 0) - 1);
+    if (repeatCount > 0 && modifiers.repeatedSuitDamageBonusPct > 0) {
+      totalModifier *= 1 + (repeatCount * modifiers.repeatedSuitDamageBonusPct) / 100;
+    }
     const damageRank =
       getCompressedRankValue(rank) + (suit === "Plasma" ? modifiers.plasmaBonusValue : 0);
     baseValues.push(damageRank * totalModifier);
@@ -261,6 +297,7 @@ function evaluateConcreteHand(cards: Card[], modifiers: PreviewModifiers): HandP
 export function buildHandPreview(
   cards: Card[],
   upgrades: Upgrade[],
+  relics: Relic[],
   metaProgress: MetaProgress | null,
   unlockedLevelRewards: string[],
 ): HandPreview | null {
@@ -268,7 +305,7 @@ export function buildHandPreview(
     return null;
   }
 
-  const modifiers = buildModifiers(upgrades, metaProgress, unlockedLevelRewards);
+  const modifiers = buildModifiers(upgrades, relics, metaProgress, unlockedLevelRewards);
   const variantsPerCard = cards.map((card) => resolveCardVariants(card, unlockedLevelRewards));
   const combinations = cartesianProduct(variantsPerCard);
 

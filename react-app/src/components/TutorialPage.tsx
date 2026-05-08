@@ -179,9 +179,9 @@ export function TutorialPage({ onBackToLobby }: TutorialPageProps) {
   const [discardImproved, setDiscardImproved] = useState(false);
   const [boughtUpgradeId, setBoughtUpgradeId] = useState<number | null>(null);
 
-  const attackPreview = useMemo(() => buildHandPreview(attackCards, [], null, []), []);
+  const attackPreview = useMemo(() => buildHandPreview(attackCards, [], [], null, []), []);
   const discardPreview = useMemo(
-    () => buildHandPreview(discardImproved ? improvedDiscardHand : weakDiscardHand, [], null, []),
+    () => buildHandPreview(discardImproved ? improvedDiscardHand : weakDiscardHand, [], [], null, []),
     [discardImproved],
   );
 
