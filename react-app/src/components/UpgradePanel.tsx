@@ -33,6 +33,10 @@ function formatTimer(seconds: number | null) {
 }
 
 const upgradeEmojis: Record<string, string> = {
+  "Low Card Shield": "🧱",
+  "High Card Shield": "🏰",
+  "Straight Shelter": "🪜",
+  "Flush Shelter": "🌊",
   "Increase Health": "❤️",
   "Increase Health %": "💖",
   "Increase Armor": "🛡️",
@@ -77,6 +81,10 @@ function summarizeOwnedUpgrades(upgrades: Upgrade[]): UpgradeSummarySection[] {
   let bonusHealthPercent = 0;
   let armor = 0;
   let bonusDiscards = 0;
+  let lowCardResistancePercent = 0;
+  let highCardResistancePercent = 0;
+  let straightResistancePercent = 0;
+  let flushResistancePercent = 0;
   let bonusDamagePercent = 0;
   let lowCardDamagePercent = 0;
   let highCardDamagePercent = 0;
@@ -108,6 +116,18 @@ function summarizeOwnedUpgrades(upgrades: Upgrade[]): UpgradeSummarySection[] {
         break;
       case "Increase Armor":
         armor += amount;
+        break;
+      case "Low Card Shield":
+        lowCardResistancePercent += amount;
+        break;
+      case "High Card Shield":
+        highCardResistancePercent += amount;
+        break;
+      case "Straight Shelter":
+        straightResistancePercent += amount;
+        break;
+      case "Flush Shelter":
+        flushResistancePercent += amount;
         break;
       case "Increase Discards":
         bonusDiscards += amount;
@@ -175,6 +195,10 @@ function summarizeOwnedUpgrades(upgrades: Upgrade[]): UpgradeSummarySection[] {
   if (bonusHealth > 0) defensive.push(`+${bonusHealth} health`);
   if (bonusHealthPercent > 0) defensive.push(`+${bonusHealthPercent}% health`);
   if (armor > 0) defensive.push(`+${armor} armor`);
+  if (lowCardResistancePercent > 0) defensive.push(`+${lowCardResistancePercent}% low card resistance`);
+  if (highCardResistancePercent > 0) defensive.push(`+${highCardResistancePercent}% high card resistance`);
+  if (straightResistancePercent > 0) defensive.push(`+${straightResistancePercent}% straight resistance`);
+  if (flushResistancePercent > 0) defensive.push(`+${flushResistancePercent}% flush resistance`);
 
   const draw: string[] = [];
   if (lowCardDrawPercent > 0) draw.push(`+${lowCardDrawPercent}% low card draw chance`);
