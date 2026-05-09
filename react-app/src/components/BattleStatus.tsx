@@ -127,11 +127,17 @@ export function BattleStatus({
                   🛡️ {player.armor}
                 </span>
               </div>
-              {battleMoment?.target === player.id ? (
-                <span className="damage-burst" aria-hidden="true">
-                  -{battleMoment.damage}
-                </span>
-              ) : null}
+                {battleMoment?.target === player.id
+                  ? battleMoment.damageInstances.map((instanceDamage, index) => (
+                      <span
+                        key={`${player.id}-damage-${index}`}
+                        className={`damage-burst${index > 0 ? " damage-burst-secondary" : ""}`}
+                        aria-hidden="true"
+                      >
+                        -{instanceDamage}
+                      </span>
+                    ))
+                  : null}
               {defeatedThisRound ? (
                 <span className="defeat-burst" aria-hidden="true">
                   cracked

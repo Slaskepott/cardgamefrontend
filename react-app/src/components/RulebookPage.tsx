@@ -30,6 +30,12 @@ interface ShopUpgradeGroup {
   upgrades: ShopUpgradeLine[];
 }
 
+interface RelicEntry {
+  name: string;
+  theme: string;
+  summary: string;
+}
+
 const handLadder: HandEntry[] = [
   { name: "High card", multiplier: 1, summary: "No combo. Pure card quality." },
   { name: "Pair", multiplier: 2, summary: "Two cards with the same rank." },
@@ -45,11 +51,23 @@ const handLadder: HandEntry[] = [
   { name: "Royal flush", multiplier: 10, summary: "10-J-Q-K-A in one suit." },
 ];
 
+const relicEntries: RelicEntry[] = [
+  { name: "Tiny Tyrants", theme: "Chaos", summary: "2s, 3s, and 4s deal triple damage." },
+  { name: "House Advantage", theme: "Bulwark", summary: "Playing a full house grants armor after the hit lands." },
+  { name: "Greedy Fingers", theme: "Greed", summary: "Every discard gives bonus gold, but your max health is reduced." },
+  { name: "Wild Orbit", theme: "Wild", summary: "Jokers are much more likely, but shop rerolls cost health." },
+  { name: "Tidal Memory", theme: "Flow", summary: "Repeated suits in a hand gain escalating damage." },
+  { name: "Overflow Chamber", theme: "Excess", summary: "Draw 1 extra card every round, but lose overall damage." },
+  { name: "Plasma Lattice", theme: "Plasma", summary: "Plasma cards gain big damage and draw-chance bonuses." },
+  { name: "Fortress Heart", theme: "Bulwark", summary: "Gain a big spike of armor and max health." },
+  { name: "Pattern Ward", theme: "Bulwark", summary: "Strong hands like straights, flushes, full houses, and four of a kind hit you for less." },
+];
+
 const shopUpgradeGroups: ShopUpgradeGroup[] = [
   {
     id: "survival",
     title: "Survival",
-    description: "Health, armor, and discard upgrades that keep you alive longer.",
+      description: "Health, armor, resistances, and discard upgrades that keep you alive longer.",
     upgrades: [
       {
         name: "Increase Health",
@@ -80,6 +98,46 @@ const shopUpgradeGroups: ShopUpgradeGroup[] = [
           { rarity: "rare", effect: "+28 Armor", cost: 11 },
           { rarity: "epic", effect: "+42 Armor", cost: 16 },
           { rarity: "legendary", effect: "+60 Armor", cost: 23 },
+        ],
+      },
+      {
+        name: "Low Card Shield",
+        icon: "ðŸ§±",
+        summary: "Reduces damage taken from low-rank-heavy hands.",
+        tiers: [
+          { rarity: "common", effect: "+12% Low Card Resistance", cost: 4 },
+          { rarity: "uncommon", effect: "+20% Low Card Resistance", cost: 7 },
+          { rarity: "rare", effect: "+32% Low Card Resistance", cost: 11 },
+        ],
+      },
+      {
+        name: "High Card Shield",
+        icon: "ðŸ°",
+        summary: "Reduces damage taken from premium-rank-heavy hands.",
+        tiers: [
+          { rarity: "common", effect: "+10% High Card Resistance", cost: 4 },
+          { rarity: "uncommon", effect: "+18% High Card Resistance", cost: 7 },
+          { rarity: "rare", effect: "+28% High Card Resistance", cost: 11 },
+        ],
+      },
+      {
+        name: "Straight Shelter",
+        icon: "ðŸªœ",
+        summary: "Direct resistance against straight-based hands.",
+        tiers: [
+          { rarity: "uncommon", effect: "+12% Straight Resistance", cost: 5 },
+          { rarity: "rare", effect: "+20% Straight Resistance", cost: 9 },
+          { rarity: "epic", effect: "+30% Straight Resistance", cost: 14 },
+        ],
+      },
+      {
+        name: "Flush Shelter",
+        icon: "ðŸŒŠ",
+        summary: "Direct resistance against flush-based hands.",
+        tiers: [
+          { rarity: "uncommon", effect: "+12% Flush Resistance", cost: 5 },
+          { rarity: "rare", effect: "+20% Flush Resistance", cost: 9 },
+          { rarity: "epic", effect: "+30% Flush Resistance", cost: 14 },
         ],
       },
       {
@@ -281,6 +339,7 @@ const topicLabels = [
   { id: "hands", label: "Hands" },
   { id: "battle-math", label: "Battle math" },
   { id: "shop", label: "Shop" },
+  { id: "relics", label: "Relics" },
   { id: "progression", label: "Progression" },
 ] as const;
 
@@ -340,9 +399,12 @@ export function RulebookPage({ onBackToLobby }: RulebookPageProps) {
     hands: visibleHands.length > 0 || matchesQuery(query, "hands multipliers gold royal flush"),
     battleMath: matchesQuery(
       query,
-      "battle math formula arithmetic rank compression armor damage multiplier plasma low card high card",
+      "battle math formula arithmetic rank compression armor resistance damage multiplier plasma low card high card straight flush full house four of a kind relics",
     ),
     shop: visibleUpgradeGroups.length > 0 || matchesQuery(query, "shop reroll upgrades gold continue"),
+    relics:
+      relicEntries.some((relic) => matchesQuery(query, relic.name, relic.theme, relic.summary)) ||
+      matchesQuery(query, "relic relics choose relic rounds 2 4 6 match-only power spike"),
     progression: matchesQuery(
       query,
       "progression elo level talents achievements joker flame plasma fifteen avatar",
@@ -420,6 +482,10 @@ export function RulebookPage({ onBackToLobby }: RulebookPageProps) {
               <span>You build up to five-card hands, but actual damage comes from both hand type and per-card value.</span>
             </article>
             <article className="rulebook-overview-card">
+              <strong>Relic spikes</strong>
+              <span>After rounds 2, 4, and 6, each player gets a dramatic match-only relic choice.</span>
+            </article>
+            <article className="rulebook-overview-card">
               <strong>Gold between rounds</strong>
               <span>Your hand multiplier also becomes your gold income, so bigger combos fund stronger shops.</span>
             </article>
@@ -451,7 +517,11 @@ export function RulebookPage({ onBackToLobby }: RulebookPageProps) {
               <span>After each round, both players shop at the same time. Gold comes mostly from your hand multiplier.</span>
             </article>
             <article className="rulebook-flow-card">
-              <strong>4. Repeat until 5 wins</strong>
+              <strong>4. Relic rounds</strong>
+              <span>After rounds 2, 4, and 6, the normal shop is followed by a separate relic selection phase.</span>
+            </article>
+            <article className="rulebook-flow-card">
+              <strong>5. Repeat until 5 wins</strong>
               <span>Rounds reset health and hands, but upgrades and match score stay. First to 5 round wins takes the match.</span>
             </article>
           </div>
@@ -463,6 +533,10 @@ export function RulebookPage({ onBackToLobby }: RulebookPageProps) {
             <div className="rulebook-note-card">
               <strong>Shop timer</strong>
               <span>Each shop phase gives every player 120 seconds.</span>
+            </div>
+            <div className="rulebook-note-card">
+              <strong>Bot matches</strong>
+              <span>Bot matches skip visible timers, but still use the same round, shop, and relic structure.</span>
             </div>
             <div className="rulebook-note-card">
               <strong>Inactivity</strong>
@@ -504,7 +578,7 @@ export function RulebookPage({ onBackToLobby }: RulebookPageProps) {
             <h3>Exact arithmetic</h3>
             <p className="panel-copy compact-copy">
               The short version: each selected card contributes value, those values are averaged,
-              your hand multiplier is applied, then armor reduces the final hit.
+              your hand multiplier is applied, then armor and resistances reduce the final hit.
             </p>
           </div>
           <div className="rulebook-math-stack">
@@ -523,7 +597,8 @@ export function RulebookPage({ onBackToLobby }: RulebookPageProps) {
   (compressed rank + plasma bonus value)
   × overall damage modifier
   × elemental damage modifier
-  × low-card or high-card modifier (if applicable)`}</pre>
+  × low-card or high-card modifier (if applicable)
+  × relic card modifiers (if applicable)`}</pre>
             </details>
 
             <details className="rulebook-math-card">
@@ -556,19 +631,23 @@ final damage before defense =
             </details>
 
             <details className="rulebook-math-card">
-              <summary>Armor and final damage taken</summary>
+              <summary>Armor, resistances, and final damage taken</summary>
               <p>
-                Armor is percentage reduction with diminishing returns. More armor always helps, but
-                it never scales linearly toward 100%.
+                Armor is percentage reduction with diminishing returns. On top of that, some talents,
+                upgrades, and relics resist low cards, high cards, or specific hand families.
               </p>
               <pre>{`scaled armor = armor ^ 0.9
 armor reduction = scaled armor / (scaled armor + 120)
 
 final damage taken =
-  round(raw damage × target damage-taken multiplier × (1 - armor reduction))`}</pre>
+  round(
+    raw damage × target damage-taken multiplier × (1 - armor reduction)
+    × rank resistance multiplier
+    × hand-type resistance multiplier
+  )`}</pre>
               <p>
-                Damage-taken multipliers come from certain talents. Armor is shown as both a raw
-                value and a hoverable percentage reduction in the battle UI.
+                Rank resistance checks how much of the attacking hand is low or high cards.
+                Hand-type resistance checks patterns like straight, flush, full house, and four of a kind.
               </p>
             </details>
           </div>
@@ -625,6 +704,46 @@ final damage taken =
         </section>
       ) : null}
 
+      {visibleSections.relics ? (
+        <section id="relics" className="rulebook-section">
+          <div className="rulebook-section-head">
+            <p className="eyebrow">Relics</p>
+            <h3>Match-only power spikes</h3>
+            <p className="panel-copy compact-copy">
+              After rounds 2, 4, and 6, both players finish the normal shop and then choose 1 of 3
+              relics. Relics do not cost gold and only last for that match.
+            </p>
+          </div>
+          <div className="rulebook-inline-note-grid">
+            <article className="rulebook-note-card">
+              <strong>Personal offers</strong>
+              <span>Each player gets their own 3 relic offers instead of fighting over one shared pool.</span>
+            </article>
+            <article className="rulebook-note-card">
+              <strong>Big swings</strong>
+              <span>Relics are meant to change your plan, not just add another tiny stat bonus.</span>
+            </article>
+            <article className="rulebook-note-card">
+              <strong>Bot matches too</strong>
+              <span>Bot matches use relic rounds as well, so they feel like full real matches.</span>
+            </article>
+          </div>
+          <div className="rulebook-hand-grid">
+            {relicEntries
+              .filter((relic) => matchesQuery(query, relic.name, relic.theme, relic.summary))
+              .map((relic) => (
+                <article key={relic.name} className="rulebook-hand-card">
+                  <div className="rulebook-hand-head">
+                    <strong>{relic.name}</strong>
+                    <span>{relic.theme}</span>
+                  </div>
+                  <p>{relic.summary}</p>
+                </article>
+              ))}
+          </div>
+        </section>
+      ) : null}
+
       {visibleSections.progression ? (
         <section id="progression" className="rulebook-section">
           <div className="rulebook-section-head">
@@ -644,12 +763,16 @@ final damage taken =
               <strong>Level rewards</strong>
               <span>Levels unlock special cards and meta bonuses like Joker, Flame, 15, and Plasma.</span>
             </article>
-            <article className="rulebook-progress-card">
-              <strong>ELO</strong>
-              <span>ELO changes only when the full best-of-9 match ends, not after each individual round.</span>
-            </article>
-          </div>
-        </section>
+              <article className="rulebook-progress-card">
+                <strong>ELO</strong>
+                <span>ELO changes only when the full best-of-9 match ends, not after each individual round.</span>
+              </article>
+              <article className="rulebook-progress-card">
+                <strong>Bot matches</strong>
+                <span>Playing bots does not award ELO, achievements, XP, or level progression.</span>
+              </article>
+            </div>
+          </section>
       ) : null}
     </section>
   );

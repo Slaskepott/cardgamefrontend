@@ -45,12 +45,16 @@ interface PreviewModifiers {
   fullHouseDamageModifier: number;
   repeatedSuitDamageBonusPct: number;
   plasmaBonusValue: number;
+  gapStraightEnabled: boolean;
+  softFlushEnabled: boolean;
+  playTwiceChancePct: number;
 }
 
 export interface HandPreview {
   handType: string;
   damage: number;
   multiplier: number;
+  playTwiceChancePct: number;
 }
 
 function parsePercent(effect: string) {
@@ -98,6 +102,9 @@ function buildModifiers(
     fullHouseDamageModifier: 1 + Number(talentBonuses.full_house_damage_pct ?? 0) / 100,
     repeatedSuitDamageBonusPct: 0,
     plasmaBonusValue: unlocked.has("singularity_engine") ? 2 : 0,
+    gapStraightEnabled: false,
+    softFlushEnabled: false,
+    playTwiceChancePct: Number(talentBonuses.play_twice_chance_pct ?? 0),
   };
 
   upgrades.forEach((upgrade) => {
@@ -112,6 +119,18 @@ function buildModifiers(
     }
     if (upgrade.name === "High Cards Specialist") {
       modifiers.highCardDamageModifier += amount;
+      return;
+    }
+    if (upgrade.name === "Echo Hand") {
+      modifiers.playTwiceChancePct += parsePercent(upgrade.effect);
+      return;
+    }
+    if (upgrade.name === "Gap Straight") {
+      modifiers.gapStraightEnabled = true;
+      return;
+    }
+    if (upgrade.name === "Soft Flush") {
+      modifiers.softFlushEnabled = true;
       return;
     }
     if (upgrade.name.startsWith("Increase ") && upgrade.name.endsWith(" Damage")) {
@@ -189,6 +208,17 @@ function cartesianProduct<T>(items: T[][]): T[][] {
   );
 }
 
+function isGapStraightWindow(window: number[], modifiers: PreviewModifiers) {
+  if (window.length !== 5) {
+    return false;
+  }
+  const spread = window[4] - window[0];
+  if (spread === 4) {
+    return true;
+  }
+  return modifiers.gapStraightEnabled && spread === 5;
+}
+
 function evaluateConcreteHand(cards: Card[], modifiers: PreviewModifiers): HandPreview {
   const rankCounts = new Map<number, number>();
   const suitCounts = new Map<string, number>();
@@ -229,14 +259,16 @@ function evaluateConcreteHand(cards: Card[], modifiers: PreviewModifiers): HandP
   });
 
   const rankFrequencies = [...rankCounts.values()].sort((left, right) => right - left);
-  const isFlush = cards.length >= 5 && Math.max(...suitCounts.values()) === cards.length;
+  const flushRequirement = modifiers.softFlushEnabled ? 4 : cards.length;
+  const isFlush =
+    cards.length >= flushRequirement && Math.max(...suitCounts.values()) >= flushRequirement;
   const sortedRanks = [...new Set(ranks)].sort((left, right) => left - right);
 
   let isStraight = false;
   if (sortedRanks.length >= 5) {
     for (let index = 0; index <= sortedRanks.length - 5; index += 1) {
       const window = sortedRanks.slice(index, index + 5);
-      if (window[4] - window[0] === 4 && window.length === 5) {
+      if (isGapStraightWindow(window, modifiers)) {
         isStraight = true;
         break;
       }
@@ -291,6 +323,7 @@ function evaluateConcreteHand(cards: Card[], modifiers: PreviewModifiers): HandP
     handType,
     multiplier,
     damage: Math.round(baseDamage * multiplier * handTypeModifier),
+    playTwiceChancePct: modifiers.playTwiceChancePct,
   };
 }
 

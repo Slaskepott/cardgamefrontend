@@ -25,6 +25,9 @@ export interface BattleMoment {
   attacker: string;
   target: string | null;
   damage: number;
+  damageInstances: number[];
+  hits: number;
+  doublePlayTriggered: boolean;
   handType: string;
   multiplier: number;
   accentSuit: Suit | null;
@@ -183,6 +186,9 @@ export interface HandPlayedMessage {
   player: string;
   cards: Card[];
   damage: number;
+  damage_instances?: number[];
+  hits?: number;
+  double_play_triggered?: boolean;
   health_update: HealthUpdate;
   max_health_update: HealthUpdate;
   armor_update?: HealthUpdate;

@@ -56,6 +56,9 @@ const upgradeEmojis: Record<string, string> = {
   "High Draw Specialist": "🎯",
   "Royal Invitation": "👑",
   "Tiny Troublemakers": "😈",
+  "Echo Hand": "🌀",
+  "Gap Straight": "↔️",
+  "Soft Flush": "🌈",
 };
 
 interface UpgradeSummarySection {
@@ -92,6 +95,9 @@ function summarizeOwnedUpgrades(upgrades: Upgrade[]): UpgradeSummarySection[] {
   let highCardDrawPercent = 0;
   let royalDrawPercent = 0;
   let tinyDrawPercent = 0;
+  let playTwiceChancePercent = 0;
+  let gapStraightEnabled = false;
+  let softFlushEnabled = false;
   const elementalDamage: Record<string, number> = {
     earth: 0,
     fire: 0,
@@ -153,6 +159,15 @@ function summarizeOwnedUpgrades(upgrades: Upgrade[]): UpgradeSummarySection[] {
       case "Tiny Troublemakers":
         tinyDrawPercent += amount;
         break;
+      case "Echo Hand":
+        playTwiceChancePercent += amount;
+        break;
+      case "Gap Straight":
+        gapStraightEnabled = true;
+        break;
+      case "Soft Flush":
+        softFlushEnabled = true;
+        break;
       case "Increase Earth Damage":
         elementalDamage.earth += amount;
         break;
@@ -190,6 +205,9 @@ function summarizeOwnedUpgrades(upgrades: Upgrade[]): UpgradeSummarySection[] {
   if (elementalDamage.fire > 0) offensive.push(`+${elementalDamage.fire}% fire damage`);
   if (elementalDamage.water > 0) offensive.push(`+${elementalDamage.water}% water damage`);
   if (elementalDamage.air > 0) offensive.push(`+${elementalDamage.air}% air damage`);
+  if (playTwiceChancePercent > 0) offensive.push(`+${playTwiceChancePercent}% chance to play a hand twice`);
+  if (gapStraightEnabled) offensive.push("Straights can skip one rank");
+  if (softFlushEnabled) offensive.push("Flushes only need 4 suited cards");
 
   const defensive: string[] = [];
   if (bonusHealth > 0) defensive.push(`+${bonusHealth} health`);

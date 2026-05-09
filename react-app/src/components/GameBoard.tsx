@@ -123,20 +123,24 @@ export function GameBoard({
                   ? `${suitFlavor[battleMoment.accentSuit].emoji} ${suitFlavor[battleMoment.accentSuit].label}`
                   : "⚔ impact"}
               </span>
-              <strong>
-                {battleMoment.attacker} hits
-                {battleMoment.target ? ` ${battleMoment.target}` : ""} for {battleMoment.damage}
-              </strong>
-              <span className="battle-impact-detail">
-                {battleMoment.handType.replace(/\b\w/g, (letter) => letter.toUpperCase())} x
-                {battleMoment.multiplier}
-                {battleMoment.winner ? ` • ${battleMoment.winner} wins the round` : ""}
-              </span>
-            </div>
-            <div className="battle-impact-damage">-{battleMoment.damage}</div>
-          </section>
-        </div>
-      ) : null}
+                <strong>
+                  {battleMoment.attacker} hits
+                  {battleMoment.target ? ` ${battleMoment.target}` : ""} for {battleMoment.damage}
+                </strong>
+                <span className="battle-impact-detail">
+                  {battleMoment.handType.replace(/\b\w/g, (letter) => letter.toUpperCase())} x
+                  {battleMoment.multiplier}
+                  {battleMoment.doublePlayTriggered ? " • Double strike" : ""}
+                  {battleMoment.winner ? ` • ${battleMoment.winner} wins the round` : ""}
+                </span>
+              </div>
+              <div className="battle-impact-damage">
+                -{battleMoment.hits > 1 ? battleMoment.damageInstances[0] : battleMoment.damage}
+                {battleMoment.hits > 1 ? <span className="battle-impact-hits">×{battleMoment.hits}</span> : null}
+              </div>
+            </section>
+          </div>
+        ) : null}
 
       {discardMoment ? (
         <div className="board-discard-banner-shell" aria-hidden="true">
@@ -222,6 +226,9 @@ export function GameBoard({
               </div>
               <div className="hand-preview-metrics">
                 <span>Deals {handPreview.damage} damage</span>
+                {handPreview.playTwiceChancePct > 0 ? (
+                  <span>{handPreview.playTwiceChancePct}% chance to hit twice</span>
+                ) : null}
               </div>
             </>
           ) : (
