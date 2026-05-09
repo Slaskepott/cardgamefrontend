@@ -6,6 +6,7 @@ import { BattleStatus } from "./components/BattleStatus";
 import { BootSplash } from "./components/BootSplash";
 import { AvailableLobbies } from "./components/AvailableLobbies";
 import { AuthPanel } from "./components/AuthPanel";
+import { ChatTray } from "./components/ChatTray";
 import { EventFeed } from "./components/EventFeed";
 import { GameBoard } from "./components/GameBoard";
 import { LevelUpToast } from "./components/LevelUpToast";
@@ -62,6 +63,9 @@ export default function App() {
 
   const session = useGameSession(currentUser);
   const { setDraftPlayerId } = session;
+  const chatAuthorName =
+    currentUser?.displayName?.trim() || session.playerId || session.draftPlayerId || "Guest";
+  const chatAuthorAvatar = currentUser?.photoURL || "👤";
   const seenUnlockedAchievementsRef = useRef<Set<string>>(new Set());
   const hydratedAchievementsRef = useRef(false);
   const previousLevelRef = useRef<number | null>(null);
@@ -676,6 +680,15 @@ export default function App() {
             </section>
           ) : null}
         </section>
+      ) : null}
+      {entryStage === "hub" ? (
+        <ChatTray
+          scope={view === "game" ? "game" : "global"}
+          gameId={session.gameId}
+          playerId={session.playerId}
+          authorName={chatAuthorName}
+          authorAvatar={chatAuthorAvatar}
+        />
       ) : null}
     </main>
   );

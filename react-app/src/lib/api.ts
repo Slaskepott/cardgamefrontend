@@ -4,6 +4,7 @@ import type {
   BuyUpgradeResponse,
   ContinueFromShopResponse,
   ChooseRelicResponse,
+  ChatResponse,
   CreateGameResponse,
   DiscardResponse,
   HeartbeatResponse,
@@ -91,17 +92,6 @@ export function getPlayers(gameId: string) {
 
 export function listLobbies() {
   return requestJson<LobbiesResponse>("/games");
-}
-
-export async function getSlaskecoins(email: string) {
-  const response = await fetch(
-    `${apiBaseUrl}/slaskecoins/${encodeURIComponent(email)}`,
-  );
-  if (!response.ok) {
-    throw new Error(`Failed to fetch slaskecoins (${response.status})`);
-  }
-
-  return (await response.json()) as number;
 }
 
 export function getMetaProgress(email: string) {
@@ -240,4 +230,26 @@ export function sendHeartbeat(gameId: string, playerId: string) {
       method: "POST",
     },
   );
+}
+
+export function getGlobalChat() {
+  return requestJson<ChatResponse>("/chat/global");
+}
+
+export function postGlobalChat(author: string, text: string, avatar = "👤") {
+  return requestJson<ChatResponse>("/chat/global", {
+    method: "POST",
+    body: JSON.stringify({ author, avatar, text }),
+  });
+}
+
+export function getGameChat(gameId: string) {
+  return requestJson<ChatResponse>(`/game/${gameId}/chat`);
+}
+
+export function postGameChat(gameId: string, playerId: string, text: string) {
+  return requestJson<ChatResponse>(`/game/${gameId}/chat`, {
+    method: "POST",
+    body: JSON.stringify({ player_id: playerId, text }),
+  });
 }

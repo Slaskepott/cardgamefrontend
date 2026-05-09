@@ -21,6 +21,16 @@ export interface Relic {
   description: string;
 }
 
+export interface ChatMessage {
+  id: string;
+  scope: "global" | "game";
+  game_id: string | null;
+  author: string;
+  avatar: string;
+  text: string;
+  created_at: number;
+}
+
 export interface BattleMoment {
   attacker: string;
   target: string | null;
@@ -335,6 +345,12 @@ export interface HeartbeatResponse extends ActionResponse {
 
 export interface ChooseRelicResponse extends ActionResponse {
   waiting_players?: string[];
+}
+
+export interface ChatResponse {
+  error?: string;
+  messages?: ChatMessage[];
+  message?: ChatMessage | string;
 }
 
 export interface MetaProgressResponse extends MetaProgress {

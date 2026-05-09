@@ -259,7 +259,7 @@ function evaluateConcreteHand(cards: Card[], modifiers: PreviewModifiers): HandP
   });
 
   const rankFrequencies = [...rankCounts.values()].sort((left, right) => right - left);
-  const flushRequirement = modifiers.softFlushEnabled ? 4 : cards.length;
+  const flushRequirement = modifiers.softFlushEnabled ? 4 : 5;
   const isFlush =
     cards.length >= flushRequirement && Math.max(...suitCounts.values()) >= flushRequirement;
   const sortedRanks = [...new Set(ranks)].sort((left, right) => left - right);
