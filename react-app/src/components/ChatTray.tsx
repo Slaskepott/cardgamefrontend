@@ -32,6 +32,8 @@ export function ChatTray({
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const messagesRef = useRef<HTMLDivElement | null>(null);
+  const lastMessageIdRef = useRef<string | null>(null);
+  const userHoldingScrollRef = useRef(false);
 
   const title = scope === "game" ? "Match chat" : "Global chat";
   const subtitle = scope === "game" ? "Only this game can see these messages." : "Everyone sees this chat.";
@@ -96,8 +98,26 @@ export function ChatTray({
   );
 
   useEffect(() => {
-    if (!minimized && messagesRef.current) {
-      messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+    if (minimized || !messagesRef.current || orderedMessages.length === 0) {
+      lastMessageIdRef.current = orderedMessages.at(-1)?.id ?? null;
+      return;
+    }
+
+    const nextLastMessageId = orderedMessages.at(-1)?.id ?? null;
+    const previousLastMessageId = lastMessageIdRef.current;
+    lastMessageIdRef.current = nextLastMessageId;
+
+    if (!nextLastMessageId || nextLastMessageId === previousLastMessageId) {
+      return;
+    }
+
+    const scroller = messagesRef.current;
+    const distanceFromBottom =
+      scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
+    const isNearBottom = distanceFromBottom < 56;
+
+    if (isNearBottom && !userHoldingScrollRef.current) {
+      scroller.scrollTop = scroller.scrollHeight;
     }
   }, [orderedMessages, minimized]);
 
@@ -121,7 +141,19 @@ export function ChatTray({
       </button>
       {!minimized ? (
         <div className="chat-tray-body">
-          <div className="chat-messages" ref={messagesRef}>
+          <div
+            className="chat-messages"
+            ref={messagesRef}
+            onPointerDown={() => {
+              userHoldingScrollRef.current = true;
+            }}
+            onPointerUp={() => {
+              userHoldingScrollRef.current = false;
+            }}
+            onPointerLeave={() => {
+              userHoldingScrollRef.current = false;
+            }}
+          >
             {orderedMessages.length === 0 ? (
               <p className="chat-empty">No messages yet.</p>
             ) : (
