@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getGameChat, getGlobalChat, postGameChat, postGlobalChat } from "../lib/api";
 import type { ChatMessage } from "../types/game";
 
@@ -31,6 +31,7 @@ export function ChatTray({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
+  const messagesRef = useRef<HTMLDivElement | null>(null);
 
   const title = scope === "game" ? "Match chat" : "Global chat";
   const subtitle = scope === "game" ? "Only this game can see these messages." : "Everyone sees this chat.";
@@ -94,6 +95,12 @@ export function ChatTray({
     [messages],
   );
 
+  useEffect(() => {
+    if (!minimized && messagesRef.current) {
+      messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+    }
+  }, [orderedMessages, minimized]);
+
   if (!visible || !canUseGameScope) {
     return null;
   }
@@ -114,7 +121,7 @@ export function ChatTray({
       </button>
       {!minimized ? (
         <div className="chat-tray-body">
-          <div className="chat-messages">
+          <div className="chat-messages" ref={messagesRef}>
             {orderedMessages.length === 0 ? (
               <p className="chat-empty">No messages yet.</p>
             ) : (
