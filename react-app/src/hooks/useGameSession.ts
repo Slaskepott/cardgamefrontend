@@ -180,6 +180,8 @@ export function useGameSession(currentUser: User | null) {
   const battleMomentTimeoutRef = useRef<number | null>(null);
   const discardMomentTimeoutRef = useRef<number | null>(null);
   const shopOpenTimeoutRef = useRef<number | null>(null);
+  const matchResultTimeoutRef = useRef<number | null>(null);
+  const finisherVisibleUntilRef = useRef(0);
 
   useEffect(() => {
     return () => {
@@ -188,6 +190,7 @@ export function useGameSession(currentUser: User | null) {
       clearWindowTimeout(battleMomentTimeoutRef);
       clearWindowTimeout(discardMomentTimeoutRef);
       clearWindowTimeout(shopOpenTimeoutRef);
+      clearWindowTimeout(matchResultTimeoutRef);
     };
   }, []);
 
@@ -279,16 +282,18 @@ export function useGameSession(currentUser: User | null) {
       multiplier: message.multiplier,
       accentSuit,
       winner: message.winner,
+      matchFinished: message.match_finished ?? false,
     };
   }
 
   function showBattleMoment(message: HandPlayedMessage) {
     clearWindowTimeout(battleMomentTimeoutRef);
+    finisherVisibleUntilRef.current = message.match_finished ? Date.now() + 1850 : 0;
     setBattleMoment(buildBattleMoment(message));
     battleMomentTimeoutRef.current = window.setTimeout(() => {
       setBattleMoment(null);
       battleMomentTimeoutRef.current = null;
-    }, 3200);
+    }, message.match_finished ? 4200 : 3200);
   }
 
   function showDiscardMoment(nextCards: Card[], nextRemainingDiscards: number) {
@@ -510,23 +515,36 @@ export function useGameSession(currentUser: User | null) {
           setRelicWaitingPlayers(message.waiting_players ?? []);
         }
         if (isMatchOverMessage(message)) {
-          setMatchResult(message);
-          setPhase("match_over");
-          setShopOpen(false);
-          setShopUpgrades([]);
-          setRelicOffers([]);
-          setRelicWaitingPlayers([]);
-          setShopWaitingPlayers([]);
-          setCurrentTurn(null);
-          setPlayerWins((current) => ({
-            ...current,
-            ...message.scores,
-          }));
-          setPlayerAvatars((current) => ({
-            ...current,
-            ...message.avatars,
-          }));
-          pushFeedEntry(`${message.winner} wins the match.`);
+          const showMatchResult = () => {
+            setMatchResult(message);
+            setPhase("match_over");
+            setShopOpen(false);
+            setShopUpgrades([]);
+            setRelicOffers([]);
+            setRelicWaitingPlayers([]);
+            setShopWaitingPlayers([]);
+            setCurrentTurn(null);
+            setPlayerWins((current) => ({
+              ...current,
+              ...message.scores,
+            }));
+            setPlayerAvatars((current) => ({
+              ...current,
+              ...message.avatars,
+            }));
+            pushFeedEntry(`${message.winner} wins the match.`);
+          };
+
+          clearWindowTimeout(matchResultTimeoutRef);
+          const shouldDelayForFinisher = finisherVisibleUntilRef.current > Date.now();
+          if (shouldDelayForFinisher) {
+            matchResultTimeoutRef.current = window.setTimeout(() => {
+              showMatchResult();
+              matchResultTimeoutRef.current = null;
+            }, 1850);
+          } else {
+            showMatchResult();
+          }
         }
         if (isApplyUpgradesMessage(message)) {
           setPlayerHealth((current) => ({
@@ -915,7 +933,9 @@ export function useGameSession(currentUser: User | null) {
       setBattleDeadlineAt(null);
       setShopDeadlines({});
       setMatchResult(null);
+      finisherVisibleUntilRef.current = 0;
       clearWindowTimeout(shopOpenTimeoutRef);
+      clearWindowTimeout(matchResultTimeoutRef);
       setShopOpen(false);
       setShopUpgrades([]);
       setShopRerollsRemaining(0);

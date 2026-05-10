@@ -57,6 +57,7 @@ const upgradeEmojis: Record<string, string> = {
   "Royal Invitation": "👑",
   "Tiny Troublemakers": "😈",
   "Echo Hand": "🌀",
+  "Grand Bazaar": "🎪",
   "Gap Straight": "↔️",
   "Soft Flush": "🌈",
 };
@@ -84,6 +85,7 @@ function summarizeOwnedUpgrades(upgrades: Upgrade[]): UpgradeSummarySection[] {
   let bonusHealthPercent = 0;
   let armor = 0;
   let bonusDiscards = 0;
+  let shopSelections = 0;
   let lowCardResistancePercent = 0;
   let highCardResistancePercent = 0;
   let straightResistancePercent = 0;
@@ -162,6 +164,9 @@ function summarizeOwnedUpgrades(upgrades: Upgrade[]): UpgradeSummarySection[] {
       case "Echo Hand":
         playTwiceChancePercent += amount;
         break;
+      case "Grand Bazaar":
+        shopSelections += amount;
+        break;
       case "Gap Straight":
         gapStraightEnabled = true;
         break;
@@ -231,6 +236,9 @@ function summarizeOwnedUpgrades(upgrades: Upgrade[]): UpgradeSummarySection[] {
   const game: string[] = [];
   if (bonusDiscards > 0) {
     game.push(`+${bonusDiscards} discard${bonusDiscards === 1 ? "" : "s"}`);
+  }
+  if (shopSelections > 0) {
+    game.push(`+${shopSelections} shop selection${shopSelections === 1 ? "" : "s"}`);
   }
 
   return [
@@ -359,12 +367,12 @@ export function UpgradePanel({
       </div>
 
       <div className="upgrade-grid">
-        {upgrades.map((upgrade) => (
+        {upgrades.map((upgrade, index) => (
           <button
             type="button"
             key={upgrade.id}
             className={`upgrade-card ${upgrade.rarity}`}
-            style={{ ["--shop-delay" as any]: `${upgrade.id * 90}ms` }}
+            style={{ ["--shop-delay" as any]: `${index * 60}ms` }}
             onClick={() => void onBuyUpgrade(upgrade)}
             disabled={busy}
           >

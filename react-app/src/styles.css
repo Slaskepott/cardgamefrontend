@@ -2629,6 +2629,78 @@ input {
     defeatedHealthBar 960ms ease-out forwards;
 }
 
+.health-card-finished {
+  animation:
+    healthCardHit 700ms cubic-bezier(0.2, 0.88, 0.34, 1),
+    healthCardDefeat 1600ms cubic-bezier(0.14, 0.9, 0.26, 1.06);
+}
+
+.health-avatar-shell {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+}
+
+.health-card-finished .health-avatar {
+  animation: avatarFinisher 1500ms cubic-bezier(0.16, 0.9, 0.28, 1.08) forwards;
+  transform-origin: center;
+}
+
+.defeat-shockwave,
+.defeat-slash,
+.defeat-ember-burst {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.defeat-shockwave {
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 223, 168, 0.92);
+  box-shadow:
+    0 0 18px rgba(255, 193, 107, 0.5),
+    inset 0 0 18px rgba(255, 234, 196, 0.4);
+  transform: translate(-50%, -50%) scale(0.2);
+  animation: defeatShockwave 1150ms ease-out forwards;
+}
+
+.defeat-slash {
+  width: 3.8rem;
+  height: 0.28rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(255, 243, 214, 0.98), transparent);
+  box-shadow:
+    0 0 18px rgba(255, 208, 133, 0.58),
+    0 0 34px rgba(255, 137, 61, 0.28);
+}
+
+.defeat-slash-a {
+  transform: translate(-50%, -50%) rotate(34deg) scaleX(0.35);
+  animation: defeatSlashA 760ms cubic-bezier(0.2, 0.88, 0.34, 1) 240ms forwards;
+}
+
+.defeat-slash-b {
+  transform: translate(-50%, -50%) rotate(-28deg) scaleX(0.3);
+  animation: defeatSlashB 760ms cubic-bezier(0.2, 0.88, 0.34, 1) 360ms forwards;
+}
+
+.defeat-ember-burst {
+  width: 4.8rem;
+  height: 4.8rem;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 245, 228, 0.94), transparent 20%),
+    radial-gradient(circle at 30% 34%, rgba(255, 192, 96, 0.9), transparent 24%),
+    radial-gradient(circle at 70% 26%, rgba(255, 136, 66, 0.82), transparent 22%),
+    radial-gradient(circle at 42% 72%, rgba(255, 114, 74, 0.8), transparent 28%);
+  filter: blur(2px);
+  transform: translate(-50%, -50%) scale(0.4);
+  animation: emberBurstExplode 1180ms ease-out 280ms forwards;
+}
+
 .health-meta {
   display: flex;
   justify-content: space-between;
@@ -2711,6 +2783,12 @@ input {
   opacity: 0;
   animation: defeatStamp 960ms ease-out forwards;
   pointer-events: none;
+}
+
+.health-card-finished .defeat-burst {
+  font-size: 0.96rem;
+  letter-spacing: 0.22em;
+  animation: defeatStamp 1450ms ease-out forwards;
 }
 
 .upgrade-grid,
@@ -3499,31 +3577,31 @@ input {
   padding: 1.2rem;
   align-content: start;
   opacity: 0;
-  animation: shopReveal 480ms cubic-bezier(0.18, 0.88, 0.32, 1.18) forwards;
+  animation: shopReveal 340ms cubic-bezier(0.18, 0.88, 0.32, 1.18) forwards;
   animation-delay: var(--shop-delay, 0ms);
 }
 
 .shop-panel-expanded .upgrade-card .upgrade-card-content {
   opacity: 0;
   transform: scale(0.94);
-  animation: upgradeContentReveal 380ms ease-out forwards;
-  animation-delay: calc(var(--shop-delay, 0ms) + 300ms);
+  animation: upgradeContentReveal 240ms ease-out forwards;
+  animation-delay: calc(var(--shop-delay, 0ms) + 180ms);
   animation-fill-mode: forwards;
 }
 
 .shop-panel-expanded .upgrade-card .upgrade-pack-half-top {
-  animation: packHalfTopOpen 520ms cubic-bezier(0.2, 0.9, 0.24, 1.06) forwards;
+  animation: packHalfTopOpen 420ms cubic-bezier(0.2, 0.9, 0.24, 1.06) forwards;
   animation-delay: calc(var(--shop-delay, 0ms) + 30ms);
 }
 
 .shop-panel-expanded .upgrade-card .upgrade-pack-half-bottom {
-  animation: packHalfBottomOpen 520ms cubic-bezier(0.2, 0.9, 0.24, 1.06) forwards;
+  animation: packHalfBottomOpen 420ms cubic-bezier(0.2, 0.9, 0.24, 1.06) forwards;
   animation-delay: calc(var(--shop-delay, 0ms) + 30ms);
 }
 
 .shop-panel-expanded .upgrade-card .upgrade-pack-burst {
-  animation: packBurstReveal 420ms ease-out forwards;
-  animation-delay: calc(var(--shop-delay, 0ms) + 110ms);
+  animation: packBurstReveal 320ms ease-out forwards;
+  animation-delay: calc(var(--shop-delay, 0ms) + 90ms);
 }
 
 .shop-panel-expanded .upgrade-card strong {
@@ -3540,9 +3618,9 @@ input {
 
 .shop-panel-expanded .upgrade-card.uncommon {
   animation:
-    shopReveal 480ms cubic-bezier(0.18, 0.88, 0.32, 1.18) forwards,
+    shopReveal 340ms cubic-bezier(0.18, 0.88, 0.32, 1.18) forwards,
     uncommonDrift 4.5s ease-in-out infinite;
-  animation-delay: var(--shop-delay, 0ms), calc(var(--shop-delay, 0ms) + 480ms);
+  animation-delay: var(--shop-delay, 0ms), calc(var(--shop-delay, 0ms) + 340ms);
 }
 
 .shop-panel-expanded .upgrade-card.uncommon .upgrade-pack-half-top,
@@ -3552,9 +3630,9 @@ input {
 
 .shop-panel-expanded .upgrade-card.rare {
   animation:
-    shopReveal 480ms cubic-bezier(0.18, 0.88, 0.32, 1.18) forwards,
+    shopReveal 340ms cubic-bezier(0.18, 0.88, 0.32, 1.18) forwards,
     rareGleam 4s ease-in-out infinite;
-  animation-delay: var(--shop-delay, 0ms), calc(var(--shop-delay, 0ms) + 480ms);
+  animation-delay: var(--shop-delay, 0ms), calc(var(--shop-delay, 0ms) + 340ms);
 }
 
 .shop-panel-expanded .upgrade-card.rare .upgrade-pack-half-top,
@@ -3568,13 +3646,13 @@ input {
 
 .shop-panel-expanded .upgrade-card.epic {
   animation:
-    shopReveal 480ms cubic-bezier(0.18, 0.88, 0.32, 1.18) forwards,
+    shopReveal 340ms cubic-bezier(0.18, 0.88, 0.32, 1.18) forwards,
     epicPulse 2.4s ease-in-out infinite,
     epicRunes 5s linear infinite;
   animation-delay:
     var(--shop-delay, 0ms),
-      calc(var(--shop-delay, 0ms) + 480ms),
-      calc(var(--shop-delay, 0ms) + 480ms);
+      calc(var(--shop-delay, 0ms) + 340ms),
+      calc(var(--shop-delay, 0ms) + 340ms);
 }
 
 .shop-panel-expanded .upgrade-card.epic .upgrade-pack-half-top,
@@ -3590,13 +3668,13 @@ input {
 
 .shop-panel-expanded .upgrade-card.legendary {
   animation:
-    shopReveal 480ms cubic-bezier(0.18, 0.88, 0.32, 1.18) forwards,
+    shopReveal 340ms cubic-bezier(0.18, 0.88, 0.32, 1.18) forwards,
     legendaryPulse 1.6s ease-in-out infinite,
     legendaryShimmer 4s linear infinite;
   animation-delay:
     var(--shop-delay, 0ms),
-      calc(var(--shop-delay, 0ms) + 480ms),
-      calc(var(--shop-delay, 0ms) + 480ms);
+      calc(var(--shop-delay, 0ms) + 340ms),
+      calc(var(--shop-delay, 0ms) + 340ms);
 }
 
 .shop-panel-expanded .upgrade-card.legendary .upgrade-pack-half-top,
@@ -3868,6 +3946,88 @@ input {
   }
   100% {
     filter: saturate(1) brightness(1);
+  }
+}
+
+@keyframes avatarFinisher {
+  0% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+    filter: saturate(1) brightness(1);
+  }
+  24% {
+    opacity: 1;
+    transform: scale(1.28) rotate(-8deg);
+    filter: saturate(1.14) brightness(1.05);
+  }
+  46% {
+    opacity: 1;
+    transform: scale(1.4) rotate(7deg);
+    filter: saturate(1.2) brightness(1.1);
+  }
+  70% {
+    opacity: 0.72;
+    transform: scale(1.16) rotate(-5deg);
+    filter: saturate(1.4) brightness(1.18) blur(1px);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.34) rotate(18deg);
+    filter: saturate(1.5) brightness(1.3) blur(3px);
+  }
+}
+
+@keyframes defeatShockwave {
+  0% {
+    opacity: 0.95;
+    transform: translate(-50%, -50%) scale(0.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(3.4);
+  }
+}
+
+@keyframes defeatSlashA {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(34deg) scaleX(0.35);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(34deg) scaleX(1.35);
+  }
+}
+
+@keyframes defeatSlashB {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(-28deg) scaleX(0.3);
+  }
+  22% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(-28deg) scaleX(1.42);
+  }
+}
+
+@keyframes emberBurstExplode {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  36% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.25);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(2.25);
   }
 }
 

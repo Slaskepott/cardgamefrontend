@@ -42,6 +42,7 @@ export interface BattleMoment {
   multiplier: number;
   accentSuit: Suit | null;
   winner: string | null;
+  matchFinished?: boolean;
 }
 
 export interface DiscardMoment {

@@ -97,6 +97,7 @@ export function BattleStatus({
           const percentage =
             player.maxHealth > 0 ? Math.max(0, (player.health / player.maxHealth) * 100) : 0;
           const defeatedThisRound = battleMoment?.winner && battleMoment.target === player.id;
+          const matchFinisher = Boolean(defeatedThisRound && battleMoment?.matchFinished);
           return (
             <article
               key={player.id}
@@ -104,11 +105,17 @@ export function BattleStatus({
                 battleMoment?.target === player.id ? " health-card-damaged" : ""
               }${battleMoment?.attacker === player.id ? " health-card-attacker" : ""}${
                 defeatedThisRound ? " health-card-defeated" : ""
-              }`}
+              }${matchFinisher ? " health-card-finished" : ""}`}
             >
               <div className="health-meta">
                 <strong className="health-player-name">
-                  <span className="player-avatar-badge health-avatar">{player.avatar}</span>
+                  <span className="health-avatar-shell" aria-hidden="true">
+                    <span className="player-avatar-badge health-avatar">{player.avatar}</span>
+                    {matchFinisher ? <span className="defeat-shockwave" /> : null}
+                    {matchFinisher ? <span className="defeat-slash defeat-slash-a" /> : null}
+                    {matchFinisher ? <span className="defeat-slash defeat-slash-b" /> : null}
+                    {matchFinisher ? <span className="defeat-ember-burst" /> : null}
+                  </span>
                   {player.id}
                 </strong>
                 <span>{player.wins} wins</span>
@@ -140,7 +147,7 @@ export function BattleStatus({
                   : null}
               {defeatedThisRound ? (
                 <span className="defeat-burst" aria-hidden="true">
-                  cracked
+                  {matchFinisher ? "obliterated" : "cracked"}
                 </span>
               ) : null}
             </article>
