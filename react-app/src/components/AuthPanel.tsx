@@ -9,6 +9,7 @@ import {
 } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import type { MetaProgress } from "../types/game";
+import type { AudioSettings } from "../lib/audio";
 
 const avatarOptions = [
   "🧙",
@@ -53,6 +54,8 @@ interface AuthPanelProps {
   guestMode: boolean;
   currentView: AccountView;
   metaProgress: MetaProgress | null;
+  audioSettings: AudioSettings;
+  onAudioSettingsChange: (settings: AudioSettings) => void;
   onOpenProgression: () => void;
   onAccountIconClick?: () => void;
   onNavigate: (view: Exclude<AccountView, "game">) => void | Promise<void>;
@@ -64,6 +67,8 @@ export function AuthPanel({
   guestMode,
   currentView,
   metaProgress,
+  audioSettings,
+  onAudioSettingsChange,
   onOpenProgression,
   onAccountIconClick,
   onNavigate,
@@ -76,8 +81,10 @@ export function AuthPanel({
   const [avatar, setAvatar] = useState("😎");
   const [busy, setBusy] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [audioMenuOpen, setAudioMenuOpen] = useState(false);
   const [message, setMessage] = useState("");
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
+  const audioMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setMenuOpen(false);
@@ -101,6 +108,103 @@ export function AuthPanel({
       document.removeEventListener("mousedown", handlePointerDown);
     };
   }, [menuOpen]);
+
+  useEffect(() => {
+    if (!audioMenuOpen) {
+      return;
+    }
+
+    function handlePointerDown(event: MouseEvent) {
+      if (!audioMenuRef.current?.contains(event.target as Node)) {
+        setAudioMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+    };
+  }, [audioMenuOpen]);
+
+  function setAudioSetting<K extends keyof AudioSettings>(key: K, value: number) {
+    onAudioSettingsChange({
+      ...audioSettings,
+      [key]: value,
+    });
+  }
+
+  function renderAudioMenu() {
+    return (
+      <div className="account-menu audio-menu" ref={audioMenuRef}>
+        <button
+          type="button"
+          className="account-chip-button audio-chip-button"
+          aria-label="Open audio controls"
+          aria-expanded={audioMenuOpen}
+          title="Audio settings"
+          onClick={() => setAudioMenuOpen((current) => !current)}
+        >
+          {audioSettings.masterVolume <= 0.01 ? "🔇" : audioSettings.masterVolume < 0.4 ? "🔉" : "🔊"}
+        </button>
+        {audioMenuOpen ? (
+          <div className="account-dropdown audio-dropdown">
+            <div className="audio-dropdown-header">
+              <strong>Audio</strong>
+              <span>Shape the mix</span>
+            </div>
+            <label className="audio-control-row">
+              <span>Master</span>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={audioSettings.masterVolume}
+                onChange={(event) => setAudioSetting("masterVolume", Number(event.target.value))}
+              />
+              <strong>{Math.round(audioSettings.masterVolume * 100)}</strong>
+            </label>
+            <label className="audio-control-row">
+              <span>Music</span>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={audioSettings.musicVolume}
+                onChange={(event) => setAudioSetting("musicVolume", Number(event.target.value))}
+              />
+              <strong>{Math.round(audioSettings.musicVolume * 100)}</strong>
+            </label>
+            <label className="audio-control-row">
+              <span>SFX</span>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={audioSettings.sfxVolume}
+                onChange={(event) => setAudioSetting("sfxVolume", Number(event.target.value))}
+              />
+              <strong>{Math.round(audioSettings.sfxVolume * 100)}</strong>
+            </label>
+            <label className="audio-control-row">
+              <span>Ambience</span>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={audioSettings.ambienceVolume}
+                onChange={(event) => setAudioSetting("ambienceVolume", Number(event.target.value))}
+              />
+              <strong>{Math.round(audioSettings.ambienceVolume * 100)}</strong>
+            </label>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
 
   async function handleAuthAction() {
     if (!email.trim() || !password.trim()) {
@@ -186,6 +290,7 @@ export function AuthPanel({
             <span className="account-chip-balance" title="Current level">
               Lv. {metaProgress?.level ?? "..."}
             </span>
+            {renderAudioMenu()}
             <div className="account-menu" ref={accountMenuRef}>
               <button
                 type="button"
@@ -294,6 +399,7 @@ export function AuthPanel({
 
       {!currentUser && guestMode ? (
         <div className="account-chip">
+          {renderAudioMenu()}
           <div className="account-menu">
             <button
               type="button"
@@ -342,6 +448,7 @@ export function AuthPanel({
               >
                 Sign up
               </button>
+              {renderAudioMenu()}
             </div>
 
             <label>

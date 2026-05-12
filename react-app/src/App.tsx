@@ -22,7 +22,15 @@ import { TutorialPage } from "./components/TutorialPage";
 import { UpgradePanel } from "./components/UpgradePanel";
 import { apiBaseUrl } from "./lib/config";
 import { launchIntroConfetti } from "./lib/confetti";
-import { playAchievementSound, playLevelUpSound, primeAudio } from "./lib/audio";
+import {
+  getStoredAudioSettings,
+  playAchievementSound,
+  playLevelUpSound,
+  primeAudio,
+  setAudioMix,
+  setAudioScene,
+  type AudioSettings,
+} from "./lib/audio";
 import {
   getMetaProgress,
   listLobbies,
@@ -61,6 +69,7 @@ export default function App() {
   const [activeLevelUp, setActiveLevelUp] = useState<LevelUpEvent | null>(null);
   const [progressionModalOpen, setProgressionModalOpen] = useState(false);
   const [pendingAccountView, setPendingAccountView] = useState<AccountViewTarget | null>(null);
+  const [audioSettings, setAudioSettingsState] = useState<AudioSettings>(() => getStoredAudioSettings());
 
   const session = useGameSession(currentUser);
   const { setDraftPlayerId } = session;
@@ -159,6 +168,24 @@ export default function App() {
       window.removeEventListener("keydown", unlockAudio);
     };
   }, []);
+
+  useEffect(() => {
+    setAudioMix(audioSettings);
+  }, [audioSettings]);
+
+  useEffect(() => {
+    const scene =
+      entryStage === "hero"
+        ? "hero"
+        : view !== "game"
+          ? "hub"
+          : session.phase === "shop"
+            ? "shop"
+            : session.phase === "relic"
+              ? "relic"
+              : "battle";
+    setAudioScene(scene);
+  }, [entryStage, session.phase, view]);
 
   useEffect(() => {
     if (view !== "lobby") {
@@ -427,6 +454,10 @@ export default function App() {
     }, 2200);
   }
 
+  function handleAudioSettingsChange(next: AudioSettings) {
+    setAudioSettingsState(next);
+  }
+
   const hasChosenAccess = Boolean(currentUser || guestMode);
 
   if (!bootComplete) {
@@ -521,6 +552,8 @@ export default function App() {
         guestMode={guestMode}
         currentView={view}
         metaProgress={metaProgress}
+        audioSettings={audioSettings}
+        onAudioSettingsChange={handleAudioSettingsChange}
         onOpenProgression={() => setProgressionModalOpen(true)}
         onAccountIconClick={handleAccountIconClick}
         onNavigate={handleAccountNavigate}
