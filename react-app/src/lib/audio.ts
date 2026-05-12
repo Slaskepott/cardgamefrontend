@@ -28,6 +28,7 @@ let ambienceTimeout: number | null = null;
 let gameMusic: HTMLAudioElement | null = null;
 let nonGameMusic: HTMLAudioElement | null = null;
 let activeMusicKind: "game" | "non-game" | null = null;
+let musicFadeFrame: number | null = null;
 
 function clampVolume(value: number) {
   return Math.min(1, Math.max(0, value));
@@ -138,6 +139,10 @@ function effectiveGain(base: number, categoryVolume: number) {
 
 function effectiveMusicGain(base: number) {
   return effectiveGain(base * 1.45, settings.musicVolume);
+}
+
+function effectiveSfxGain(base: number) {
+  return effectiveGain(base * 1.9, settings.sfxVolume);
 }
 
 function initializeMusicTracks() {
@@ -264,6 +269,10 @@ function syncMusicVolume() {
 }
 
 function stopMusicPlayback() {
+  if (musicFadeFrame !== null && typeof window !== "undefined") {
+    window.cancelAnimationFrame(musicFadeFrame);
+  }
+  musicFadeFrame = null;
   if (gameMusic) {
     gameMusic.pause();
   }
@@ -284,9 +293,75 @@ async function playTrack(track: HTMLAudioElement | null) {
   }
 }
 
+function animateMusicTransition(
+  incomingTrack: HTMLAudioElement | null,
+  outgoingTrack: HTMLAudioElement | null,
+  durationMs = 1800,
+) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (musicFadeFrame !== null) {
+    window.cancelAnimationFrame(musicFadeFrame);
+    musicFadeFrame = null;
+  }
+
+  const targetVolume = currentMusicVolume();
+
+  if (!incomingTrack) {
+    if (outgoingTrack) {
+      outgoingTrack.pause();
+      outgoingTrack.currentTime = outgoingTrack.currentTime;
+    }
+    return;
+  }
+
+  if (incomingTrack === outgoingTrack) {
+    incomingTrack.volume = targetVolume;
+    if (incomingTrack.paused) {
+      void playTrack(incomingTrack);
+    }
+    return;
+  }
+
+  if (incomingTrack.paused) {
+    incomingTrack.volume = 0;
+    void playTrack(incomingTrack);
+  }
+
+  const initialIncoming = incomingTrack.volume;
+  const initialOutgoing = outgoingTrack?.volume ?? 0;
+  const startedAt = window.performance.now();
+
+  const step = (now: number) => {
+    const progress = Math.min(1, (now - startedAt) / durationMs);
+    const eased = 1 - Math.pow(1 - progress, 3);
+
+    incomingTrack.volume = initialIncoming + (targetVolume - initialIncoming) * eased;
+
+    if (outgoingTrack) {
+      outgoingTrack.volume = initialOutgoing * (1 - eased);
+    }
+
+    if (progress < 1) {
+      musicFadeFrame = window.requestAnimationFrame(step);
+      return;
+    }
+
+    incomingTrack.volume = targetVolume;
+    if (outgoingTrack) {
+      outgoingTrack.pause();
+      outgoingTrack.volume = targetVolume;
+    }
+    musicFadeFrame = null;
+  };
+
+  musicFadeFrame = window.requestAnimationFrame(step);
+}
+
 function syncMusicPlayback() {
   initializeMusicTracks();
-  syncMusicVolume();
 
   if (!unlocked || settings.masterVolume <= 0 || settings.musicVolume <= 0) {
     stopMusicPlayback();
@@ -297,14 +372,13 @@ function syncMusicPlayback() {
   const nextTrack = nextKind === "game" ? gameMusic : nonGameMusic;
   const previousTrack = nextKind === "game" ? nonGameMusic : gameMusic;
 
-  if (previousTrack && !previousTrack.paused) {
-    previousTrack.pause();
-  }
-
   if (activeMusicKind !== nextKind) {
     activeMusicKind = nextKind;
+    animateMusicTransition(nextTrack, previousTrack);
+    return;
   }
 
+  syncMusicVolume();
   if (nextTrack?.paused) {
     void playTrack(nextTrack);
   }
@@ -410,7 +484,7 @@ export function playCardToggle(selected: boolean) {
     type: selected ? "triangle" : "sine",
     attack: 0.004,
     release: 0.08,
-    gain: effectiveGain(selected ? 0.08 : 0.055, settings.sfxVolume),
+    gain: effectiveSfxGain(selected ? 0.08 : 0.055),
   });
 }
 
@@ -425,7 +499,7 @@ export function playDiscardSound() {
   const start = pair.context.currentTime;
   playNoise({
     when: start,
-    gain: effectiveGain(0.075, settings.sfxVolume),
+    gain: effectiveSfxGain(0.075),
     release: 0.16,
     filterFrequency: 1200,
   });
@@ -433,14 +507,14 @@ export function playDiscardSound() {
     frequency: 360,
     type: "sawtooth",
     when: start + 0.01,
-    gain: effectiveGain(0.055, settings.sfxVolume),
+    gain: effectiveSfxGain(0.055),
     release: 0.14,
   });
   playTone({
     frequency: 280,
     type: "triangle",
     when: start + 0.03,
-    gain: effectiveGain(0.05, settings.sfxVolume),
+    gain: effectiveSfxGain(0.05),
     release: 0.16,
   });
 }
@@ -459,7 +533,7 @@ export function playShopRevealSound() {
       frequency,
       type: "triangle",
       when: start + index * 0.045,
-      gain: effectiveGain(0.055, settings.sfxVolume),
+      gain: effectiveSfxGain(0.055),
       attack: 0.008,
       release: 0.16,
     });
@@ -477,7 +551,7 @@ export function playRerollSound() {
   const start = pair.context.currentTime;
   playNoise({
     when: start,
-    gain: effectiveGain(0.06, settings.sfxVolume),
+    gain: effectiveSfxGain(0.06),
     release: 0.14,
     filterFrequency: 1500,
   });
@@ -485,14 +559,14 @@ export function playRerollSound() {
     frequency: 540,
     type: "square",
     when: start + 0.03,
-    gain: effectiveGain(0.05, settings.sfxVolume),
+    gain: effectiveSfxGain(0.05),
     release: 0.12,
   });
   playTone({
     frequency: 690,
     type: "triangle",
     when: start + 0.07,
-    gain: effectiveGain(0.045, settings.sfxVolume),
+    gain: effectiveSfxGain(0.045),
     release: 0.12,
   });
 }
@@ -510,7 +584,7 @@ export function playUpgradeBuySound(rarity: string) {
     legendary: [659, 830, 988],
   };
   playChord(chords[normalized], {
-    gain: effectiveGain(normalized === "legendary" ? 0.12 : 0.09, settings.sfxVolume),
+    gain: effectiveSfxGain(normalized === "legendary" ? 0.12 : 0.09),
     release: normalized === "legendary" ? 0.52 : 0.34,
     type: normalized === "legendary" ? "sawtooth" : "triangle",
   });
@@ -521,7 +595,7 @@ export function playRelicRevealSound() {
     return;
   }
   playChord([330, 440, 554, 740], {
-    gain: effectiveGain(0.095, settings.sfxVolume),
+    gain: effectiveSfxGain(0.095),
     release: 0.42,
     type: "triangle",
   });
@@ -532,7 +606,7 @@ export function playRelicPickSound() {
     return;
   }
   playChord([392, 523, 659], {
-    gain: effectiveGain(0.11, settings.sfxVolume),
+    gain: effectiveSfxGain(0.11),
     release: 0.48,
     type: "sawtooth",
   });
@@ -551,14 +625,14 @@ export function playGoldErrorSound() {
     frequency: 220,
     type: "square",
     when: start,
-    gain: effectiveGain(0.05, settings.sfxVolume),
+    gain: effectiveSfxGain(0.05),
     release: 0.08,
   });
   playTone({
     frequency: 184,
     type: "square",
     when: start + 0.06,
-    gain: effectiveGain(0.055, settings.sfxVolume),
+    gain: effectiveSfxGain(0.055),
     release: 0.1,
   });
 }
@@ -583,7 +657,7 @@ export function playBattleImpact(options: {
     const baseFrequency = Math.max(110, 260 - Math.min(options.damage, 90));
     playNoise({
       when,
-      gain: effectiveGain(options.matchFinished ? 0.115 : 0.085, settings.sfxVolume),
+      gain: effectiveSfxGain(options.matchFinished ? 0.115 : 0.085),
       release: options.matchFinished ? 0.22 : 0.14,
       filterFrequency: options.matchFinished ? 720 : 880,
       filterType: "lowpass",
@@ -592,7 +666,7 @@ export function playBattleImpact(options: {
       frequency: baseFrequency,
       type: options.matchFinished ? "sawtooth" : "square",
       when,
-      gain: effectiveGain(options.matchFinished ? 0.08 : 0.05, settings.sfxVolume),
+      gain: effectiveSfxGain(options.matchFinished ? 0.08 : 0.05),
       attack: 0.003,
       release: options.matchFinished ? 0.24 : 0.12,
     });
@@ -600,7 +674,7 @@ export function playBattleImpact(options: {
       frequency: baseFrequency * 1.9,
       type: "triangle",
       when: when + 0.012,
-      gain: effectiveGain(options.matchFinished ? 0.04 : 0.03, settings.sfxVolume),
+      gain: effectiveSfxGain(options.matchFinished ? 0.04 : 0.03),
       attack: 0.004,
       release: 0.1,
     });
@@ -611,7 +685,7 @@ export function playBattleImpact(options: {
       frequency: 820,
       type: "triangle",
       when: start + 0.08,
-      gain: effectiveGain(0.05, settings.sfxVolume),
+      gain: effectiveSfxGain(0.05),
       attack: 0.005,
       release: 0.18,
     });
@@ -619,7 +693,7 @@ export function playBattleImpact(options: {
 
   if (options.matchFinished) {
     playChord([196, 247, 311], {
-      gain: effectiveGain(0.1, settings.sfxVolume),
+      gain: effectiveSfxGain(0.1),
       release: 0.8,
       type: "sawtooth",
     });
@@ -632,7 +706,7 @@ export function playVictorySound(isWinner: boolean) {
   }
   if (isWinner) {
     playChord([392, 494, 587, 784], {
-      gain: effectiveGain(0.12, settings.sfxVolume),
+      gain: effectiveSfxGain(0.12),
       release: 0.72,
       type: "triangle",
     });
@@ -646,21 +720,21 @@ export function playVictorySound(isWinner: boolean) {
       frequency: 240,
       type: "sawtooth",
       when: start,
-      gain: effectiveGain(0.06, settings.sfxVolume),
+      gain: effectiveSfxGain(0.06),
       release: 0.2,
     });
     playTone({
       frequency: 196,
       type: "triangle",
       when: start + 0.08,
-      gain: effectiveGain(0.055, settings.sfxVolume),
+      gain: effectiveSfxGain(0.055),
       release: 0.26,
     });
     playTone({
       frequency: 147,
       type: "sine",
       when: start + 0.16,
-      gain: effectiveGain(0.05, settings.sfxVolume),
+      gain: effectiveSfxGain(0.05),
       release: 0.34,
     });
   }
@@ -671,7 +745,7 @@ export function playAchievementSound() {
     return;
   }
   playChord([523, 659, 784], {
-    gain: effectiveGain(0.11, settings.sfxVolume),
+    gain: effectiveSfxGain(0.11),
     release: 0.48,
     type: "triangle",
   });
@@ -682,7 +756,7 @@ export function playLevelUpSound() {
     return;
   }
   playChord([440, 554, 659, 880], {
-    gain: effectiveGain(0.12, settings.sfxVolume),
+    gain: effectiveSfxGain(0.12),
     release: 0.62,
     type: "sawtooth",
   });
