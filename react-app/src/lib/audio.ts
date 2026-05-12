@@ -1,3 +1,23 @@
+import achievementUnlockSfx from "./sfx/achievement_unlock.mp3";
+import cardDeselectSfx from "./sfx/card_deselect.mp3";
+import cardSelectSfx from "./sfx/card_select.mp3";
+import defeatSfx from "./sfx/defeat.mp3";
+import discardSfx from "./sfx/discard.mp3";
+import impactDoubleSfx from "./sfx/impact_double.mp3";
+import impactHitSfx from "./sfx/impact_hit.mp3";
+import impactLethalSfx from "./sfx/impact_lethal.mp3";
+import levelUpSfx from "./sfx/level_up.mp3";
+import notEnoughGoldSfx from "./sfx/not_enough_gold.mp3";
+import relicPickSfx from "./sfx/relic_pick.mp3";
+import relicRevealSfx from "./sfx/relic_reveal.mp3";
+import shopRerollSfx from "./sfx/shop_reroll.mp3";
+import shopRevealSfx from "./sfx/shop_reveal.mp3";
+import upgradeBuyCommonSfx from "./sfx/upgrade_buy_common.mp3";
+import upgradeBuyEpicSfx from "./sfx/upgrade_buy_epic.mp3";
+import upgradeBuyLegendarySfx from "./sfx/upgrade_buy_legendary.mp3";
+import upgradeBuyRareSfx from "./sfx/upgrade_buy_rare.mp3";
+import upgradeBuyUncommonSfx from "./sfx/upgrade_buy_uncommon.mp3";
+import victorySfx from "./sfx/victory.mp3";
 import tableOfFivesMusic from "../assets/audio/table-of-fives.mp3";
 import velvetHouseEdgeMusic from "../assets/audio/velvet-house-edge.mp3";
 
@@ -18,13 +38,34 @@ const defaultAudioSettings: AudioSettings = {
   ambienceVolume: 0.45,
 };
 
+const sfxSources = {
+  achievementUnlock: achievementUnlockSfx,
+  cardDeselect: cardDeselectSfx,
+  cardSelect: cardSelectSfx,
+  defeat: defeatSfx,
+  discard: discardSfx,
+  impactDouble: impactDoubleSfx,
+  impactHit: impactHitSfx,
+  impactLethal: impactLethalSfx,
+  levelUp: levelUpSfx,
+  notEnoughGold: notEnoughGoldSfx,
+  relicPick: relicPickSfx,
+  relicReveal: relicRevealSfx,
+  shopReroll: shopRerollSfx,
+  shopReveal: shopRevealSfx,
+  upgradeBuyCommon: upgradeBuyCommonSfx,
+  upgradeBuyEpic: upgradeBuyEpicSfx,
+  upgradeBuyLegendary: upgradeBuyLegendarySfx,
+  upgradeBuyRare: upgradeBuyRareSfx,
+  upgradeBuyUncommon: upgradeBuyUncommonSfx,
+  victory: victorySfx,
+} as const;
+
+type SfxKey = keyof typeof sfxSources;
+
 let settings: AudioSettings = loadStoredAudioSettings();
-let audioContext: AudioContext | null = null;
-let masterGain: GainNode | null = null;
-let noiseBuffer: AudioBuffer | null = null;
 let unlocked = false;
 let currentScene: AudioScene = "hero";
-let ambienceTimeout: number | null = null;
 let gameMusic: HTMLAudioElement | null = null;
 let nonGameMusic: HTMLAudioElement | null = null;
 let activeMusicKind: "game" | "non-game" | null = null;
@@ -72,78 +113,16 @@ export function getStoredAudioSettings() {
   return { ...settings };
 }
 
-function getContext() {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  if (!audioContext) {
-    const Context = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (!Context) {
-      return null;
-    }
-    audioContext = new Context();
-    masterGain = audioContext.createGain();
-    masterGain.gain.value = settings.masterVolume * 0.22;
-    masterGain.connect(audioContext.destination);
-  }
-
-  return audioContext;
+function desiredMusicKind(scene: AudioScene) {
+  return scene === "battle" || scene === "shop" || scene === "relic" ? "game" : "non-game";
 }
 
-function syncMasterGain() {
-  if (!masterGain || !audioContext) {
-    return;
-  }
-  masterGain.gain.cancelScheduledValues(audioContext.currentTime);
-  masterGain.gain.linearRampToValueAtTime(settings.masterVolume * 0.22, audioContext.currentTime + 0.05);
+function currentMusicVolume() {
+  return clampVolume(settings.masterVolume * settings.musicVolume);
 }
 
-function getMasterGain() {
-  const context = getContext();
-  if (!context || !masterGain) {
-    return null;
-  }
-  return { context, gain: masterGain };
-}
-
-function getNoiseBuffer(context: AudioContext) {
-  if (noiseBuffer) {
-    return noiseBuffer;
-  }
-
-  const buffer = context.createBuffer(1, context.sampleRate * 0.4, context.sampleRate);
-  const channel = buffer.getChannelData(0);
-  for (let index = 0; index < channel.length; index += 1) {
-    channel[index] = Math.random() * 2 - 1;
-  }
-  noiseBuffer = buffer;
-  return buffer;
-}
-
-function shapeGain(
-  gainNode: GainNode,
-  now: number,
-  attack: number,
-  peak: number,
-  release: number,
-) {
-  gainNode.gain.cancelScheduledValues(now);
-  gainNode.gain.setValueAtTime(0.0001, now);
-  gainNode.gain.exponentialRampToValueAtTime(Math.max(0.0001, peak), now + attack);
-  gainNode.gain.exponentialRampToValueAtTime(0.0001, now + attack + release);
-}
-
-function effectiveGain(base: number, categoryVolume: number) {
-  return base * settings.masterVolume * categoryVolume;
-}
-
-function effectiveMusicGain(base: number) {
-  return effectiveGain(base * 1.45, settings.musicVolume);
-}
-
-function effectiveSfxGain(base: number) {
-  return effectiveGain(base * 1.9, settings.sfxVolume);
+function currentSfxVolume() {
+  return clampVolume(settings.masterVolume * settings.sfxVolume);
 }
 
 function initializeMusicTracks() {
@@ -164,109 +143,11 @@ function initializeMusicTracks() {
   }
 }
 
-function playTone(options: {
-  frequency: number;
-  type?: OscillatorType;
-  attack?: number;
-  release?: number;
-  gain?: number;
-  detune?: number;
-  when?: number;
-  target?: AudioNode | null;
-}) {
-  const pair = getMasterGain();
-  if (!pair) {
+function setTrackVolume(track: HTMLAudioElement | null, value: number) {
+  if (!track) {
     return;
   }
-  const { context, gain } = pair;
-  const oscillator = context.createOscillator();
-  const gainNode = context.createGain();
-  oscillator.type = options.type ?? "sine";
-  oscillator.frequency.setValueAtTime(options.frequency, context.currentTime);
-  oscillator.detune.setValueAtTime(options.detune ?? 0, context.currentTime);
-  oscillator.connect(gainNode);
-  gainNode.connect(options.target ?? gain);
-  const when = options.when ?? context.currentTime;
-  shapeGain(gainNode, when, options.attack ?? 0.01, options.gain ?? 0.12, options.release ?? 0.18);
-  oscillator.start(when);
-  oscillator.stop(when + (options.attack ?? 0.01) + (options.release ?? 0.18) + 0.05);
-}
-
-function playNoise(options: {
-  attack?: number;
-  release?: number;
-  gain?: number;
-  filterFrequency?: number;
-  filterType?: BiquadFilterType;
-  when?: number;
-}) {
-  const pair = getMasterGain();
-  if (!pair) {
-    return;
-  }
-  const { context, gain } = pair;
-  const source = context.createBufferSource();
-  source.buffer = getNoiseBuffer(context);
-  const filter = context.createBiquadFilter();
-  filter.type = options.filterType ?? "bandpass";
-  filter.frequency.setValueAtTime(options.filterFrequency ?? 900, context.currentTime);
-  filter.Q.value = 0.8;
-  const gainNode = context.createGain();
-  source.connect(filter);
-  filter.connect(gainNode);
-  gainNode.connect(gain);
-  const when = options.when ?? context.currentTime;
-  shapeGain(gainNode, when, options.attack ?? 0.005, options.gain ?? 0.08, options.release ?? 0.12);
-  source.start(when);
-  source.stop(when + (options.attack ?? 0.005) + (options.release ?? 0.12) + 0.05);
-}
-
-function playChord(
-  frequencies: number[],
-  options?: { gain?: number; release?: number; type?: OscillatorType },
-) {
-  const pair = getMasterGain();
-  if (!pair) {
-    return;
-  }
-  const when = pair.context.currentTime;
-  const gain = options?.gain ?? 0.08;
-  frequencies.forEach((frequency, index) => {
-    playTone({
-      frequency,
-      type: options?.type ?? "triangle",
-      attack: 0.012,
-      release: options?.release ?? 0.36,
-      gain: gain / Math.max(1, frequencies.length * 0.8),
-      when: when + index * 0.015,
-      detune: (index - 1) * 4,
-    });
-  });
-}
-
-function clearAmbienceLoop() {
-  if (ambienceTimeout !== null && typeof window !== "undefined") {
-    window.clearTimeout(ambienceTimeout);
-  }
-  ambienceTimeout = null;
-}
-
-function desiredMusicKind(scene: AudioScene) {
-  return scene === "battle" || scene === "shop" || scene === "relic" ? "game" : "non-game";
-}
-
-function currentMusicVolume() {
-  return clampVolume(settings.masterVolume * settings.musicVolume);
-}
-
-function syncMusicVolume() {
-  const volume = currentMusicVolume();
-  if (gameMusic && activeMusicKind === "game") {
-    gameMusic.volume = volume;
-  }
-  if (nonGameMusic && activeMusicKind === "non-game") {
-    nonGameMusic.volume = volume;
-  }
+  track.volume = clampVolume(value);
 }
 
 function silenceTrack(track: HTMLAudioElement | null) {
@@ -274,7 +155,7 @@ function silenceTrack(track: HTMLAudioElement | null) {
     return;
   }
   track.pause();
-  track.volume = 0;
+  setTrackVolume(track, 0);
 }
 
 function stopMusicPlayback() {
@@ -288,7 +169,11 @@ function stopMusicPlayback() {
   activeMusicKind = null;
 }
 
-async function playTrack(track: HTMLAudioElement | null, expectedKind?: "game" | "non-game", token?: number) {
+async function playTrack(
+  track: HTMLAudioElement | null,
+  expectedKind?: "game" | "non-game",
+  token?: number,
+) {
   if (!track) {
     return;
   }
@@ -321,7 +206,6 @@ function animateMusicTransition(
   }
   musicTransitionToken += 1;
   const transitionToken = musicTransitionToken;
-
   const targetVolume = currentMusicVolume();
 
   if (!incomingTrack) {
@@ -330,7 +214,7 @@ function animateMusicTransition(
   }
 
   if (incomingTrack === outgoingTrack) {
-    incomingTrack.volume = targetVolume;
+    setTrackVolume(incomingTrack, targetVolume);
     if (incomingTrack.paused) {
       void playTrack(incomingTrack, nextKind, transitionToken);
     }
@@ -338,7 +222,7 @@ function animateMusicTransition(
   }
 
   if (incomingTrack.paused) {
-    incomingTrack.volume = 0;
+    setTrackVolume(incomingTrack, 0);
     void playTrack(incomingTrack, nextKind, transitionToken);
   }
 
@@ -350,13 +234,17 @@ function animateMusicTransition(
     if (transitionToken !== musicTransitionToken) {
       return;
     }
+
     const progress = Math.min(1, (now - startedAt) / durationMs);
     const eased = 1 - Math.pow(1 - progress, 3);
 
-    incomingTrack.volume = initialIncoming + (targetVolume - initialIncoming) * eased;
+    setTrackVolume(
+      incomingTrack,
+      initialIncoming + (targetVolume - initialIncoming) * eased,
+    );
 
     if (outgoingTrack) {
-      outgoingTrack.volume = initialOutgoing * (1 - eased);
+      setTrackVolume(outgoingTrack, initialOutgoing * (1 - eased));
     }
 
     if (progress < 1) {
@@ -364,7 +252,7 @@ function animateMusicTransition(
       return;
     }
 
-    incomingTrack.volume = targetVolume;
+    setTrackVolume(incomingTrack, targetVolume);
     if (outgoingTrack) {
       silenceTrack(outgoingTrack);
     }
@@ -372,6 +260,16 @@ function animateMusicTransition(
   };
 
   musicFadeFrame = window.requestAnimationFrame(step);
+}
+
+function syncMusicVolume() {
+  const volume = currentMusicVolume();
+  if (gameMusic && activeMusicKind === "game") {
+    setTrackVolume(gameMusic, volume);
+  }
+  if (nonGameMusic && activeMusicKind === "non-game") {
+    setTrackVolume(nonGameMusic, volume);
+  }
 }
 
 function syncMusicPlayback() {
@@ -399,72 +297,11 @@ function syncMusicPlayback() {
   }
 }
 
-function queueAmbienceLoop() {
-  clearAmbienceLoop();
-  if (!unlocked || settings.masterVolume <= 0 || settings.ambienceVolume <= 0 || typeof window === "undefined") {
-    return;
-  }
-
-  const ambientGains: Record<AudioScene, number> = {
-    hero: 0.026,
-    hub: 0.02,
-    battle: 0.018,
-    shop: 0.024,
-    relic: 0.028,
-  };
-  const noiseFreq: Record<AudioScene, number> = {
-    hero: 580,
-    hub: 760,
-    battle: 940,
-    shop: 830,
-    relic: 690,
-  };
-
-  playNoise({
-    gain: effectiveGain(ambientGains[currentScene], settings.ambienceVolume),
-    release: currentScene === "battle" ? 0.5 : 0.85,
-    filterFrequency: noiseFreq[currentScene],
-    filterType: currentScene === "battle" ? "bandpass" : "lowpass",
-  });
-
-  if (currentScene !== "battle") {
-    const pair = getMasterGain();
-    if (pair) {
-      playTone({
-        frequency: currentScene === "relic" ? 466.16 : 349.23,
-        type: "sine",
-        gain: effectiveGain(0.012, settings.ambienceVolume),
-        attack: 0.05,
-        release: 1.2,
-        when: pair.context.currentTime + 0.12,
-      });
-    }
-  }
-
-  const nextDelay =
-    currentScene === "battle"
-      ? 2200 + Math.round(Math.random() * 900)
-      : 3200 + Math.round(Math.random() * 1800);
-  ambienceTimeout = window.setTimeout(queueAmbienceLoop, nextDelay);
-}
-
 function refreshBackgroundAudio() {
-  syncMasterGain();
   syncMusicPlayback();
-  if (!unlocked) {
-    return;
-  }
-  queueAmbienceLoop();
 }
 
 export async function primeAudio() {
-  const context = getContext();
-  if (!context) {
-    return;
-  }
-  if (context.state === "suspended") {
-    await context.resume();
-  }
   initializeMusicTracks();
   unlocked = true;
   refreshBackgroundAudio();
@@ -486,170 +323,60 @@ export function setAudioScene(scene: AudioScene) {
   refreshBackgroundAudio();
 }
 
-function canPlaySfx() {
-  return unlocked && settings.masterVolume > 0 && settings.sfxVolume > 0 && !!getContext();
+function playSfx(key: SfxKey, volumeMultiplier = 1) {
+  if (!unlocked) {
+    return;
+  }
+  const volume = clampVolume(currentSfxVolume() * volumeMultiplier);
+  if (volume <= 0) {
+    return;
+  }
+
+  const sound = new Audio(sfxSources[key]);
+  sound.preload = "auto";
+  sound.volume = volume;
+  void sound.play().catch(() => {
+    // Ignore playback interruption/no-user-gesture cases.
+  });
 }
 
 export function playCardToggle(selected: boolean) {
-  if (!canPlaySfx()) {
-    return;
-  }
-  playTone({
-    frequency: selected ? 620 : 420,
-    type: selected ? "triangle" : "sine",
-    attack: 0.004,
-    release: 0.08,
-    gain: effectiveSfxGain(selected ? 0.08 : 0.055),
-  });
+  playSfx(selected ? "cardSelect" : "cardDeselect");
 }
 
 export function playDiscardSound() {
-  if (!canPlaySfx()) {
-    return;
-  }
-  const pair = getMasterGain();
-  if (!pair) {
-    return;
-  }
-  const start = pair.context.currentTime;
-  playNoise({
-    when: start,
-    gain: effectiveSfxGain(0.075),
-    release: 0.16,
-    filterFrequency: 1200,
-  });
-  playTone({
-    frequency: 360,
-    type: "sawtooth",
-    when: start + 0.01,
-    gain: effectiveSfxGain(0.055),
-    release: 0.14,
-  });
-  playTone({
-    frequency: 280,
-    type: "triangle",
-    when: start + 0.03,
-    gain: effectiveSfxGain(0.05),
-    release: 0.16,
-  });
+  playSfx("discard");
 }
 
 export function playShopRevealSound() {
-  if (!canPlaySfx()) {
-    return;
-  }
-  const pair = getMasterGain();
-  if (!pair) {
-    return;
-  }
-  const start = pair.context.currentTime;
-  [420, 520, 660].forEach((frequency, index) => {
-    playTone({
-      frequency,
-      type: "triangle",
-      when: start + index * 0.045,
-      gain: effectiveSfxGain(0.055),
-      attack: 0.008,
-      release: 0.16,
-    });
-  });
+  playSfx("shopReveal");
 }
 
 export function playRerollSound() {
-  if (!canPlaySfx()) {
-    return;
-  }
-  const pair = getMasterGain();
-  if (!pair) {
-    return;
-  }
-  const start = pair.context.currentTime;
-  playNoise({
-    when: start,
-    gain: effectiveSfxGain(0.06),
-    release: 0.14,
-    filterFrequency: 1500,
-  });
-  playTone({
-    frequency: 540,
-    type: "square",
-    when: start + 0.03,
-    gain: effectiveSfxGain(0.05),
-    release: 0.12,
-  });
-  playTone({
-    frequency: 690,
-    type: "triangle",
-    when: start + 0.07,
-    gain: effectiveSfxGain(0.045),
-    release: 0.12,
-  });
+  playSfx("shopReroll");
 }
 
 export function playUpgradeBuySound(rarity: string) {
-  if (!canPlaySfx()) {
-    return;
-  }
-  const normalized = (rarity as "common" | "uncommon" | "rare" | "epic" | "legendary") ?? "common";
-  const chords = {
-    common: [392, 494],
-    uncommon: [440, 554, 659],
-    rare: [494, 622, 740],
-    epic: [554, 698, 830],
-    legendary: [659, 830, 988],
+  const keyByRarity: Record<string, SfxKey> = {
+    common: "upgradeBuyCommon",
+    uncommon: "upgradeBuyUncommon",
+    rare: "upgradeBuyRare",
+    epic: "upgradeBuyEpic",
+    legendary: "upgradeBuyLegendary",
   };
-  playChord(chords[normalized], {
-    gain: effectiveSfxGain(normalized === "legendary" ? 0.12 : 0.09),
-    release: normalized === "legendary" ? 0.52 : 0.34,
-    type: normalized === "legendary" ? "sawtooth" : "triangle",
-  });
+  playSfx(keyByRarity[rarity] ?? "upgradeBuyCommon");
 }
 
 export function playRelicRevealSound() {
-  if (!canPlaySfx()) {
-    return;
-  }
-  playChord([330, 440, 554, 740], {
-    gain: effectiveSfxGain(0.095),
-    release: 0.42,
-    type: "triangle",
-  });
+  playSfx("relicReveal");
 }
 
 export function playRelicPickSound() {
-  if (!canPlaySfx()) {
-    return;
-  }
-  playChord([392, 523, 659], {
-    gain: effectiveSfxGain(0.11),
-    release: 0.48,
-    type: "sawtooth",
-  });
+  playSfx("relicPick");
 }
 
 export function playGoldErrorSound() {
-  if (!canPlaySfx()) {
-    return;
-  }
-  const pair = getMasterGain();
-  if (!pair) {
-    return;
-  }
-  const start = pair.context.currentTime;
-  playTone({
-    frequency: 220,
-    type: "square",
-    when: start,
-    gain: effectiveSfxGain(0.05),
-    release: 0.08,
-  });
-  playTone({
-    frequency: 184,
-    type: "square",
-    when: start + 0.06,
-    gain: effectiveSfxGain(0.055),
-    release: 0.1,
-  });
+  playSfx("notEnoughGold");
 }
 
 export function playBattleImpact(options: {
@@ -658,121 +385,28 @@ export function playBattleImpact(options: {
   doublePlayTriggered: boolean;
   matchFinished?: boolean;
 }) {
-  if (!canPlaySfx()) {
-    return;
-  }
-  const pair = getMasterGain();
-  if (!pair) {
-    return;
-  }
-  const start = pair.context.currentTime;
   const hitCount = Math.max(1, options.hits || 1);
   for (let index = 0; index < hitCount; index += 1) {
-    const when = start + index * 0.17;
-    const baseFrequency = Math.max(110, 260 - Math.min(options.damage, 90));
-    playNoise({
-      when,
-      gain: effectiveSfxGain(options.matchFinished ? 0.115 : 0.085),
-      release: options.matchFinished ? 0.22 : 0.14,
-      filterFrequency: options.matchFinished ? 720 : 880,
-      filterType: "lowpass",
-    });
-    playTone({
-      frequency: baseFrequency,
-      type: options.matchFinished ? "sawtooth" : "square",
-      when,
-      gain: effectiveSfxGain(options.matchFinished ? 0.08 : 0.05),
-      attack: 0.003,
-      release: options.matchFinished ? 0.24 : 0.12,
-    });
-    playTone({
-      frequency: baseFrequency * 1.9,
-      type: "triangle",
-      when: when + 0.012,
-      gain: effectiveSfxGain(options.matchFinished ? 0.04 : 0.03),
-      attack: 0.004,
-      release: 0.1,
-    });
+    window.setTimeout(() => {
+      playSfx(options.matchFinished ? "impactLethal" : "impactHit", 1);
+    }, index * 170);
   }
 
   if (options.doublePlayTriggered) {
-    playTone({
-      frequency: 820,
-      type: "triangle",
-      when: start + 0.08,
-      gain: effectiveSfxGain(0.05),
-      attack: 0.005,
-      release: 0.18,
-    });
-  }
-
-  if (options.matchFinished) {
-    playChord([196, 247, 311], {
-      gain: effectiveSfxGain(0.1),
-      release: 0.8,
-      type: "sawtooth",
-    });
+    window.setTimeout(() => {
+      playSfx("impactDouble", 0.95);
+    }, 90);
   }
 }
 
 export function playVictorySound(isWinner: boolean) {
-  if (!canPlaySfx()) {
-    return;
-  }
-  if (isWinner) {
-    playChord([392, 494, 587, 784], {
-      gain: effectiveSfxGain(0.12),
-      release: 0.72,
-      type: "triangle",
-    });
-  } else {
-    const pair = getMasterGain();
-    if (!pair) {
-      return;
-    }
-    const start = pair.context.currentTime;
-    playTone({
-      frequency: 240,
-      type: "sawtooth",
-      when: start,
-      gain: effectiveSfxGain(0.06),
-      release: 0.2,
-    });
-    playTone({
-      frequency: 196,
-      type: "triangle",
-      when: start + 0.08,
-      gain: effectiveSfxGain(0.055),
-      release: 0.26,
-    });
-    playTone({
-      frequency: 147,
-      type: "sine",
-      when: start + 0.16,
-      gain: effectiveSfxGain(0.05),
-      release: 0.34,
-    });
-  }
+  playSfx(isWinner ? "victory" : "defeat");
 }
 
 export function playAchievementSound() {
-  if (!canPlaySfx()) {
-    return;
-  }
-  playChord([523, 659, 784], {
-    gain: effectiveSfxGain(0.11),
-    release: 0.48,
-    type: "triangle",
-  });
+  playSfx("achievementUnlock");
 }
 
 export function playLevelUpSound() {
-  if (!canPlaySfx()) {
-    return;
-  }
-  playChord([440, 554, 659, 880], {
-    gain: effectiveSfxGain(0.12),
-    release: 0.62,
-    type: "sawtooth",
-  });
+  playSfx("levelUp");
 }
