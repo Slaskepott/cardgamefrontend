@@ -22,6 +22,7 @@ import { TutorialPage } from "./components/TutorialPage";
 import { UpgradePanel } from "./components/UpgradePanel";
 import { apiBaseUrl } from "./lib/config";
 import { launchIntroConfetti } from "./lib/confetti";
+import { playAchievementSound, playLevelUpSound, primeAudio } from "./lib/audio";
 import {
   getMetaProgress,
   listLobbies,
@@ -142,6 +143,20 @@ export default function App() {
       if (accountIconClickTimeoutRef.current !== null) {
         window.clearTimeout(accountIconClickTimeoutRef.current);
       }
+    };
+  }, []);
+
+  useEffect(() => {
+    function unlockAudio() {
+      void primeAudio();
+    }
+
+    window.addEventListener("pointerdown", unlockAudio, { passive: true });
+    window.addEventListener("keydown", unlockAudio);
+
+    return () => {
+      window.removeEventListener("pointerdown", unlockAudio);
+      window.removeEventListener("keydown", unlockAudio);
     };
   }, []);
 
@@ -299,6 +314,8 @@ export default function App() {
       return;
     }
 
+    playAchievementSound();
+
     const timeoutId = window.setTimeout(() => {
       setActiveAchievement(null);
     }, 4200);
@@ -312,6 +329,8 @@ export default function App() {
     if (!activeLevelUp) {
       return;
     }
+
+    playLevelUpSound();
 
     const timeoutId = window.setTimeout(() => {
       setActiveLevelUp(null);

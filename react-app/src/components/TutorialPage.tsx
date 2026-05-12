@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Card } from "../types/game";
 import { buildHandPreview } from "../lib/handPreview";
 import { launchVictoryConfetti } from "../lib/confetti";
+import { playVictorySound } from "../lib/audio";
 
 interface TutorialPageProps {
   onBackToLobby: () => void;
@@ -188,6 +189,7 @@ export function TutorialPage({ onBackToLobby }: TutorialPageProps) {
   useEffect(() => {
     if (step === 4) {
       launchVictoryConfetti();
+      playVictorySound(true);
     }
   }, [step]);
 

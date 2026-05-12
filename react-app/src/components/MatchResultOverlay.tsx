@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import type { MatchOverMessage } from "../types/game";
 import { launchVictoryConfetti } from "../lib/confetti";
+import { playVictorySound } from "../lib/audio";
 
 interface MatchResultOverlayProps {
   matchResult: MatchOverMessage;
@@ -21,9 +22,12 @@ export function MatchResultOverlay({
   playerId,
   onLeaveLobby,
 }: MatchResultOverlayProps) {
+  const didPlayerWin = Boolean(playerId && matchResult.winner === playerId);
+
   useEffect(() => {
     launchVictoryConfetti();
-  }, []);
+    playVictorySound(didPlayerWin);
+  }, [didPlayerWin]);
 
   const botMatch = Boolean(matchResult.is_bot_match || matchResult.progression_disabled);
   const playerEntries = Object.entries(matchResult.avatars).map(([name, avatar]) => {

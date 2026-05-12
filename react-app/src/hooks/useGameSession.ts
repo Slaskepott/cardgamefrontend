@@ -25,6 +25,17 @@ import {
 } from "../lib/api";
 import { generateLobbyId, generatePlayerName } from "../lib/nameGenerator";
 import { connectToGameSocket } from "../lib/ws";
+import {
+  playBattleImpact,
+  playCardToggle,
+  playDiscardSound,
+  playGoldErrorSound,
+  playRelicPickSound,
+  playRelicRevealSound,
+  playRerollSound,
+  playShopRevealSound,
+  playUpgradeBuySound,
+} from "../lib/audio";
 import type {
   ApplyUpgradesMessage,
   BattleMoment,
@@ -290,6 +301,12 @@ export function useGameSession(currentUser: User | null) {
     clearWindowTimeout(battleMomentTimeoutRef);
     finisherVisibleUntilRef.current = message.match_finished ? Date.now() + 1850 : 0;
     setBattleMoment(buildBattleMoment(message));
+    playBattleImpact({
+      damage: message.damage,
+      hits: message.hits ?? (message.damage_instances?.length ?? 1),
+      doublePlayTriggered: message.double_play_triggered ?? false,
+      matchFinished: message.match_finished ?? false,
+    });
     battleMomentTimeoutRef.current = window.setTimeout(() => {
       setBattleMoment(null);
       battleMomentTimeoutRef.current = null;
@@ -302,6 +319,7 @@ export function useGameSession(currentUser: User | null) {
       cards: nextCards,
       remainingDiscards: nextRemainingDiscards,
     });
+    playDiscardSound();
     discardMomentTimeoutRef.current = window.setTimeout(() => {
       setDiscardMoment(null);
       discardMomentTimeoutRef.current = null;
@@ -326,12 +344,14 @@ export function useGameSession(currentUser: User | null) {
     if (delayMs <= 0) {
       setShopUpgrades(upgrades);
       setShopOpen(true);
+      playShopRevealSound();
       return;
     }
 
     shopOpenTimeoutRef.current = window.setTimeout(() => {
       setShopUpgrades(upgrades);
       setShopOpen(true);
+      playShopRevealSound();
       shopOpenTimeoutRef.current = null;
     }, delayMs);
   }
@@ -513,6 +533,7 @@ export function useGameSession(currentUser: User | null) {
           setShopUpgrades([]);
           setRelicOffers(message.relics);
           setRelicWaitingPlayers(message.waiting_players ?? []);
+          playRelicRevealSound();
         }
         if (isMatchOverMessage(message)) {
           const showMatchResult = () => {
@@ -715,6 +736,7 @@ export function useGameSession(currentUser: User | null) {
     setSelectedCards((current) => {
       const existing = current.find((entry) => entry.key === cardKey);
       if (existing) {
+        playCardToggle(false);
         return current.filter((entry) => entry.key !== cardKey);
       }
 
@@ -723,6 +745,7 @@ export function useGameSession(currentUser: User | null) {
         return current;
       }
 
+      playCardToggle(true);
       return [...current, { ...card, key: cardKey }];
     });
   }
@@ -821,6 +844,7 @@ export function useGameSession(currentUser: User | null) {
       }
       if (response.message === "Not enough gold") {
         triggerGoldAttention();
+        playGoldErrorSound();
         pushFeedEntry("Not enough gold for that upgrade.");
         return;
       }
@@ -832,6 +856,7 @@ export function useGameSession(currentUser: User | null) {
       setPlayerGold((current) =>
         typeof response.price === "number" ? current - response.price : current,
       );
+      playUpgradeBuySound(upgrade.rarity);
       pushFeedEntry(`${upgrade.name} purchased.`);
     } catch (error) {
       pushFeedEntry(error instanceof Error ? error.message : "Upgrade purchase failed.");
@@ -877,6 +902,7 @@ export function useGameSession(currentUser: User | null) {
         setShopUpgrades(response.upgrades);
       }
       setShopRerollsRemaining(response.rerolls_remaining ?? 0);
+      playRerollSound();
       if (typeof response.health === "number" && playerId) {
         setPlayerHealth((current) => ({
           ...current,
@@ -961,6 +987,7 @@ export function useGameSession(currentUser: User | null) {
       }
       setRelicOffers([]);
       setRelicWaitingPlayers(response.waiting_players ?? []);
+      playRelicPickSound();
       pushFeedEntry("Relic chosen.");
     } catch (error) {
       pushFeedEntry(error instanceof Error ? error.message : "Relic choice failed.");
