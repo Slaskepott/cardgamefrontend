@@ -253,12 +253,12 @@ type MusicProfile = {
 const sceneMusicProfiles: Record<AudioScene, MusicProfile> = {
   hero: {
     rootMidi: 60,
-    progression: [0, 5, 7, 3],
+    progression: [0, 5, 7, 3, 9, 5, 7, 10],
     scale: [0, 2, 4, 7, 9, 11],
     chordShape: [0, 4, 7, 11],
-    motifA: [0, 2, 4, 2],
-    motifB: [4, 7, 9, 7],
-    stepMs: 310,
+    motifA: [0, 2, 4, 2, 4, 7, 9, 7],
+    motifB: [4, 7, 9, 7, 4, 2, 0, 2],
+    stepMs: 300,
     bassType: "sine",
     chordType: "triangle",
     leadType: "triangle",
@@ -268,12 +268,12 @@ const sceneMusicProfiles: Record<AudioScene, MusicProfile> = {
   },
   hub: {
     rootMidi: 57,
-    progression: [0, 3, 5, 7],
+    progression: [0, 3, 5, 7, 10, 7, 5, 3],
     scale: [0, 2, 3, 5, 7, 10],
     chordShape: [0, 3, 7, 10],
-    motifA: [0, 2, 3, 5],
-    motifB: [7, 5, 3, 2],
-    stepMs: 280,
+    motifA: [0, 2, 3, 5, 3, 2, 0, 2],
+    motifB: [7, 5, 3, 2, 3, 5, 7, 10],
+    stepMs: 290,
     bassType: "sine",
     chordType: "triangle",
     leadType: "triangle",
@@ -283,12 +283,12 @@ const sceneMusicProfiles: Record<AudioScene, MusicProfile> = {
   },
   battle: {
     rootMidi: 52,
-    progression: [0, 3, 5, 2],
+    progression: [0, 3, 5, 2, 7, 5, 3, 8],
     scale: [0, 2, 3, 5, 7, 8, 10],
     chordShape: [0, 3, 7, 10],
-    motifA: [0, 3, 5, 3],
-    motifB: [7, 5, 3, 2],
-    stepMs: 225,
+    motifA: [0, 3, 5, 3, 7, 5, 3, 2],
+    motifB: [7, 5, 3, 2, 0, 2, 3, 5],
+    stepMs: 235,
     bassType: "square",
     chordType: "sawtooth",
     leadType: "triangle",
@@ -298,12 +298,12 @@ const sceneMusicProfiles: Record<AudioScene, MusicProfile> = {
   },
   shop: {
     rootMidi: 62,
-    progression: [0, 5, 9, 7],
+    progression: [0, 5, 9, 7, 4, 9, 7, 2],
     scale: [0, 2, 4, 5, 7, 9, 10],
     chordShape: [0, 4, 7, 10],
-    motifA: [0, 2, 4, 5],
-    motifB: [7, 5, 4, 2],
-    stepMs: 295,
+    motifA: [0, 2, 4, 5, 7, 5, 4, 2],
+    motifB: [7, 9, 7, 5, 4, 2, 0, 2],
+    stepMs: 305,
     bassType: "sine",
     chordType: "triangle",
     leadType: "triangle",
@@ -313,11 +313,11 @@ const sceneMusicProfiles: Record<AudioScene, MusicProfile> = {
   },
   relic: {
     rootMidi: 64,
-    progression: [0, 2, 7, 5],
+    progression: [0, 2, 7, 5, 9, 7, 2, 10],
     scale: [0, 2, 3, 5, 7, 9, 10],
     chordShape: [0, 3, 7, 10],
-    motifA: [0, 3, 5, 9],
-    motifB: [7, 5, 3, 2],
+    motifA: [0, 3, 5, 9, 7, 5, 3, 2],
+    motifB: [7, 5, 3, 2, 0, 2, 3, 5],
     stepMs: 300,
     bassType: "sine",
     chordType: "triangle",
@@ -335,8 +335,8 @@ function queueMusicLoop() {
   }
 
   const scene = sceneMusicProfiles[currentScene];
-  const bar = Math.floor(musicStep / 4);
-  const substep = musicStep % 4;
+  const bar = Math.floor(musicStep / 8);
+  const substep = musicStep % 8;
   const chordRootMidi = scene.rootMidi + scene.progression[bar % scene.progression.length];
   const motif = bar % 2 === 0 ? scene.motifA : scene.motifB;
   const nowPair = getMasterGain();
@@ -345,13 +345,13 @@ function queueMusicLoop() {
   }
   const now = nowPair.context.currentTime;
 
-  if (substep === 0) {
+  if (substep === 0 || substep === 4) {
     playTone({
-      frequency: midiToHz(chordRootMidi - 12),
+      frequency: midiToHz(chordRootMidi - (substep === 0 ? 12 : 7)),
       type: scene.bassType,
       gain: effectiveMusicGain(scene.bassGain),
       attack: 0.012,
-      release: currentScene === "battle" ? 0.2 : 0.3,
+      release: currentScene === "battle" ? 0.18 : 0.26,
       when: now,
     });
 
@@ -361,7 +361,7 @@ function queueMusicLoop() {
         type: scene.chordType,
         gain: effectiveMusicGain(scene.chordGain / (scene.chordShape.length * 0.78)),
         attack: 0.025,
-        release: currentScene === "battle" ? 0.24 : 0.56,
+        release: currentScene === "battle" ? 0.2 : 0.38,
         when: now + index * 0.01,
         detune: (index - 1.5) * 3,
       });
@@ -369,17 +369,17 @@ function queueMusicLoop() {
   }
 
   const melodyDegree = motif[substep % motif.length] % scene.scale.length;
-  const melodyMidi = chordRootMidi + scene.scale[melodyDegree] + (substep === 3 ? 12 : 0);
+  const melodyMidi = chordRootMidi + scene.scale[melodyDegree] + (substep >= 6 ? 12 : substep === 3 ? 7 : 0);
   playTone({
     frequency: midiToHz(melodyMidi),
     type: scene.leadType,
     gain: effectiveMusicGain(scene.leadGain),
     attack: 0.01,
-    release: currentScene === "battle" ? 0.14 : 0.24,
+    release: currentScene === "battle" ? 0.12 : 0.2,
     when: now + 0.02,
   });
 
-  if (substep === 2 && currentScene !== "battle") {
+  if ((substep === 2 || substep === 6) && currentScene !== "battle") {
     const counterDegree = (motif[(substep + 1) % motif.length] + 2) % scene.scale.length;
     playTone({
       frequency: midiToHz(chordRootMidi + scene.scale[counterDegree]),
@@ -391,7 +391,7 @@ function queueMusicLoop() {
     });
   }
 
-  if (substep === 1 && currentScene === "battle") {
+  if ((substep === 1 || substep === 5) && currentScene === "battle") {
     playTone({
       frequency: midiToHz(chordRootMidi - 5),
       type: "square",
