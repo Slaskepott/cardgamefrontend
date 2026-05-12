@@ -29,6 +29,7 @@ let gameMusic: HTMLAudioElement | null = null;
 let nonGameMusic: HTMLAudioElement | null = null;
 let activeMusicKind: "game" | "non-game" | null = null;
 let musicFadeFrame: number | null = null;
+let musicTransitionToken = 0;
 
 function clampVolume(value: number) {
   return Math.min(1, Math.max(0, value));
@@ -260,12 +261,20 @@ function currentMusicVolume() {
 
 function syncMusicVolume() {
   const volume = currentMusicVolume();
-  if (gameMusic) {
+  if (gameMusic && activeMusicKind === "game") {
     gameMusic.volume = volume;
   }
-  if (nonGameMusic) {
+  if (nonGameMusic && activeMusicKind === "non-game") {
     nonGameMusic.volume = volume;
   }
+}
+
+function silenceTrack(track: HTMLAudioElement | null) {
+  if (!track) {
+    return;
+  }
+  track.pause();
+  track.volume = 0;
 }
 
 function stopMusicPlayback() {
@@ -273,27 +282,31 @@ function stopMusicPlayback() {
     window.cancelAnimationFrame(musicFadeFrame);
   }
   musicFadeFrame = null;
-  if (gameMusic) {
-    gameMusic.pause();
-  }
-  if (nonGameMusic) {
-    nonGameMusic.pause();
-  }
+  musicTransitionToken += 1;
+  silenceTrack(gameMusic);
+  silenceTrack(nonGameMusic);
   activeMusicKind = null;
 }
 
-async function playTrack(track: HTMLAudioElement | null) {
+async function playTrack(track: HTMLAudioElement | null, expectedKind?: "game" | "non-game", token?: number) {
   if (!track) {
     return;
   }
   try {
     await track.play();
+    if (
+      (token !== undefined && token !== musicTransitionToken) ||
+      (expectedKind && desiredMusicKind(currentScene) !== expectedKind)
+    ) {
+      silenceTrack(track);
+    }
   } catch {
     // Ignore autoplay / playback interruptions until the next user interaction.
   }
 }
 
 function animateMusicTransition(
+  nextKind: "game" | "non-game",
   incomingTrack: HTMLAudioElement | null,
   outgoingTrack: HTMLAudioElement | null,
   durationMs = 1800,
@@ -306,28 +319,27 @@ function animateMusicTransition(
     window.cancelAnimationFrame(musicFadeFrame);
     musicFadeFrame = null;
   }
+  musicTransitionToken += 1;
+  const transitionToken = musicTransitionToken;
 
   const targetVolume = currentMusicVolume();
 
   if (!incomingTrack) {
-    if (outgoingTrack) {
-      outgoingTrack.pause();
-      outgoingTrack.currentTime = outgoingTrack.currentTime;
-    }
+    silenceTrack(outgoingTrack);
     return;
   }
 
   if (incomingTrack === outgoingTrack) {
     incomingTrack.volume = targetVolume;
     if (incomingTrack.paused) {
-      void playTrack(incomingTrack);
+      void playTrack(incomingTrack, nextKind, transitionToken);
     }
     return;
   }
 
   if (incomingTrack.paused) {
     incomingTrack.volume = 0;
-    void playTrack(incomingTrack);
+    void playTrack(incomingTrack, nextKind, transitionToken);
   }
 
   const initialIncoming = incomingTrack.volume;
@@ -335,6 +347,9 @@ function animateMusicTransition(
   const startedAt = window.performance.now();
 
   const step = (now: number) => {
+    if (transitionToken !== musicTransitionToken) {
+      return;
+    }
     const progress = Math.min(1, (now - startedAt) / durationMs);
     const eased = 1 - Math.pow(1 - progress, 3);
 
@@ -351,8 +366,7 @@ function animateMusicTransition(
 
     incomingTrack.volume = targetVolume;
     if (outgoingTrack) {
-      outgoingTrack.pause();
-      outgoingTrack.volume = targetVolume;
+      silenceTrack(outgoingTrack);
     }
     musicFadeFrame = null;
   };
@@ -374,13 +388,14 @@ function syncMusicPlayback() {
 
   if (activeMusicKind !== nextKind) {
     activeMusicKind = nextKind;
-    animateMusicTransition(nextTrack, previousTrack);
+    animateMusicTransition(nextKind, nextTrack, previousTrack);
     return;
   }
 
+  silenceTrack(previousTrack);
   syncMusicVolume();
   if (nextTrack?.paused) {
-    void playTrack(nextTrack);
+    void playTrack(nextTrack, nextKind, musicTransitionToken);
   }
 }
 
