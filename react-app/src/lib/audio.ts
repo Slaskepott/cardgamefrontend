@@ -239,8 +239,7 @@ type MusicProfile = {
   progression: number[];
   scale: number[];
   chordShape: number[];
-  motifA: number[];
-  motifB: number[];
+  strongBeatPatterns: number[][];
   stepMs: number;
   bassType: OscillatorType;
   leadType: OscillatorType;
@@ -256,8 +255,16 @@ const sceneMusicProfiles: Record<AudioScene, MusicProfile> = {
     progression: [0, 5, 7, 3, 9, 5, 7, 10],
     scale: [0, 2, 4, 7, 9, 11],
     chordShape: [0, 4, 7, 11],
-    motifA: [0, 2, 4, 2, 4, 7, 9, 7],
-    motifB: [4, 7, 9, 7, 4, 2, 0, 2],
+    strongBeatPatterns: [
+      [0, 1, 2, 1],
+      [0, 1, 3, 2],
+      [1, 2, 3, 2],
+      [2, 1, 0, 1],
+      [0, 1, 2, 3],
+      [1, 2, 1, 0],
+      [0, 2, 3, 1],
+      [2, 1, 0, 3],
+    ],
     stepMs: 300,
     bassType: "sine",
     chordType: "triangle",
@@ -271,8 +278,16 @@ const sceneMusicProfiles: Record<AudioScene, MusicProfile> = {
     progression: [0, 3, 5, 7, 10, 7, 5, 3],
     scale: [0, 2, 3, 5, 7, 10],
     chordShape: [0, 3, 7, 10],
-    motifA: [0, 2, 3, 5, 3, 2, 0, 2],
-    motifB: [7, 5, 3, 2, 3, 5, 7, 10],
+    strongBeatPatterns: [
+      [0, 1, 2, 1],
+      [0, 2, 3, 2],
+      [1, 2, 1, 0],
+      [0, 1, 3, 2],
+      [2, 3, 2, 1],
+      [1, 2, 1, 0],
+      [0, 2, 1, 3],
+      [2, 1, 0, 1],
+    ],
     stepMs: 290,
     bassType: "sine",
     chordType: "triangle",
@@ -286,8 +301,16 @@ const sceneMusicProfiles: Record<AudioScene, MusicProfile> = {
     progression: [0, 3, 5, 2, 7, 5, 3, 8],
     scale: [0, 2, 3, 5, 7, 8, 10],
     chordShape: [0, 3, 7, 10],
-    motifA: [0, 3, 5, 3, 7, 5, 3, 2],
-    motifB: [7, 5, 3, 2, 0, 2, 3, 5],
+    strongBeatPatterns: [
+      [0, 2, 1, 2],
+      [0, 1, 3, 2],
+      [1, 2, 3, 2],
+      [2, 1, 0, 1],
+      [0, 2, 3, 2],
+      [1, 2, 1, 0],
+      [0, 1, 2, 3],
+      [3, 2, 1, 0],
+    ],
     stepMs: 235,
     bassType: "square",
     chordType: "sawtooth",
@@ -301,8 +324,16 @@ const sceneMusicProfiles: Record<AudioScene, MusicProfile> = {
     progression: [0, 5, 9, 7, 4, 9, 7, 2],
     scale: [0, 2, 4, 5, 7, 9, 10],
     chordShape: [0, 4, 7, 10],
-    motifA: [0, 2, 4, 5, 7, 5, 4, 2],
-    motifB: [7, 9, 7, 5, 4, 2, 0, 2],
+    strongBeatPatterns: [
+      [0, 1, 2, 1],
+      [0, 2, 3, 2],
+      [1, 2, 3, 1],
+      [2, 1, 0, 1],
+      [0, 1, 2, 3],
+      [1, 3, 2, 1],
+      [0, 2, 1, 0],
+      [2, 1, 0, 3],
+    ],
     stepMs: 305,
     bassType: "sine",
     chordType: "triangle",
@@ -316,8 +347,16 @@ const sceneMusicProfiles: Record<AudioScene, MusicProfile> = {
     progression: [0, 2, 7, 5, 9, 7, 2, 10],
     scale: [0, 2, 3, 5, 7, 9, 10],
     chordShape: [0, 3, 7, 10],
-    motifA: [0, 3, 5, 9, 7, 5, 3, 2],
-    motifB: [7, 5, 3, 2, 0, 2, 3, 5],
+    strongBeatPatterns: [
+      [0, 1, 2, 3],
+      [1, 2, 1, 0],
+      [0, 2, 3, 2],
+      [2, 1, 0, 1],
+      [0, 1, 3, 2],
+      [1, 2, 3, 1],
+      [0, 2, 1, 0],
+      [3, 2, 1, 0],
+    ],
     stepMs: 300,
     bassType: "sine",
     chordType: "triangle",
@@ -327,6 +366,34 @@ const sceneMusicProfiles: Record<AudioScene, MusicProfile> = {
     leadGain: 0.032,
   },
 };
+
+function chordToneScaleDegrees(scale: number[], chordShape: number[]) {
+  return chordShape.map((interval) => {
+    const normalized = ((interval % 12) + 12) % 12;
+    const exactIndex = scale.findIndex((degree) => degree === normalized);
+    if (exactIndex >= 0) {
+      return exactIndex;
+    }
+
+    let bestIndex = 0;
+    let bestDistance = Number.POSITIVE_INFINITY;
+    scale.forEach((degree, index) => {
+      const distance = Math.abs(degree - normalized);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestIndex = index;
+      }
+    });
+    return bestIndex;
+  });
+}
+
+function getPassingDegree(current: number, next: number, scaleLength: number, nudgeUp: boolean) {
+  if (current === next) {
+    return Math.max(0, Math.min(scaleLength - 1, current + (nudgeUp ? 1 : -1)));
+  }
+  return current < next ? current + 1 : current - 1;
+}
 
 function queueMusicLoop() {
   clearMusicLoop();
@@ -338,7 +405,8 @@ function queueMusicLoop() {
   const bar = Math.floor(musicStep / 8);
   const substep = musicStep % 8;
   const chordRootMidi = scene.rootMidi + scene.progression[bar % scene.progression.length];
-  const motif = bar % 2 === 0 ? scene.motifA : scene.motifB;
+  const chordDegrees = chordToneScaleDegrees(scene.scale, scene.chordShape);
+  const strongPattern = scene.strongBeatPatterns[bar % scene.strongBeatPatterns.length];
   const nowPair = getMasterGain();
   if (!nowPair) {
     return;
@@ -368,8 +436,22 @@ function queueMusicLoop() {
     });
   }
 
-  const melodyDegree = motif[substep % motif.length] % scene.scale.length;
-  const melodyMidi = chordRootMidi + scene.scale[melodyDegree] + (substep >= 6 ? 12 : substep === 3 ? 7 : 0);
+  const strongBeatIndex = Math.floor(substep / 2);
+  const currentStrongDegree = chordDegrees[strongPattern[strongBeatIndex] % chordDegrees.length];
+  const nextPattern =
+    strongBeatIndex === 3
+      ? scene.strongBeatPatterns[(bar + 1) % scene.strongBeatPatterns.length]
+      : strongPattern;
+  const nextStrongDegree =
+    strongBeatIndex === 3
+      ? chordDegrees[nextPattern[0] % chordDegrees.length]
+      : chordDegrees[strongPattern[strongBeatIndex + 1] % chordDegrees.length];
+  const melodicDegree =
+    substep % 2 === 0
+      ? currentStrongDegree
+      : getPassingDegree(currentStrongDegree, nextStrongDegree, scene.scale.length, (bar + substep) % 3 === 0);
+  const octaveLift = substep >= 6 ? 12 : substep === 3 ? 7 : 0;
+  const melodyMidi = chordRootMidi + scene.scale[melodicDegree] + octaveLift;
   playTone({
     frequency: midiToHz(melodyMidi),
     type: scene.leadType,
@@ -380,7 +462,7 @@ function queueMusicLoop() {
   });
 
   if ((substep === 2 || substep === 6) && currentScene !== "battle") {
-    const counterDegree = (motif[(substep + 1) % motif.length] + 2) % scene.scale.length;
+    const counterDegree = getPassingDegree(currentStrongDegree, nextStrongDegree, scene.scale.length, true);
     playTone({
       frequency: midiToHz(chordRootMidi + scene.scale[counterDegree]),
       type: "sine",
