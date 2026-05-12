@@ -226,38 +226,179 @@ function clearAmbienceLoop() {
   ambienceTimeout = null;
 }
 
+function midiToHz(midi: number) {
+  return 440 * Math.pow(2, (midi - 69) / 12);
+}
+
+type MusicProfile = {
+  rootMidi: number;
+  progression: number[];
+  scale: number[];
+  chordShape: number[];
+  motifA: number[];
+  motifB: number[];
+  stepMs: number;
+  bassType: OscillatorType;
+  leadType: OscillatorType;
+  chordType: OscillatorType;
+  bassGain: number;
+  chordGain: number;
+  leadGain: number;
+};
+
+const sceneMusicProfiles: Record<AudioScene, MusicProfile> = {
+  hero: {
+    rootMidi: 60,
+    progression: [0, 5, 7, 3],
+    scale: [0, 2, 4, 7, 9, 11],
+    chordShape: [0, 4, 7, 11],
+    motifA: [0, 2, 4, 2],
+    motifB: [4, 7, 9, 7],
+    stepMs: 310,
+    bassType: "sine",
+    chordType: "triangle",
+    leadType: "triangle",
+    bassGain: 0.032,
+    chordGain: 0.026,
+    leadGain: 0.03,
+  },
+  hub: {
+    rootMidi: 57,
+    progression: [0, 3, 5, 7],
+    scale: [0, 2, 3, 5, 7, 10],
+    chordShape: [0, 3, 7, 10],
+    motifA: [0, 2, 3, 5],
+    motifB: [7, 5, 3, 2],
+    stepMs: 280,
+    bassType: "sine",
+    chordType: "triangle",
+    leadType: "triangle",
+    bassGain: 0.028,
+    chordGain: 0.024,
+    leadGain: 0.026,
+  },
+  battle: {
+    rootMidi: 52,
+    progression: [0, 3, 5, 2],
+    scale: [0, 2, 3, 5, 7, 8, 10],
+    chordShape: [0, 3, 7, 10],
+    motifA: [0, 3, 5, 3],
+    motifB: [7, 5, 3, 2],
+    stepMs: 225,
+    bassType: "square",
+    chordType: "sawtooth",
+    leadType: "triangle",
+    bassGain: 0.03,
+    chordGain: 0.018,
+    leadGain: 0.024,
+  },
+  shop: {
+    rootMidi: 62,
+    progression: [0, 5, 9, 7],
+    scale: [0, 2, 4, 5, 7, 9, 10],
+    chordShape: [0, 4, 7, 10],
+    motifA: [0, 2, 4, 5],
+    motifB: [7, 5, 4, 2],
+    stepMs: 295,
+    bassType: "sine",
+    chordType: "triangle",
+    leadType: "triangle",
+    bassGain: 0.026,
+    chordGain: 0.024,
+    leadGain: 0.028,
+  },
+  relic: {
+    rootMidi: 64,
+    progression: [0, 2, 7, 5],
+    scale: [0, 2, 3, 5, 7, 9, 10],
+    chordShape: [0, 3, 7, 10],
+    motifA: [0, 3, 5, 9],
+    motifB: [7, 5, 3, 2],
+    stepMs: 300,
+    bassType: "sine",
+    chordType: "triangle",
+    leadType: "sawtooth",
+    bassGain: 0.028,
+    chordGain: 0.028,
+    leadGain: 0.032,
+  },
+};
+
 function queueMusicLoop() {
   clearMusicLoop();
   if (!unlocked || settings.masterVolume <= 0 || settings.musicVolume <= 0 || typeof window === "undefined") {
     return;
   }
 
-  const scenes: Record<AudioScene, { notes: number[]; stepMs: number; type: OscillatorType; gain: number }> = {
-    hero: { notes: [261.63, 329.63, 392, 523.25], stepMs: 760, type: "triangle", gain: 0.034 },
-    hub: { notes: [246.94, 311.13, 369.99, 493.88], stepMs: 680, type: "triangle", gain: 0.03 },
-    battle: { notes: [220, 293.66, 329.63, 392], stepMs: 520, type: "sawtooth", gain: 0.028 },
-    shop: { notes: [293.66, 369.99, 440, 587.33], stepMs: 640, type: "triangle", gain: 0.032 },
-    relic: { notes: [329.63, 415.3, 493.88, 659.25], stepMs: 620, type: "triangle", gain: 0.034 },
-  };
-  const scene = scenes[currentScene];
-  const note = scene.notes[musicStep % scene.notes.length];
-  musicStep += 1;
-  playTone({
-    frequency: note,
-    type: scene.type,
-    gain: effectiveGain(scene.gain, settings.musicVolume),
-    attack: 0.02,
-    release: currentScene === "battle" ? 0.24 : 0.42,
-  });
-  if (musicStep % scene.notes.length === 0) {
+  const scene = sceneMusicProfiles[currentScene];
+  const bar = Math.floor(musicStep / 4);
+  const substep = musicStep % 4;
+  const chordRootMidi = scene.rootMidi + scene.progression[bar % scene.progression.length];
+  const motif = bar % 2 === 0 ? scene.motifA : scene.motifB;
+  const nowPair = getMasterGain();
+  if (!nowPair) {
+    return;
+  }
+  const now = nowPair.context.currentTime;
+
+  if (substep === 0) {
     playTone({
-      frequency: note / 2,
-      type: "sine",
-      gain: effectiveGain(scene.gain * 0.65, settings.musicVolume),
-      attack: 0.025,
-      release: 0.54,
+      frequency: midiToHz(chordRootMidi - 12),
+      type: scene.bassType,
+      gain: effectiveGain(scene.bassGain, settings.musicVolume),
+      attack: 0.012,
+      release: currentScene === "battle" ? 0.2 : 0.3,
+      when: now,
+    });
+
+    scene.chordShape.forEach((interval, index) => {
+      playTone({
+        frequency: midiToHz(chordRootMidi + interval),
+        type: scene.chordType,
+        gain: effectiveGain(scene.chordGain / (scene.chordShape.length * 0.78), settings.musicVolume),
+        attack: 0.025,
+        release: currentScene === "battle" ? 0.24 : 0.56,
+        when: now + index * 0.01,
+        detune: (index - 1.5) * 3,
+      });
     });
   }
+
+  const melodyDegree = motif[substep % motif.length] % scene.scale.length;
+  const melodyMidi = chordRootMidi + scene.scale[melodyDegree] + (substep === 3 ? 12 : 0);
+  playTone({
+    frequency: midiToHz(melodyMidi),
+    type: scene.leadType,
+    gain: effectiveGain(scene.leadGain, settings.musicVolume),
+    attack: 0.01,
+    release: currentScene === "battle" ? 0.14 : 0.24,
+    when: now + 0.02,
+  });
+
+  if (substep === 2 && currentScene !== "battle") {
+    const counterDegree = (motif[(substep + 1) % motif.length] + 2) % scene.scale.length;
+    playTone({
+      frequency: midiToHz(chordRootMidi + scene.scale[counterDegree]),
+      type: "sine",
+      gain: effectiveGain(scene.leadGain * 0.45, settings.musicVolume),
+      attack: 0.012,
+      release: 0.18,
+      when: now + 0.06,
+    });
+  }
+
+  if (substep === 1 && currentScene === "battle") {
+    playTone({
+      frequency: midiToHz(chordRootMidi - 5),
+      type: "square",
+      gain: effectiveGain(scene.bassGain * 0.6, settings.musicVolume),
+      attack: 0.008,
+      release: 0.12,
+      when: now + 0.03,
+    });
+  }
+
+  musicStep += 1;
   musicTimeout = window.setTimeout(queueMusicLoop, scene.stepMs);
 }
 
