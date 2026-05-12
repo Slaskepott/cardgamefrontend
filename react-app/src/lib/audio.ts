@@ -132,6 +132,10 @@ function effectiveGain(base: number, categoryVolume: number) {
   return base * settings.masterVolume * categoryVolume;
 }
 
+function effectiveMusicGain(base: number) {
+  return effectiveGain(base * 1.45, settings.musicVolume);
+}
+
 function playTone(options: {
   frequency: number;
   type?: OscillatorType;
@@ -345,7 +349,7 @@ function queueMusicLoop() {
     playTone({
       frequency: midiToHz(chordRootMidi - 12),
       type: scene.bassType,
-      gain: effectiveGain(scene.bassGain, settings.musicVolume),
+      gain: effectiveMusicGain(scene.bassGain),
       attack: 0.012,
       release: currentScene === "battle" ? 0.2 : 0.3,
       when: now,
@@ -355,7 +359,7 @@ function queueMusicLoop() {
       playTone({
         frequency: midiToHz(chordRootMidi + interval),
         type: scene.chordType,
-        gain: effectiveGain(scene.chordGain / (scene.chordShape.length * 0.78), settings.musicVolume),
+        gain: effectiveMusicGain(scene.chordGain / (scene.chordShape.length * 0.78)),
         attack: 0.025,
         release: currentScene === "battle" ? 0.24 : 0.56,
         when: now + index * 0.01,
@@ -369,7 +373,7 @@ function queueMusicLoop() {
   playTone({
     frequency: midiToHz(melodyMidi),
     type: scene.leadType,
-    gain: effectiveGain(scene.leadGain, settings.musicVolume),
+    gain: effectiveMusicGain(scene.leadGain),
     attack: 0.01,
     release: currentScene === "battle" ? 0.14 : 0.24,
     when: now + 0.02,
@@ -380,7 +384,7 @@ function queueMusicLoop() {
     playTone({
       frequency: midiToHz(chordRootMidi + scene.scale[counterDegree]),
       type: "sine",
-      gain: effectiveGain(scene.leadGain * 0.45, settings.musicVolume),
+      gain: effectiveMusicGain(scene.leadGain * 0.45),
       attack: 0.012,
       release: 0.18,
       when: now + 0.06,
@@ -391,7 +395,7 @@ function queueMusicLoop() {
     playTone({
       frequency: midiToHz(chordRootMidi - 5),
       type: "square",
-      gain: effectiveGain(scene.bassGain * 0.6, settings.musicVolume),
+      gain: effectiveMusicGain(scene.bassGain * 0.6),
       attack: 0.008,
       release: 0.12,
       when: now + 0.03,
