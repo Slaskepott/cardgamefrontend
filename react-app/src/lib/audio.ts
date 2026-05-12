@@ -1,3 +1,6 @@
+import tableOfFivesMusic from "../assets/audio/table-of-fives.mp3";
+import velvetHouseEdgeMusic from "../assets/audio/velvet-house-edge.mp3";
+
 export interface AudioSettings {
   masterVolume: number;
   musicVolume: number;
@@ -21,9 +24,10 @@ let masterGain: GainNode | null = null;
 let noiseBuffer: AudioBuffer | null = null;
 let unlocked = false;
 let currentScene: AudioScene = "hero";
-let musicTimeout: number | null = null;
 let ambienceTimeout: number | null = null;
-let musicStep = 0;
+let gameMusic: HTMLAudioElement | null = null;
+let nonGameMusic: HTMLAudioElement | null = null;
+let activeMusicKind: "game" | "non-game" | null = null;
 
 function clampVolume(value: number) {
   return Math.min(1, Math.max(0, value));
@@ -136,6 +140,24 @@ function effectiveMusicGain(base: number) {
   return effectiveGain(base * 1.45, settings.musicVolume);
 }
 
+function initializeMusicTracks() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (!gameMusic) {
+    gameMusic = new Audio(velvetHouseEdgeMusic);
+    gameMusic.loop = true;
+    gameMusic.preload = "auto";
+  }
+
+  if (!nonGameMusic) {
+    nonGameMusic = new Audio(tableOfFivesMusic);
+    nonGameMusic.loop = true;
+    nonGameMusic.preload = "auto";
+  }
+}
+
 function playTone(options: {
   frequency: number;
   type?: OscillatorType;
@@ -216,13 +238,6 @@ function playChord(
   });
 }
 
-function clearMusicLoop() {
-  if (musicTimeout !== null && typeof window !== "undefined") {
-    window.clearTimeout(musicTimeout);
-  }
-  musicTimeout = null;
-}
-
 function clearAmbienceLoop() {
   if (ambienceTimeout !== null && typeof window !== "undefined") {
     window.clearTimeout(ambienceTimeout);
@@ -230,262 +245,69 @@ function clearAmbienceLoop() {
   ambienceTimeout = null;
 }
 
-function midiToHz(midi: number) {
-  return 440 * Math.pow(2, (midi - 69) / 12);
+function desiredMusicKind(scene: AudioScene) {
+  return scene === "battle" || scene === "shop" || scene === "relic" ? "game" : "non-game";
 }
 
-type MusicProfile = {
-  rootMidi: number;
-  progression: number[];
-  scale: number[];
-  chordShape: number[];
-  strongBeatPatterns: number[][];
-  stepMs: number;
-  bassType: OscillatorType;
-  leadType: OscillatorType;
-  chordType: OscillatorType;
-  bassGain: number;
-  chordGain: number;
-  leadGain: number;
-};
-
-const sceneMusicProfiles: Record<AudioScene, MusicProfile> = {
-  hero: {
-    rootMidi: 60,
-    progression: [0, 5, 7, 3, 9, 5, 7, 10],
-    scale: [0, 2, 4, 7, 9, 11],
-    chordShape: [0, 4, 7, 11],
-    strongBeatPatterns: [
-      [0, 1, 2, 1],
-      [0, 1, 3, 2],
-      [1, 2, 3, 2],
-      [2, 1, 0, 1],
-      [0, 1, 2, 3],
-      [1, 2, 1, 0],
-      [0, 2, 3, 1],
-      [2, 1, 0, 3],
-    ],
-    stepMs: 300,
-    bassType: "sine",
-    chordType: "triangle",
-    leadType: "triangle",
-    bassGain: 0.032,
-    chordGain: 0.026,
-    leadGain: 0.03,
-  },
-  hub: {
-    rootMidi: 57,
-    progression: [0, 3, 5, 7, 10, 7, 5, 3],
-    scale: [0, 2, 3, 5, 7, 10],
-    chordShape: [0, 3, 7, 10],
-    strongBeatPatterns: [
-      [0, 1, 2, 1],
-      [0, 2, 3, 2],
-      [1, 2, 1, 0],
-      [0, 1, 3, 2],
-      [2, 3, 2, 1],
-      [1, 2, 1, 0],
-      [0, 2, 1, 3],
-      [2, 1, 0, 1],
-    ],
-    stepMs: 290,
-    bassType: "sine",
-    chordType: "triangle",
-    leadType: "triangle",
-    bassGain: 0.028,
-    chordGain: 0.024,
-    leadGain: 0.026,
-  },
-  battle: {
-    rootMidi: 52,
-    progression: [0, 3, 5, 2, 7, 5, 3, 8],
-    scale: [0, 2, 3, 5, 7, 8, 10],
-    chordShape: [0, 3, 7, 10],
-    strongBeatPatterns: [
-      [0, 2, 1, 2],
-      [0, 1, 3, 2],
-      [1, 2, 3, 2],
-      [2, 1, 0, 1],
-      [0, 2, 3, 2],
-      [1, 2, 1, 0],
-      [0, 1, 2, 3],
-      [3, 2, 1, 0],
-    ],
-    stepMs: 235,
-    bassType: "square",
-    chordType: "sawtooth",
-    leadType: "triangle",
-    bassGain: 0.03,
-    chordGain: 0.018,
-    leadGain: 0.024,
-  },
-  shop: {
-    rootMidi: 62,
-    progression: [0, 5, 9, 7, 4, 9, 7, 2],
-    scale: [0, 2, 4, 5, 7, 9, 10],
-    chordShape: [0, 4, 7, 10],
-    strongBeatPatterns: [
-      [0, 1, 2, 1],
-      [0, 2, 3, 2],
-      [1, 2, 3, 1],
-      [2, 1, 0, 1],
-      [0, 1, 2, 3],
-      [1, 3, 2, 1],
-      [0, 2, 1, 0],
-      [2, 1, 0, 3],
-    ],
-    stepMs: 305,
-    bassType: "sine",
-    chordType: "triangle",
-    leadType: "triangle",
-    bassGain: 0.026,
-    chordGain: 0.024,
-    leadGain: 0.028,
-  },
-  relic: {
-    rootMidi: 64,
-    progression: [0, 2, 7, 5, 9, 7, 2, 10],
-    scale: [0, 2, 3, 5, 7, 9, 10],
-    chordShape: [0, 3, 7, 10],
-    strongBeatPatterns: [
-      [0, 1, 2, 3],
-      [1, 2, 1, 0],
-      [0, 2, 3, 2],
-      [2, 1, 0, 1],
-      [0, 1, 3, 2],
-      [1, 2, 3, 1],
-      [0, 2, 1, 0],
-      [3, 2, 1, 0],
-    ],
-    stepMs: 300,
-    bassType: "sine",
-    chordType: "triangle",
-    leadType: "sawtooth",
-    bassGain: 0.028,
-    chordGain: 0.028,
-    leadGain: 0.032,
-  },
-};
-
-function chordToneScaleDegrees(scale: number[], chordShape: number[]) {
-  return chordShape.map((interval) => {
-    const normalized = ((interval % 12) + 12) % 12;
-    const exactIndex = scale.findIndex((degree) => degree === normalized);
-    if (exactIndex >= 0) {
-      return exactIndex;
-    }
-
-    let bestIndex = 0;
-    let bestDistance = Number.POSITIVE_INFINITY;
-    scale.forEach((degree, index) => {
-      const distance = Math.abs(degree - normalized);
-      if (distance < bestDistance) {
-        bestDistance = distance;
-        bestIndex = index;
-      }
-    });
-    return bestIndex;
-  });
+function currentMusicVolume() {
+  return clampVolume(settings.masterVolume * settings.musicVolume);
 }
 
-function getPassingDegree(current: number, next: number, scaleLength: number, nudgeUp: boolean) {
-  if (current === next) {
-    return Math.max(0, Math.min(scaleLength - 1, current + (nudgeUp ? 1 : -1)));
+function syncMusicVolume() {
+  const volume = currentMusicVolume();
+  if (gameMusic) {
+    gameMusic.volume = volume;
   }
-  return current < next ? current + 1 : current - 1;
+  if (nonGameMusic) {
+    nonGameMusic.volume = volume;
+  }
 }
 
-function queueMusicLoop() {
-  clearMusicLoop();
-  if (!unlocked || settings.masterVolume <= 0 || settings.musicVolume <= 0 || typeof window === "undefined") {
+function stopMusicPlayback() {
+  if (gameMusic) {
+    gameMusic.pause();
+  }
+  if (nonGameMusic) {
+    nonGameMusic.pause();
+  }
+  activeMusicKind = null;
+}
+
+async function playTrack(track: HTMLAudioElement | null) {
+  if (!track) {
+    return;
+  }
+  try {
+    await track.play();
+  } catch {
+    // Ignore autoplay / playback interruptions until the next user interaction.
+  }
+}
+
+function syncMusicPlayback() {
+  initializeMusicTracks();
+  syncMusicVolume();
+
+  if (!unlocked || settings.masterVolume <= 0 || settings.musicVolume <= 0) {
+    stopMusicPlayback();
     return;
   }
 
-  const scene = sceneMusicProfiles[currentScene];
-  const bar = Math.floor(musicStep / 8);
-  const substep = musicStep % 8;
-  const chordRootMidi = scene.rootMidi + scene.progression[bar % scene.progression.length];
-  const chordDegrees = chordToneScaleDegrees(scene.scale, scene.chordShape);
-  const strongPattern = scene.strongBeatPatterns[bar % scene.strongBeatPatterns.length];
-  const nowPair = getMasterGain();
-  if (!nowPair) {
-    return;
-  }
-  const now = nowPair.context.currentTime;
+  const nextKind = desiredMusicKind(currentScene);
+  const nextTrack = nextKind === "game" ? gameMusic : nonGameMusic;
+  const previousTrack = nextKind === "game" ? nonGameMusic : gameMusic;
 
-  if (substep === 0 || substep === 4) {
-    playTone({
-      frequency: midiToHz(chordRootMidi - (substep === 0 ? 12 : 7)),
-      type: scene.bassType,
-      gain: effectiveMusicGain(scene.bassGain),
-      attack: 0.012,
-      release: currentScene === "battle" ? 0.18 : 0.26,
-      when: now,
-    });
-
-    scene.chordShape.forEach((interval, index) => {
-      playTone({
-        frequency: midiToHz(chordRootMidi + interval),
-        type: scene.chordType,
-        gain: effectiveMusicGain(scene.chordGain / (scene.chordShape.length * 0.78)),
-        attack: 0.025,
-        release: currentScene === "battle" ? 0.2 : 0.38,
-        when: now + index * 0.01,
-        detune: (index - 1.5) * 3,
-      });
-    });
+  if (previousTrack && !previousTrack.paused) {
+    previousTrack.pause();
   }
 
-  const strongBeatIndex = Math.floor(substep / 2);
-  const currentStrongDegree = chordDegrees[strongPattern[strongBeatIndex] % chordDegrees.length];
-  const nextPattern =
-    strongBeatIndex === 3
-      ? scene.strongBeatPatterns[(bar + 1) % scene.strongBeatPatterns.length]
-      : strongPattern;
-  const nextStrongDegree =
-    strongBeatIndex === 3
-      ? chordDegrees[nextPattern[0] % chordDegrees.length]
-      : chordDegrees[strongPattern[strongBeatIndex + 1] % chordDegrees.length];
-  const melodicDegree =
-    substep % 2 === 0
-      ? currentStrongDegree
-      : getPassingDegree(currentStrongDegree, nextStrongDegree, scene.scale.length, (bar + substep) % 3 === 0);
-  const octaveLift = substep >= 6 ? 12 : substep === 3 ? 7 : 0;
-  const melodyMidi = chordRootMidi + scene.scale[melodicDegree] + octaveLift;
-  playTone({
-    frequency: midiToHz(melodyMidi),
-    type: scene.leadType,
-    gain: effectiveMusicGain(scene.leadGain),
-    attack: 0.01,
-    release: currentScene === "battle" ? 0.12 : 0.2,
-    when: now + 0.02,
-  });
-
-  if ((substep === 2 || substep === 6) && currentScene !== "battle") {
-    const counterDegree = getPassingDegree(currentStrongDegree, nextStrongDegree, scene.scale.length, true);
-    playTone({
-      frequency: midiToHz(chordRootMidi + scene.scale[counterDegree]),
-      type: "sine",
-      gain: effectiveMusicGain(scene.leadGain * 0.45),
-      attack: 0.012,
-      release: 0.18,
-      when: now + 0.06,
-    });
+  if (activeMusicKind !== nextKind) {
+    activeMusicKind = nextKind;
   }
 
-  if ((substep === 1 || substep === 5) && currentScene === "battle") {
-    playTone({
-      frequency: midiToHz(chordRootMidi - 5),
-      type: "square",
-      gain: effectiveMusicGain(scene.bassGain * 0.6),
-      attack: 0.008,
-      release: 0.12,
-      when: now + 0.03,
-    });
+  if (nextTrack?.paused) {
+    void playTrack(nextTrack);
   }
-
-  musicStep += 1;
-  musicTimeout = window.setTimeout(queueMusicLoop, scene.stepMs);
 }
 
 function queueAmbienceLoop() {
@@ -539,10 +361,10 @@ function queueAmbienceLoop() {
 
 function refreshBackgroundAudio() {
   syncMasterGain();
+  syncMusicPlayback();
   if (!unlocked) {
     return;
   }
-  queueMusicLoop();
   queueAmbienceLoop();
 }
 
@@ -554,6 +376,7 @@ export async function primeAudio() {
   if (context.state === "suspended") {
     await context.resume();
   }
+  initializeMusicTracks();
   unlocked = true;
   refreshBackgroundAudio();
 }
@@ -571,7 +394,6 @@ export function setAudioMix(next: AudioSettings) {
 
 export function setAudioScene(scene: AudioScene) {
   currentScene = scene;
-  musicStep = 0;
   refreshBackgroundAudio();
 }
 
