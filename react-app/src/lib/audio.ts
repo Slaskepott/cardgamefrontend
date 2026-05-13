@@ -21,6 +21,7 @@ import shopReveal1Sfx from "./sfx/shop_reveal1.wav";
 import shopReveal2Sfx from "./sfx/shop_reveal2.wav";
 import shopReveal3Sfx from "./sfx/shop_reveal3.wav";
 import shopReveal4Sfx from "./sfx/shop_reveal4.wav";
+import shopReveal5Sfx from "./sfx/shop_reveal5.wav";
 import upgradeBuyCommonSfx from "./sfx/shop_purchase_common.mp3";
 import upgradeBuyEpicSfx from "./sfx/shop_purchase_epic.mp3";
 import upgradeBuyLegendarySfx from "./sfx/shop_purchase_legendary.mp3";
@@ -71,6 +72,7 @@ const sfxSources = {
   shopReveal2: shopReveal2Sfx,
   shopReveal3: shopReveal3Sfx,
   shopReveal4: shopReveal4Sfx,
+  shopReveal5: shopReveal5Sfx,
   upgradeBuyCommon: upgradeBuyCommonSfx,
   upgradeBuyEpic: upgradeBuyEpicSfx,
   upgradeBuyLegendary: upgradeBuyLegendarySfx,
@@ -369,10 +371,10 @@ export function playDiscardSound() {
 export function playShopRevealSound(rarity?: string) {
   const keyByRarity: Record<string, SfxKey> = {
     common: "shopReveal1",
-    uncommon: "shopReveal1",
-    rare: "shopReveal2",
-    epic: "shopReveal3",
-    legendary: "shopReveal4",
+    uncommon: "shopReveal2",
+    rare: "shopReveal3",
+    epic: "shopReveal4",
+    legendary: "shopReveal5",
   };
   playSfx(keyByRarity[rarity ?? ""] ?? "shopReveal");
 }
