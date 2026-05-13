@@ -28,7 +28,7 @@ import upgradeBuyLegendarySfx from "./sfx/shop_purchase_legendary.mp3";
 import upgradeBuyRareSfx from "./sfx/shop_purchase_rare.wav";
 import upgradeBuyUncommonSfx from "./sfx/shop_purchase_uncommon.mp3";
 import victorySfx from "./sfx/victory.mp3";
-import tableOfFivesMusic from "../assets/audio/table-of-fives.mp3";
+import tableOfFivesMusic from "../assets/audio/velvet-house-edge-menu.mp3";
 import velvetHouseEdgeMusic from "../assets/audio/velvet-house-edge.mp3";
 
 export interface AudioSettings {
