@@ -195,7 +195,7 @@ export function TalentTreePage({
           <h2>Talent tree</h2>
           <p className="panel-copy">
             Pick one specialization. Early nodes are intentionally small, but each tree ends in
-            a real capstone worth chasing.
+            a real capstone worth chasing. Don't worry about making mistakes — you can reset and reallocate your points at any time.
           </p>
         </div>
         <div className="battle-metrics">

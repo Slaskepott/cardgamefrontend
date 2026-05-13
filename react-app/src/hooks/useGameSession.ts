@@ -170,6 +170,7 @@ export function useGameSession(currentUser: User | null) {
   const [discardMoment, setDiscardMoment] = useState<DiscardMoment | null>(null);
   const [shopOpen, setShopOpen] = useState(false);
   const [shopUpgrades, setShopUpgrades] = useState<Upgrade[]>([]);
+  const [shopRevealCycle, setShopRevealCycle] = useState(0);
   const [shopRerollsRemaining, setShopRerollsRemaining] = useState(0);
   const [shopWaitingPlayers, setShopWaitingPlayers] = useState<string[]>([]);
   const [relicOffers, setRelicOffers] = useState<Relic[]>([]);
@@ -301,11 +302,20 @@ export function useGameSession(currentUser: User | null) {
     clearWindowTimeout(battleMomentTimeoutRef);
     finisherVisibleUntilRef.current = message.match_finished ? Date.now() + 1850 : 0;
     setBattleMoment(buildBattleMoment(message));
+    const targetPlayerId =
+      Object.keys(message.health_update).find((name) => name !== message.player) ?? null;
+    const targetHealthAfter =
+      targetPlayerId && message.health_update[targetPlayerId] != null
+        ? message.health_update[targetPlayerId]
+        : null;
+    const targetHealthBefore =
+      targetHealthAfter !== null ? targetHealthAfter + message.damage : null;
     playBattleImpact({
       damage: message.damage,
       hits: message.hits ?? (message.damage_instances?.length ?? 1),
       doublePlayTriggered: message.double_play_triggered ?? false,
       matchFinished: message.match_finished ?? false,
+      targetHealthBefore,
     });
     battleMomentTimeoutRef.current = window.setTimeout(() => {
       setBattleMoment(null);
@@ -344,14 +354,14 @@ export function useGameSession(currentUser: User | null) {
     if (delayMs <= 0) {
       setShopUpgrades(upgrades);
       setShopOpen(true);
-      playShopRevealSound();
+      setShopRevealCycle((current) => current + 1);
       return;
     }
 
     shopOpenTimeoutRef.current = window.setTimeout(() => {
       setShopUpgrades(upgrades);
       setShopOpen(true);
-      playShopRevealSound();
+      setShopRevealCycle((current) => current + 1);
       shopOpenTimeoutRef.current = null;
     }, delayMs);
   }
@@ -900,6 +910,7 @@ export function useGameSession(currentUser: User | null) {
       }
       if (response.upgrades) {
         setShopUpgrades(response.upgrades);
+        setShopRevealCycle((current) => current + 1);
       }
       setShopRerollsRemaining(response.rerolls_remaining ?? 0);
       playRerollSound();
@@ -1071,6 +1082,7 @@ export function useGameSession(currentUser: User | null) {
     discardMoment,
     shopOpen,
     shopUpgrades,
+    shopRevealCycle,
     shopRerollsRemaining,
     ownedUpgrades,
     enemyUpgrades,

@@ -104,6 +104,190 @@ input {
   margin: 0 auto;
   padding: 3rem 1.25rem 4rem;
   position: relative;
+  isolation: isolate;
+}
+
+.floating-cards-background {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+  opacity: 1;
+  perspective: 1800px;
+  transform-style: preserve-3d;
+}
+
+.floating-cards-background::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 28%, rgba(115, 190, 255, 0.08), transparent 30%),
+    radial-gradient(circle at 82% 22%, rgba(255, 201, 104, 0.08), transparent 28%),
+    radial-gradient(circle at 56% 80%, rgba(176, 125, 255, 0.08), transparent 30%);
+  filter: blur(16px);
+}
+
+.floating-card-shell {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 12rem;
+  height: 17.25rem;
+  aspect-ratio: 0.695;
+  opacity: 0.26;
+  filter: saturate(0.92) blur(0.15px);
+  transform:
+    translate3d(var(--float-start-x), var(--float-start-y), 0)
+    scale(var(--float-scale));
+  animation:
+    floatingCardTraverse var(--float-duration) linear infinite,
+    floatingCardPulse calc(var(--float-duration) * 0.72) ease-in-out infinite,
+    floatingCardTilt calc(var(--float-duration) * 0.6) ease-in-out infinite;
+  animation-delay: var(--float-delay), calc(var(--float-delay) * -0.35), calc(var(--float-delay) * -0.5);
+  transform-style: preserve-3d;
+  will-change: transform, opacity;
+}
+
+.app-foreground {
+  position: relative;
+  z-index: 1;
+}
+
+.floating-card {
+  width: 100%;
+  height: 100%;
+  animation: floatingCardWobble calc(var(--float-duration) * 0.32) ease-in-out infinite;
+  animation-delay: calc(var(--float-delay) * -0.7);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.floating-card-shell:hover {
+  transform: none;
+}
+
+.floating-card .card-rank,
+.floating-card .card-label,
+.floating-card .card-suit,
+.floating-card .floating-card-title {
+  opacity: 0.92;
+}
+
+.floating-card .card-corner {
+  max-width: 5.5rem;
+}
+
+.floating-card .card-illustration {
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.12));
+}
+
+.floating-card-pill {
+  position: absolute;
+  left: 50%;
+  top: 0.9rem;
+  transform: translateX(-50%);
+  padding: 0.28rem 0.62rem;
+  border-radius: 999px;
+  background: rgba(19, 39, 69, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: rgba(44, 26, 15, 0.72);
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.floating-card-title {
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  bottom: 1rem;
+  font-size: 1.12rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+}
+
+.floating-card-illustration {
+  font-size: 3.6rem;
+}
+
+.floating-card.suit-fire,
+.floating-card.suit-water,
+.floating-card.suit-earth,
+.floating-card.suit-air,
+.floating-card.suit-plasma,
+.floating-card.suit-wild {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.74),
+    0 10px 30px rgba(3, 9, 19, 0.2);
+}
+
+@keyframes floatingCardTraverse {
+  0% {
+    transform:
+      translate3d(var(--float-start-x), var(--float-start-y), 0)
+      scale(var(--float-scale));
+  }
+  50% {
+    transform:
+      translate3d(
+        calc((var(--float-start-x) * 0.45) + (var(--float-end-x) * 0.55)),
+        calc((var(--float-start-y) * 0.45) + (var(--float-end-y) * 0.55)),
+        0
+      )
+      scale(calc(var(--float-scale) * 1.035));
+  }
+  100% {
+    transform:
+      translate3d(
+        var(--float-end-x),
+        var(--float-end-y),
+        0
+      )
+      scale(calc(var(--float-scale) * 1.045));
+  }
+}
+
+@keyframes floatingCardPulse {
+  0%,
+  100% {
+    opacity: 0.18;
+  }
+  50% {
+    opacity: 0.32;
+  }
+}
+
+@keyframes floatingCardTilt {
+  0%,
+  100% {
+    filter: saturate(0.92) blur(0.15px);
+  }
+  50% {
+    filter: saturate(1) blur(0);
+  }
+}
+
+@keyframes floatingCardWobble {
+  0%,
+  100% {
+    transform:
+      rotateZ(var(--float-rotate))
+      rotateZ(calc(var(--float-wobble) * -0.48))
+      rotateX(calc(var(--float-tilt-x) * 0.68))
+      rotateY(calc(var(--float-tilt-y) * -0.72));
+  }
+  50% {
+    transform:
+      rotateZ(calc(var(--float-rotate) + (var(--float-wobble) * 0.25)))
+      rotateZ(calc(var(--float-wobble) * 0.62))
+      rotateX(calc(var(--float-tilt-x) * -0.58))
+      rotateY(calc(var(--float-tilt-y) * 0.74));
+  }
 }
 
 .hero {
@@ -5245,10 +5429,22 @@ input::placeholder {
   background:
     radial-gradient(circle at top, rgba(109, 202, 255, 0.12), transparent 26%),
     linear-gradient(180deg, rgba(12, 22, 38, 0.84), rgba(8, 16, 29, 0.92));
+  padding-top: 5.4rem;
 }
 
 .shop-panel-expanded .section-header {
   margin-bottom: 0.4rem;
+  padding-right: 17rem;
+}
+
+@media (max-width: 900px) {
+  .shop-panel-expanded {
+    padding-top: 1.5rem;
+  }
+
+  .shop-panel-expanded .section-header {
+    padding-right: 0;
+  }
 }
 
 .modal-backdrop {

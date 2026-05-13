@@ -1,22 +1,31 @@
 import achievementUnlockSfx from "./sfx/achievement_unlock.mp3";
-import cardDeselectSfx from "./sfx/card_deselect.mp3";
-import cardSelectSfx from "./sfx/card_select.mp3";
+import cardDeselectSfx from "./sfx/card_deselect.wav";
+import cardSelectSfx from "./sfx/card_select.wav";
 import defeatSfx from "./sfx/defeat.mp3";
 import discardSfx from "./sfx/discard.mp3";
 import impactDoubleSfx from "./sfx/impact_double.mp3";
-import impactHitSfx from "./sfx/impact_hit.mp3";
-import impactLethalSfx from "./sfx/impact_lethal.mp3";
 import levelUpSfx from "./sfx/level_up.mp3";
-import notEnoughGoldSfx from "./sfx/not_enough_gold.mp3";
+import notEnoughGoldSfx from "./sfx/error.wav";
+import punch1Sfx from "./sfx/punch1.wav";
+import punch2Sfx from "./sfx/punch2.wav";
+import punch3Sfx from "./sfx/punch3.wav";
+import punch4Sfx from "./sfx/punch4.wav";
+import punchExtremeSfx from "./sfx/punch_extreme.mp3";
+import punchHard1Sfx from "./sfx/punch_hard1.wav";
+import punchMedium1Sfx from "./sfx/punch_medium1.wav";
 import relicPickSfx from "./sfx/relic_pick.mp3";
 import relicRevealSfx from "./sfx/relic_reveal.mp3";
 import shopRerollSfx from "./sfx/shop_reroll.mp3";
 import shopRevealSfx from "./sfx/shop_reveal.mp3";
-import upgradeBuyCommonSfx from "./sfx/upgrade_buy_common.mp3";
-import upgradeBuyEpicSfx from "./sfx/upgrade_buy_epic.mp3";
-import upgradeBuyLegendarySfx from "./sfx/upgrade_buy_legendary.mp3";
-import upgradeBuyRareSfx from "./sfx/upgrade_buy_rare.mp3";
-import upgradeBuyUncommonSfx from "./sfx/upgrade_buy_uncommon.mp3";
+import shopReveal1Sfx from "./sfx/shop_reveal1.wav";
+import shopReveal2Sfx from "./sfx/shop_reveal2.wav";
+import shopReveal3Sfx from "./sfx/shop_reveal3.wav";
+import shopReveal4Sfx from "./sfx/shop_reveal4.wav";
+import upgradeBuyCommonSfx from "./sfx/shop_purchase_common.mp3";
+import upgradeBuyEpicSfx from "./sfx/shop_purchase_epic.mp3";
+import upgradeBuyLegendarySfx from "./sfx/shop_purchase_legendary.mp3";
+import upgradeBuyRareSfx from "./sfx/shop_purchase_rare.wav";
+import upgradeBuyUncommonSfx from "./sfx/shop_purchase_uncommon.mp3";
 import victorySfx from "./sfx/victory.mp3";
 import tableOfFivesMusic from "../assets/audio/table-of-fives.mp3";
 import velvetHouseEdgeMusic from "../assets/audio/velvet-house-edge.mp3";
@@ -45,14 +54,23 @@ const sfxSources = {
   defeat: defeatSfx,
   discard: discardSfx,
   impactDouble: impactDoubleSfx,
-  impactHit: impactHitSfx,
-  impactLethal: impactLethalSfx,
   levelUp: levelUpSfx,
   notEnoughGold: notEnoughGoldSfx,
+  punch1: punch1Sfx,
+  punch2: punch2Sfx,
+  punch3: punch3Sfx,
+  punch4: punch4Sfx,
+  punchExtreme: punchExtremeSfx,
+  punchHard1: punchHard1Sfx,
+  punchMedium1: punchMedium1Sfx,
   relicPick: relicPickSfx,
   relicReveal: relicRevealSfx,
   shopReroll: shopRerollSfx,
   shopReveal: shopRevealSfx,
+  shopReveal1: shopReveal1Sfx,
+  shopReveal2: shopReveal2Sfx,
+  shopReveal3: shopReveal3Sfx,
+  shopReveal4: shopReveal4Sfx,
   upgradeBuyCommon: upgradeBuyCommonSfx,
   upgradeBuyEpic: upgradeBuyEpicSfx,
   upgradeBuyLegendary: upgradeBuyLegendarySfx,
@@ -348,8 +366,15 @@ export function playDiscardSound() {
   playSfx("discard");
 }
 
-export function playShopRevealSound() {
-  playSfx("shopReveal");
+export function playShopRevealSound(rarity?: string) {
+  const keyByRarity: Record<string, SfxKey> = {
+    common: "shopReveal1",
+    uncommon: "shopReveal1",
+    rare: "shopReveal2",
+    epic: "shopReveal3",
+    legendary: "shopReveal4",
+  };
+  playSfx(keyByRarity[rarity ?? ""] ?? "shopReveal");
 }
 
 export function playRerollSound() {
@@ -384,11 +409,24 @@ export function playBattleImpact(options: {
   hits: number;
   doublePlayTriggered: boolean;
   matchFinished?: boolean;
+  targetHealthBefore?: number | null;
 }) {
   const hitCount = Math.max(1, options.hits || 1);
+  const targetHealthBefore = Math.max(1, options.targetHealthBefore ?? options.damage);
+  const damagePercent = (options.damage / targetHealthBefore) * 100;
+  const lowImpactPool: SfxKey[] = ["punch1", "punch2", "punch3", "punch4"];
+  const impactKey: SfxKey =
+    damagePercent <= 30
+      ? lowImpactPool[Math.floor(Math.random() * lowImpactPool.length)]
+      : damagePercent <= 60
+        ? "punchMedium1"
+        : damagePercent <= 80
+          ? "punchHard1"
+          : "punchExtreme";
+
   for (let index = 0; index < hitCount; index += 1) {
     window.setTimeout(() => {
-      playSfx(options.matchFinished ? "impactLethal" : "impactHit", 1);
+      playSfx(impactKey, options.matchFinished ? 1.05 : 1);
     }, index * 170);
   }
 

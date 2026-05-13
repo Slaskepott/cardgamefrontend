@@ -8,6 +8,7 @@ import { AvailableLobbies } from "./components/AvailableLobbies";
 import { AuthPanel } from "./components/AuthPanel";
 import { ChatTray } from "./components/ChatTray";
 import { EventFeed } from "./components/EventFeed";
+import { FloatingCardsBackground } from "./components/FloatingCardsBackground";
 import { GameBoard } from "./components/GameBoard";
 import { LevelUpToast } from "./components/LevelUpToast";
 import { LevelProgressionModal } from "./components/LevelProgressionModal";
@@ -479,6 +480,9 @@ export default function App() {
 
   return (
     <main className="app-shell">
+      {view !== "game" ? <FloatingCardsBackground /> : null}
+      <div className="app-foreground">
+
       {view !== "game" ? (
         <header className="simple-header">
           <button
@@ -706,6 +710,7 @@ export default function App() {
               goldAttentionActive={session.goldAttentionActive}
               rerollsRemaining={session.shopRerollsRemaining}
               visible={session.shopOpen}
+              revealCycle={session.shopRevealCycle}
               busy={session.busy}
               onBuyUpgrade={session.handleBuyUpgrade}
               onRerollShop={session.handleRerollShop}
@@ -742,6 +747,7 @@ export default function App() {
           authorAvatar={chatAuthorAvatar}
         />
       ) : null}
+      </div>
     </main>
   );
 }

@@ -1,3 +1,5 @@
+import { useEffect, useRef } from "react";
+import { playShopRevealSound } from "../lib/audio";
 import type { Relic, Upgrade } from "../types/game";
 
 interface UpgradePanelProps {
@@ -11,6 +13,7 @@ interface UpgradePanelProps {
   goldAttentionActive: boolean;
   rerollsRemaining: number;
   visible: boolean;
+  revealCycle: number;
   busy: boolean;
   onBuyUpgrade: (upgrade: Upgrade) => Promise<void>;
   onRerollShop: () => Promise<void>;
@@ -305,6 +308,7 @@ export function UpgradePanel({
   goldAttentionActive,
   rerollsRemaining,
   visible,
+  revealCycle,
   busy,
   onBuyUpgrade,
   onRerollShop,
@@ -314,6 +318,32 @@ export function UpgradePanel({
   shopTimerSeconds,
   onLeaveLobby,
 }: UpgradePanelProps) {
+  const lastRevealCycleRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!visible || upgrades.length === 0) {
+      if (!visible) {
+        lastRevealCycleRef.current = null;
+      }
+      return;
+    }
+
+    if (lastRevealCycleRef.current === revealCycle) {
+      return;
+    }
+    lastRevealCycleRef.current = revealCycle;
+
+    const timeoutIds = upgrades.map((upgrade, index) =>
+      window.setTimeout(() => {
+        playShopRevealSound(upgrade.rarity);
+      }, index * 500),
+    );
+
+    return () => {
+      timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId));
+    };
+  }, [revealCycle, upgrades, visible]);
+
   if (!visible) {
     const summarySections = summarizeOwnedUpgrades(ownedUpgrades);
     const enemySummarySections = summarizeOwnedUpgrades(enemyUpgrades);
@@ -372,7 +402,7 @@ export function UpgradePanel({
             type="button"
             key={upgrade.id}
             className={`upgrade-card ${upgrade.rarity}`}
-            style={{ ["--shop-delay" as any]: `${index * 60}ms` }}
+            style={{ ["--shop-delay" as any]: `${index * 500}ms` }}
             onClick={() => void onBuyUpgrade(upgrade)}
             disabled={busy}
           >
