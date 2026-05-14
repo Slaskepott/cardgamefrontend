@@ -27,13 +27,14 @@ export function ChatTray({
   authorAvatar,
   visible = true,
 }: ChatTrayProps) {
-  const [minimized, setMinimized] = useState(false);
+  const [minimized, setMinimized] = useState(true);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const messagesRef = useRef<HTMLDivElement | null>(null);
   const lastMessageIdRef = useRef<string | null>(null);
   const userHoldingScrollRef = useRef(false);
+  const previousMessageCountRef = useRef(0);
 
   const title = scope === "game" ? "Match chat" : "Global chat";
   const subtitle = scope === "game" ? "Only this game can see these messages." : "Everyone sees this chat.";
@@ -100,26 +101,42 @@ export function ChatTray({
   useEffect(() => {
     if (minimized || !messagesRef.current || orderedMessages.length === 0) {
       lastMessageIdRef.current = orderedMessages.at(-1)?.id ?? null;
+      previousMessageCountRef.current = orderedMessages.length;
       return;
     }
 
     const nextLastMessageId = orderedMessages.at(-1)?.id ?? null;
     const previousLastMessageId = lastMessageIdRef.current;
+    const previousMessageCount = previousMessageCountRef.current;
     lastMessageIdRef.current = nextLastMessageId;
+    previousMessageCountRef.current = orderedMessages.length;
 
     if (!nextLastMessageId || nextLastMessageId === previousLastMessageId) {
       return;
     }
 
-    const scroller = messagesRef.current;
-    const distanceFromBottom =
-      scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
-    const isNearBottom = distanceFromBottom < 56;
+    if (previousMessageCount === 0 && orderedMessages.length > 0) {
+      setMinimized(false);
+    }
 
-    if (isNearBottom && !userHoldingScrollRef.current) {
+    const scroller = messagesRef.current;
+    if (!userHoldingScrollRef.current) {
       scroller.scrollTop = scroller.scrollHeight;
     }
   }, [orderedMessages, minimized]);
+
+  useEffect(() => {
+    const previousMessageCount = previousMessageCountRef.current;
+    if (previousMessageCount === 0 && orderedMessages.length > 0) {
+      setMinimized(false);
+      window.setTimeout(() => {
+        if (messagesRef.current && !userHoldingScrollRef.current) {
+          messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+        }
+      }, 0);
+    }
+    previousMessageCountRef.current = orderedMessages.length;
+  }, [orderedMessages.length]);
 
   if (!visible || !canUseGameScope) {
     return null;
