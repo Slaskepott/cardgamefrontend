@@ -5,6 +5,8 @@ type PlayMode = "multiplayer" | "singleplayer";
 type MultiplayerMode = "host" | "join";
 type JoinMode = "browser" | "id";
 type SingleplayerMode = "practice" | "campaign";
+type MultiplayerEntryMode = "host" | "browser" | "id";
+type PlayHubAction = "host" | "browser" | "id" | "practice" | "campaign";
 
 const fallbackCampaignNodes: CampaignNode[] = [
   { id: "ember_wake", region: 1, index: 1, name: "Ember Wake", type: "bo3", best_of: 3, wins_to_clinch: 2, description: "+55% Fire draw chance, +25% Fire damage." },
@@ -16,7 +18,7 @@ const fallbackCampaignNodes: CampaignNode[] = [
   { id: "floodmarked_vault", region: 2, index: 7, name: "Floodmarked Vault", type: "bo5", best_of: 5, wins_to_clinch: 3, description: "+60% Water draw chance, +20% Water damage, +20% flush damage." },
   { id: "archivist_of_gaps", region: 2, index: 8, name: "The Archivist of Gaps", type: "boss", best_of: 9, wins_to_clinch: 5, description: "Gap Straight enabled, +50 health, +1 hand size, +18% straight damage." },
   { id: "stonewire_hollow", region: 3, index: 9, name: "Stonewire Hollow", type: "bo3", best_of: 3, wins_to_clinch: 2, description: "+55% Earth draw chance, +14 armor, +18% low-card resistance." },
-  { id: "prism_tax", region: 3, index: 10, name: "Prism Tax", type: "bo3", best_of: 3, wins_to_clinch: 2, description: "+25% Fire/Air/Earth/Water draw chance and +12% Fire/Air/Earth/Water damage." },
+  { id: "prism_tax", region: 3, index: 10, name: "Prism Tax", type: "bo3", best_of: 3, wins_to_clinch: 2, description: "+35% Fire draw chance, +35% Water draw chance, +18% straight damage, +18% flush damage." },
   { id: "the_fifth_seat", region: 3, index: 11, name: "The Fifth Seat", type: "bo5", best_of: 5, wins_to_clinch: 3, description: "+1 hand size, +1 shop selection, starts with Fortress Heart relic." },
   { id: "the_house_edge", region: 3, index: 12, name: "The House Edge", type: "boss", best_of: 9, wins_to_clinch: 5, description: "Gap Straight enabled, Soft Flush enabled, +75 health, starts with Plasma Lattice relic, +2 shop selections, +1 hand size." },
 ];
@@ -90,10 +92,14 @@ export function PlayHubPanel({
   const [mode, setMode] = useState<PlayMode>(initialMode);
   const [multiplayerMode, setMultiplayerMode] = useState<MultiplayerMode>(initialMultiplayerMode);
   const [joinMode, setJoinMode] = useState<JoinMode>("browser");
+  const [multiplayerEntryMode, setMultiplayerEntryMode] = useState<MultiplayerEntryMode>(
+    initialMultiplayerMode === "host" ? "host" : "browser",
+  );
   const [singleplayerMode, setSingleplayerMode] = useState<SingleplayerMode>(initialSingleplayerMode);
   const campaignNodes = metaProgress?.campaign_nodes?.length
     ? metaProgress.campaign_nodes
     : fallbackCampaignNodes;
+  const tutorialCompleted = (metaProgress?.stats?.tutorial_completions ?? 0) > 0;
   const campaignGroups = useMemo(() => groupCampaignNodes(campaignNodes), [campaignNodes]);
   const clearedNodeIds = new Set(metaProgress?.campaign_progress?.cleared_node_ids ?? []);
   const currentNodeId = metaProgress?.campaign_progress?.current_node_id ?? fallbackCampaignNodes[0].id;
@@ -104,6 +110,9 @@ export function PlayHubPanel({
 
   useEffect(() => {
     setMultiplayerMode(initialMultiplayerMode);
+    const nextEntryMode: MultiplayerEntryMode = initialMultiplayerMode === "host" ? "host" : "browser";
+    setMultiplayerEntryMode(nextEntryMode);
+    setJoinMode("browser");
   }, [initialMultiplayerMode]);
 
   useEffect(() => {
@@ -118,6 +127,57 @@ export function PlayHubPanel({
     }
     await onJoinGame(gameId, resolvedPlayerName);
   }
+
+  function setAction(action: PlayHubAction) {
+    if (action === "host") {
+      setMode("multiplayer");
+      setMultiplayerEntryMode("host");
+      setMultiplayerMode("host");
+      onModeChange?.("multiplayer");
+      onMultiplayerModeChange?.("host");
+      return;
+    }
+
+    if (action === "browser") {
+      setMode("multiplayer");
+      setMultiplayerEntryMode("browser");
+      setMultiplayerMode("join");
+      setJoinMode("browser");
+      onModeChange?.("multiplayer");
+      onMultiplayerModeChange?.("join");
+      return;
+    }
+
+    if (action === "id") {
+      setMode("multiplayer");
+      setMultiplayerEntryMode("id");
+      setMultiplayerMode("join");
+      setJoinMode("id");
+      onModeChange?.("multiplayer");
+      onMultiplayerModeChange?.("join");
+      return;
+    }
+
+    if (action === "practice") {
+      setMode("singleplayer");
+      setSingleplayerMode("practice");
+      onModeChange?.("singleplayer");
+      onSingleplayerModeChange?.("practice");
+      return;
+    }
+
+    setMode("singleplayer");
+    setSingleplayerMode("campaign");
+    onModeChange?.("singleplayer");
+    onSingleplayerModeChange?.("campaign");
+  }
+
+  const activeAction: PlayHubAction =
+    mode === "multiplayer"
+      ? multiplayerEntryMode
+      : singleplayerMode === "campaign"
+        ? "campaign"
+        : "practice";
 
   function renderCampaignMap() {
     if (!signedIn) {
@@ -192,22 +252,6 @@ export function PlayHubPanel({
   function renderJoinLobbies() {
     return (
       <div className="play-hub-join-stack">
-        <div className="play-mode-toggle nested" role="tablist" aria-label="Choose join mode">
-          <button
-            type="button"
-            className={joinMode === "browser" ? "play-mode-pill active" : "play-mode-pill"}
-            onClick={() => setJoinMode("browser")}
-          >
-            Game browser
-          </button>
-          <button
-            type="button"
-            className={joinMode === "id" ? "play-mode-pill active" : "play-mode-pill"}
-            onClick={() => setJoinMode("id")}
-          >
-            Join by ID
-          </button>
-        </div>
         {joinMode === "browser" ? (
           <div className="play-hub-lobbies-box">
             <div className="lobby-list compact">
@@ -260,12 +304,61 @@ export function PlayHubPanel({
 
   return (
     <section className="panel lobby-panel play-hub-panel">
+      <div className="play-hub-action-strip" aria-label="Choose what to do">
+        <div className="play-hub-action-group">
+          <span className="play-hub-action-label">Multiplayer</span>
+          <div className="play-mode-toggle grouped-actions" role="tablist" aria-label="Multiplayer actions">
+            <button
+              type="button"
+              className={activeAction === "host" ? "play-mode-pill active" : "play-mode-pill"}
+              onClick={() => setAction("host")}
+            >
+              Host lobby
+            </button>
+            <button
+              type="button"
+              className={activeAction === "browser" ? "play-mode-pill active" : "play-mode-pill"}
+              onClick={() => setAction("browser")}
+            >
+              Game browser
+            </button>
+            <button
+              type="button"
+              className={activeAction === "id" ? "play-mode-pill active" : "play-mode-pill"}
+              onClick={() => setAction("id")}
+            >
+              Join by ID
+            </button>
+          </div>
+        </div>
+
+        <div className="play-hub-action-group">
+          <span className="play-hub-action-label">Singleplayer</span>
+          <div className="play-mode-toggle grouped-actions" role="tablist" aria-label="Singleplayer actions">
+            <button
+              type="button"
+              className={activeAction === "practice" ? "play-mode-pill active" : "play-mode-pill"}
+              onClick={() => setAction("practice")}
+            >
+              Practice
+            </button>
+            <button
+              type="button"
+              className={activeAction === "campaign" ? "play-mode-pill active" : "play-mode-pill"}
+              onClick={() => setAction("campaign")}
+            >
+              Campaign
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div className="section-header play-hub-header">
         <div>
           <p className="eyebrow">{mode === "multiplayer" ? "Multiplayer" : "Singleplayer"}</p>
           <h2>
             {mode === "multiplayer"
-              ? multiplayerMode === "host"
+              ? multiplayerEntryMode === "host"
                 ? "Host a live Slaskecards match"
                 : "Join a live Slaskecards match"
               : singleplayerMode === "practice"
@@ -276,61 +369,17 @@ export function PlayHubPanel({
             {mode === "multiplayer"
               ? multiplayerMode === "host"
                 ? null
-                : "Join by lobby code or jump into one of the open tables below."
+                : null
               : singleplayerMode === "practice"
                 ? "Bot matches do not affect elo or progression."
                 : "Take on an authored route of unfair houses, escalating match formats, and campaign-only rewards."}
           </p>
         </div>
-        <div className="play-mode-toggle" role="tablist" aria-label="Choose game mode">
-          <button
-            type="button"
-            className={mode === "multiplayer" ? "play-mode-pill active" : "play-mode-pill"}
-            onClick={() => {
-              setMode("multiplayer");
-              onModeChange?.("multiplayer");
-            }}
-          >
-            Multiplayer
-          </button>
-          <button
-            type="button"
-            className={mode === "singleplayer" ? "play-mode-pill active" : "play-mode-pill"}
-            onClick={() => {
-              setMode("singleplayer");
-              onModeChange?.("singleplayer");
-            }}
-          >
-            Singleplayer
-          </button>
-        </div>
       </div>
 
       {mode === "multiplayer" ? (
         <form className="setup-form play-hub-form" onSubmit={(event) => event.preventDefault()}>
-          <div className="play-mode-toggle nested" role="tablist" aria-label="Choose multiplayer mode">
-            <button
-              type="button"
-              className={multiplayerMode === "host" ? "play-mode-pill active" : "play-mode-pill"}
-              onClick={() => {
-                setMultiplayerMode("host");
-                onMultiplayerModeChange?.("host");
-              }}
-            >
-              Host lobby
-            </button>
-            <button
-              type="button"
-              className={multiplayerMode === "join" ? "play-mode-pill active" : "play-mode-pill"}
-              onClick={() => {
-                setMultiplayerMode("join");
-                onMultiplayerModeChange?.("join");
-              }}
-            >
-              Join lobby
-            </button>
-          </div>
-          {multiplayerMode === "host" ? (
+          {multiplayerEntryMode === "host" ? (
             <>
               <label>
                 Game ID
@@ -375,34 +424,8 @@ export function PlayHubPanel({
         </form>
       ) : (
         <div className="singleplayer-panel-stack">
-          <div className="play-mode-toggle nested" role="tablist" aria-label="Choose singleplayer mode">
-            <button
-              type="button"
-              className={singleplayerMode === "practice" ? "play-mode-pill active" : "play-mode-pill"}
-              onClick={() => {
-                setSingleplayerMode("practice");
-                onSingleplayerModeChange?.("practice");
-              }}
-            >
-              Practice
-            </button>
-            <button
-              type="button"
-              className={singleplayerMode === "campaign" ? "play-mode-pill active" : "play-mode-pill"}
-              onClick={() => {
-                setSingleplayerMode("campaign");
-                onSingleplayerModeChange?.("campaign");
-              }}
-            >
-              Campaign
-            </button>
-          </div>
-
           {singleplayerMode === "practice" ? (
             <div className="singleplayer-practice-stack">
-              <div className="play-hub-subsection">
-                <span className="eyebrow">Play against bots</span>
-              </div>
               <div className="play-hub-bot-stack">
                 <button type="button" className="secondary" disabled={busy} onClick={() => void onStartBotMatch("easy")}>
                   {busy ? "Working..." : "Easy"}
@@ -423,19 +446,17 @@ export function PlayHubPanel({
                 >
                   Hard
                 </button>
+                <button
+                  type="button"
+                  className={`secondary tutorial-practice-button${
+                    !tutorialCompleted ? " tutorial-practice-button-glow" : ""
+                  }`}
+                  onClick={onStartTutorial}
+                  disabled={busy}
+                >
+                  Tutorial
+                </button>
               </div>
-              <div className="play-hub-subsection">
-                <span className="eyebrow">Tutorial</span>
-              </div>
-              <button
-                type="button"
-                className="lobby-card tutorial-entry-card practice-tutorial-card"
-                onClick={onStartTutorial}
-                disabled={busy}
-              >
-                <span className="lobby-card-title">Play tutorial</span>
-                <span>Learn hands, attacking, discarding, and the shop in a couple of minutes.</span>
-              </button>
             </div>
           ) : (
             renderCampaignMap()

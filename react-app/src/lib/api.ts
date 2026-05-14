@@ -174,6 +174,15 @@ export function setProfileBorder(email: string, border: string) {
   );
 }
 
+export function completeTutorial(email: string) {
+  return requestJson<MetaProgressResponse>(
+    `/meta/${encodeURIComponent(email)}/tutorial/complete`,
+    {
+      method: "POST",
+    },
+  );
+}
+
 export function discardCards(gameId: string, playerId: string, cards: Card[]) {
   return requestJson<DiscardResponse>(`/game/${gameId}/discard`, {
     method: "POST",

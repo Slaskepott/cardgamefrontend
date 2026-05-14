@@ -27,7 +27,7 @@ import upgradeBuyEpicSfx from "./sfx/shop_purchase_epic.mp3";
 import upgradeBuyLegendarySfx from "./sfx/shop_purchase_legendary.mp3";
 import upgradeBuyRareSfx from "./sfx/shop_purchase_rare.wav";
 import upgradeBuyUncommonSfx from "./sfx/shop_purchase_uncommon.mp3";
-import victorySfx from "./sfx/victory.mp3";
+import victorySfx from "./sfx/victory.wav";
 import tableOfFivesMusic from "../assets/audio/velvet-house-edge-menu.mp3";
 import velvetHouseCampaign2Music from "../assets/audio/velvet-house-campaign-2.mp3";
 import velvetHouseCampaignBoss1Music from "../assets/audio/velvet-house-campaign-boss-1.mp3";

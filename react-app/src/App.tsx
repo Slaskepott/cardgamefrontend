@@ -32,6 +32,7 @@ import {
   type AudioSettings,
 } from "./lib/audio";
 import {
+  completeTutorial,
   getMetaProgress,
   listLobbies,
   resetTalents,
@@ -75,7 +76,7 @@ export default function App() {
   const [progressionModalOpen, setProgressionModalOpen] = useState(false);
   const [pendingAccountView, setPendingAccountView] = useState<AccountViewTarget | null>(null);
   const [audioSettings, setAudioSettingsState] = useState<AudioSettings>(() => getStoredAudioSettings());
-  const [lobbyMode, setLobbyMode] = useState<LobbyMode>("multiplayer");
+  const [lobbyMode, setLobbyMode] = useState<LobbyMode>("singleplayer");
   const [lobbyMultiplayerMode, setLobbyMultiplayerMode] = useState<LobbyMultiplayerMode>("host");
   const [lobbySingleplayerMode, setLobbySingleplayerMode] = useState<LobbySingleplayerMode>("practice");
 
@@ -468,6 +469,21 @@ export default function App() {
     }
   }
 
+  async function handleCompleteTutorial() {
+    if (!currentUser?.email) {
+      return;
+    }
+
+    try {
+      const response = await completeTutorial(currentUser.email);
+      if (!response.error) {
+        setMetaProgress(response);
+      }
+    } catch {
+      // Keep the current meta snapshot if tutorial completion fails.
+    }
+  }
+
   async function handleAccountNavigate(nextView: AccountViewTarget) {
     if (view === "game" && nextView !== "lobby") {
       setPendingAccountView(nextView);
@@ -714,7 +730,10 @@ export default function App() {
         </section>
       ) : hasChosenAccess && view === "tutorial" ? (
         <section className="content-grid account-grid">
-          <TutorialPage onBackToLobby={() => setView("lobby")} />
+          <TutorialPage
+            onCompleteTutorial={handleCompleteTutorial}
+            onBackToLobby={() => setView("lobby")}
+          />
         </section>
       ) : view === "rulebook" ? (
         <section className="content-grid account-grid">

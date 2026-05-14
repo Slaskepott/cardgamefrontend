@@ -1186,41 +1186,44 @@ input {
   background:
     radial-gradient(circle at top, rgba(255, 255, 255, 0.3), transparent 38%),
     rgba(255, 240, 214, 0.12);
-  border: 2px solid rgba(255, 240, 214, 0.26);
+  border: 4px solid rgba(255, 240, 214, 0.34);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    0 8px 14px rgba(0, 0, 0, 0.16);
+    0 10px 18px rgba(0, 0, 0, 0.18),
+    0 0 0 2px rgba(255, 255, 255, 0.05);
   flex-shrink: 0;
   font-size: 1.15rem;
 }
 
 .avatar-border-default {
-  border-color: rgba(255, 240, 214, 0.18);
+  border-color: rgba(255, 240, 214, 0.28);
 }
 
 .avatar-border-bronze-flare {
-  border-color: rgba(255, 182, 88, 0.72);
+  border-color: rgba(255, 170, 64, 0.98);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.26),
-    0 0 0 3px rgba(255, 161, 73, 0.24),
-    0 10px 18px rgba(0, 0, 0, 0.18);
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 0 0 3px rgba(255, 152, 56, 0.42),
+    0 0 18px rgba(255, 140, 42, 0.34),
+    0 12px 22px rgba(0, 0, 0, 0.22);
 }
 
 .avatar-border-azure-ring {
-  border-color: rgba(116, 211, 255, 0.78);
+  border-color: rgba(90, 214, 255, 1);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.26),
-    0 0 0 3px rgba(79, 176, 255, 0.24),
-    0 10px 18px rgba(0, 0, 0, 0.18);
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 0 0 3px rgba(71, 180, 255, 0.42),
+    0 0 18px rgba(57, 194, 255, 0.34),
+    0 12px 22px rgba(0, 0, 0, 0.22);
 }
 
 .avatar-border-royal-gilded {
-  border-color: rgba(255, 215, 118, 0.86);
+  border-color: rgba(255, 218, 104, 1);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    0 0 0 3px rgba(255, 215, 118, 0.3),
-    0 0 22px rgba(255, 215, 118, 0.2),
-    0 12px 24px rgba(0, 0, 0, 0.22);
+    inset 0 1px 0 rgba(255, 255, 255, 0.34),
+    0 0 0 3px rgba(255, 218, 104, 0.46),
+    0 0 24px rgba(255, 211, 84, 0.4),
+    0 14px 26px rgba(0, 0, 0, 0.24);
 }
 
 .health-player-name {
@@ -1500,6 +1503,12 @@ input {
 
 .tutorial-shop-card {
   min-height: 0;
+  max-width: 260px;
+  justify-self: start;
+}
+
+.tutorial-shop-grid {
+  align-items: start;
 }
 
 .tutorial-shop-card-bought {
@@ -5975,6 +5984,26 @@ input::placeholder {
   align-items: flex-start;
 }
 
+.play-hub-action-strip {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.play-hub-action-group {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.play-hub-action-label {
+  color: #8eddff;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
 .play-mode-toggle {
   display: inline-flex;
   padding: 0.35rem;
@@ -5986,6 +6015,19 @@ input::placeholder {
 .play-mode-toggle.nested {
   width: fit-content;
   margin-top: 0.4rem;
+}
+
+.play-mode-toggle.grouped-actions {
+  display: grid;
+  width: 100%;
+}
+
+.play-mode-toggle.grouped-actions:has(button:nth-child(3)) {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.play-mode-toggle.grouped-actions:not(:has(button:nth-child(3))) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .play-mode-pill {
@@ -6045,13 +6087,47 @@ input::placeholder {
 
 .play-hub-bot-stack {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.85rem;
-  margin-top: 1.4rem;
 }
 
 .play-hub-bot-stack button {
   min-height: 3.6rem;
+}
+
+.tutorial-practice-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.tutorial-practice-button-glow {
+  animation: tutorialPracticeGlow 1.9s ease-in-out infinite;
+  border-color: rgba(255, 216, 126, 0.46);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 0 0 1px rgba(255, 216, 126, 0.2),
+    0 0 24px rgba(255, 216, 126, 0.24),
+    0 12px 26px rgba(2, 7, 18, 0.24);
+}
+
+@keyframes tutorialPracticeGlow {
+  0%,
+  100% {
+    transform: translateY(0);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      0 0 0 1px rgba(255, 216, 126, 0.16),
+      0 0 18px rgba(255, 216, 126, 0.18),
+      0 10px 22px rgba(2, 7, 18, 0.2);
+  }
+  50% {
+    transform: translateY(-2px);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.12),
+      0 0 0 1px rgba(255, 216, 126, 0.24),
+      0 0 30px rgba(255, 216, 126, 0.32),
+      0 14px 30px rgba(2, 7, 18, 0.24);
+  }
 }
 
 .singleplayer-panel-stack {
@@ -6492,6 +6568,10 @@ input::placeholder {
   }
 
   .play-hub-bot-stack {
+    grid-template-columns: 1fr;
+  }
+
+  .play-hub-action-strip {
     grid-template-columns: 1fr;
   }
 

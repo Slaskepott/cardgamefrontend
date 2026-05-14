@@ -5,154 +5,48 @@ import { launchVictoryConfetti } from "../lib/confetti";
 import { playVictorySound } from "../lib/audio";
 
 interface TutorialPageProps {
+  onCompleteTutorial: () => void | Promise<void>;
   onBackToLobby: () => void;
 }
 
-const handExamples: { name: string; cards: Card[]; tip: string; multiplier: number }[] = [
-  {
-    name: "High card",
-    cards: [
-      { rank: "2", suit: "Fire" },
-      { rank: "5", suit: "Water" },
-      { rank: "8", suit: "Earth" },
-      { rank: "J", suit: "Air" },
-      { rank: "K", suit: "Fire" },
-    ],
-    tip: "No combo, just raw card value.",
-    multiplier: 1,
-  },
-  {
-    name: "Pair",
-    cards: [
-      { rank: "7", suit: "Fire" },
-      { rank: "7", suit: "Water" },
-      { rank: "3", suit: "Earth" },
-      { rank: "10", suit: "Air" },
-      { rank: "Q", suit: "Fire" },
-    ],
-    tip: "A simple opener with a small multiplier.",
-    multiplier: 2,
-  },
-  {
-    name: "Two pair",
-    cards: [
-      { rank: "4", suit: "Fire" },
-      { rank: "4", suit: "Water" },
-      { rank: "9", suit: "Earth" },
-      { rank: "9", suit: "Air" },
-      { rank: "A", suit: "Fire" },
-    ],
-    tip: "More stable than a single pair.",
-    multiplier: 2,
-  },
-  {
-    name: "Three of a kind",
-    cards: [
-      { rank: "8", suit: "Fire" },
-      { rank: "8", suit: "Water" },
-      { rank: "8", suit: "Earth" },
-      { rank: "J", suit: "Air" },
-      { rank: "A", suit: "Water" },
-    ],
-    tip: "A chunky mid-tier hit.",
-    multiplier: 3,
-  },
-  {
-    name: "Straight",
-    cards: [
-      { rank: "6", suit: "Fire" },
-      { rank: "7", suit: "Water" },
-      { rank: "8", suit: "Earth" },
-      { rank: "9", suit: "Air" },
-      { rank: "10", suit: "Fire" },
-    ],
-    tip: "Consecutive ranks, any suits.",
-    multiplier: 4,
-  },
-  {
-    name: "Flush",
-    cards: [
-      { rank: "2", suit: "Water" },
-      { rank: "6", suit: "Water" },
-      { rank: "9", suit: "Water" },
-      { rank: "Q", suit: "Water" },
-      { rank: "A", suit: "Water" },
-    ],
-    tip: "All one suit. Great with elemental bonuses.",
-    multiplier: 4,
-  },
-  {
-    name: "Full house",
-    cards: [
-      { rank: "K", suit: "Fire" },
-      { rank: "K", suit: "Water" },
-      { rank: "K", suit: "Earth" },
-      { rank: "5", suit: "Air" },
-      { rank: "5", suit: "Fire" },
-    ],
-    tip: "Three of a kind plus a pair.",
-    multiplier: 4,
-  },
-  {
-    name: "Four of a kind",
-    cards: [
-      { rank: "9", suit: "Fire" },
-      { rank: "9", suit: "Water" },
-      { rank: "9", suit: "Earth" },
-      { rank: "9", suit: "Air" },
-      { rank: "A", suit: "Fire" },
-    ],
-    tip: "Rare and brutal.",
-    multiplier: 7,
-  },
-  {
-    name: "Straight flush",
-    cards: [
-      { rank: "7", suit: "Earth" },
-      { rank: "8", suit: "Earth" },
-      { rank: "9", suit: "Earth" },
-      { rank: "10", suit: "Earth" },
-      { rank: "J", suit: "Earth" },
-    ],
-    tip: "Consecutive ranks in the same suit.",
-    multiplier: 8,
-  },
-  {
-    name: "Royal flush",
-    cards: [
-      { rank: "10", suit: "Fire" },
-      { rank: "J", suit: "Fire" },
-      { rank: "Q", suit: "Fire" },
-      { rank: "K", suit: "Fire" },
-      { rank: "A", suit: "Fire" },
-    ],
-    tip: "The dream. Max prestige, max damage.",
-    multiplier: 10,
-  },
-];
-
-const attackCards: Card[] = [
+const openingAttack: Card[] = [
+  { rank: "8", suit: "Fire" },
+  { rank: "8", suit: "Water" },
+  { rank: "8", suit: "Earth" },
+  { rank: "K", suit: "Air" },
   { rank: "K", suit: "Fire" },
-  { rank: "K", suit: "Water" },
-  { rank: "K", suit: "Earth" },
-  { rank: "5", suit: "Air" },
-  { rank: "5", suit: "Fire" },
 ];
 
-const weakDiscardHand: Card[] = [
+const botAttack: Card[] = [
+  { rank: "6", suit: "Water" },
+  { rank: "7", suit: "Water" },
+  { rank: "8", suit: "Water" },
+  { rank: "9", suit: "Water" },
+  { rank: "10", suit: "Water" },
+];
+
+const weakHand: Card[] = [
   { rank: "2", suit: "Fire" },
-  { rank: "5", suit: "Water" },
+  { rank: "4", suit: "Water" },
+  { rank: "7", suit: "Earth" },
+  { rank: "8", suit: "Air" },
+  { rank: "J", suit: "Fire" },
+];
+
+const improvedHand: Card[] = [
+  { rank: "5", suit: "Fire" },
+  { rank: "6", suit: "Water" },
   { rank: "7", suit: "Earth" },
   { rank: "8", suit: "Air" },
   { rank: "9", suit: "Fire" },
 ];
 
-const improvedDiscardHand: Card[] = [
-  { rank: "5", suit: "Water" },
-  { rank: "6", suit: "Air" },
-  { rank: "7", suit: "Earth" },
-  { rank: "8", suit: "Air" },
-  { rank: "9", suit: "Fire" },
+const finishingAttack: Card[] = [
+  { rank: "9", suit: "Earth" },
+  { rank: "10", suit: "Earth" },
+  { rank: "J", suit: "Earth" },
+  { rank: "Q", suit: "Earth" },
+  { rank: "K", suit: "Earth" },
 ];
 
 const tutorialShop = [
@@ -174,34 +68,46 @@ function TutorialCard({ card }: { card: Card }) {
   );
 }
 
-export function TutorialPage({ onBackToLobby }: TutorialPageProps) {
+export function TutorialPage({ onCompleteTutorial, onBackToLobby }: TutorialPageProps) {
   const [step, setStep] = useState(0);
+  const [playerHealth, setPlayerHealth] = useState(100);
   const [enemyHealth, setEnemyHealth] = useState(100);
   const [discardImproved, setDiscardImproved] = useState(false);
   const [boughtUpgradeId, setBoughtUpgradeId] = useState<number | null>(null);
+  const [completionTracked, setCompletionTracked] = useState(false);
 
-  const attackPreview = useMemo(() => buildHandPreview(attackCards, [], [], null, []), []);
+  const openingPreview = useMemo(() => buildHandPreview(openingAttack, [], [], null, []), []);
+  const botPreview = useMemo(() => buildHandPreview(botAttack, [], [], null, []), []);
   const discardPreview = useMemo(
-    () => buildHandPreview(discardImproved ? improvedDiscardHand : weakDiscardHand, [], [], null, []),
+    () => buildHandPreview(discardImproved ? improvedHand : weakHand, [], [], null, []),
     [discardImproved],
   );
+  const finishingPreview = useMemo(() => buildHandPreview(finishingAttack, [], [], null, []), []);
 
   useEffect(() => {
-    if (step === 4) {
+    if (step === 4 && boughtUpgradeId !== null) {
       launchVictoryConfetti();
       playVictorySound(true);
     }
-  }, [step]);
+  }, [step, boughtUpgradeId]);
+
+  useEffect(() => {
+    if (step === 4 && boughtUpgradeId !== null && !completionTracked) {
+      setCompletionTracked(true);
+      void onCompleteTutorial();
+    }
+  }, [boughtUpgradeId, completionTracked, onCompleteTutorial, step]);
+
+  const currentDiscardHand = discardImproved ? improvedHand : weakHand;
 
   return (
     <section className="panel account-page-panel tutorial-page">
       <div className="section-header">
         <div>
           <p className="eyebrow">Tutorial</p>
-          <h2>Learn a quick match flow</h2>
+          <h2>Play one tiny practice round</h2>
           <p className="panel-copy">
-            This is a short solo walkthrough: learn the hand ladder, see how attacking works,
-            practice a discard, and take one fast shop turn.
+            One attack, one bot attack, one discard, one more attack, then a quick shop stop.
           </p>
         </div>
         <div className="button-row">
@@ -212,7 +118,7 @@ export function TutorialPage({ onBackToLobby }: TutorialPageProps) {
       </div>
 
       <div className="tutorial-stepper">
-        {["Hands", "Attack", "Discard", "Shop", "Finish"].map((label, index) => (
+        {["Attack", "Bot attack", "Discard", "Attack", "Shop"].map((label, index) => (
           <div
             key={label}
             className={`tutorial-step-pill${index === step ? " active" : ""}${index < step ? " complete" : ""}`}
@@ -222,92 +128,67 @@ export function TutorialPage({ onBackToLobby }: TutorialPageProps) {
         ))}
       </div>
 
+      <div className="tutorial-duel-strip">
+        <article className="health-card tutorial-health-card">
+          <div className="health-meta">
+            <strong className="health-player-name">
+              <span className="player-avatar-badge health-avatar">🤖</span>
+              Tutorial bot
+            </strong>
+            <span>{enemyHealth} HP</span>
+          </div>
+          <div className="health-bar-shell">
+            <div className="health-bar-fill" style={{ width: `${Math.max(enemyHealth, 0)}%` }} />
+          </div>
+        </article>
+        <article className="health-card tutorial-health-card">
+          <div className="health-meta">
+            <strong className="health-player-name">
+              <span className="player-avatar-badge health-avatar">🧑</span>
+              You
+            </strong>
+            <span>{playerHealth} HP</span>
+          </div>
+          <div className="health-bar-shell">
+            <div className="health-bar-fill player" style={{ width: `${Math.max(playerHealth, 0)}%` }} />
+          </div>
+        </article>
+      </div>
+
       {step === 0 ? (
         <section className="tutorial-stage">
           <div className="tutorial-copy-block">
-            <h3>The hand ladder</h3>
+            <h3>Open with a real hand</h3>
             <p className="panel-copy compact-copy">
-              Most of the game is reading your hand quickly. Better hands get bigger multipliers,
-              so poker logic matters more than just slamming your highest ranks. The multiplier is
-              also how much gold you earn after playing the hand.
+              These five cards are already selected. A full house gives you strong damage and good gold.
             </p>
           </div>
-          <div className="tutorial-hand-grid">
-            {handExamples.map((example) => (
-              <article key={example.name} className="tutorial-hand-card">
-                <div className="tutorial-hand-head">
-                  <strong>{example.name}</strong>
-                  <span>{example.tip}</span>
-                </div>
-                <div className="tutorial-hand-rewards">
-                  <span>Multiplier x{example.multiplier}</span>
-                  <span>+{example.multiplier} gold</span>
-                </div>
-                <div className="tutorial-mini-cards">
-                  {example.cards.map((card, index) => (
-                    <TutorialCard key={`${example.name}-${index}`} card={card} />
-                  ))}
-                </div>
-              </article>
-            ))}
-          </div>
-          <div className="button-row">
-            <button type="button" onClick={() => setStep(1)}>
-              Start practice duel
-            </button>
-          </div>
-        </section>
-      ) : null}
-
-      {step === 1 ? (
-        <section className="tutorial-stage">
-          <div className="tutorial-copy-block">
-            <h3>Attacking</h3>
-            <p className="panel-copy compact-copy">
-              On your turn, select up to five cards and play the best hand you can build. Here
-              you’ve lined up a full house, which hits much harder than a random pile.
-            </p>
-          </div>
-          <div className="tutorial-duel-strip">
-            <article className="health-card tutorial-health-card">
-              <div className="health-meta">
-                <strong className="health-player-name">
-                  <span className="player-avatar-badge health-avatar">😈</span>
-                  Training dummy
-                </strong>
-                <span>{enemyHealth} HP</span>
-              </div>
-              <div className="health-bar-shell">
-                <div className="health-bar-fill" style={{ width: `${enemyHealth}%` }} />
-              </div>
-            </article>
-            <article className="hand-preview-panel active tutorial-preview-panel">
-              <div className="hand-preview-copy">
-                <span className="hand-preview-label">Selected hand preview</span>
-                <strong>
-                  {titleCase(attackPreview?.handType ?? "full house")}{" "}
-                  <span className="hand-preview-inline-multiplier">
-                    (Multiplier x{attackPreview?.multiplier ?? 1})
-                  </span>
-                </strong>
-                <span>Those cards are already selected for you.</span>
-              </div>
-              <div className="hand-preview-metrics">
-                <span>Deals {attackPreview?.damage ?? 0} damage</span>
-              </div>
-            </article>
-          </div>
+          <article className="hand-preview-panel active tutorial-preview-panel">
+            <div className="hand-preview-copy">
+              <span className="hand-preview-label">Selected hand preview</span>
+              <strong>
+                {titleCase(openingPreview?.handType ?? "full house")}{" "}
+                <span className="hand-preview-inline-multiplier">
+                  (Multiplier x{openingPreview?.multiplier ?? 1})
+                </span>
+              </strong>
+              <span>Good hands are your engine. Bigger combos mean bigger hits and more gold.</span>
+            </div>
+            <div className="hand-preview-metrics">
+              <span>Deals {openingPreview?.damage ?? 0} damage</span>
+            </div>
+          </article>
           <div className="tutorial-card-row">
-            {attackCards.map((card, index) => (
-              <TutorialCard key={`attack-${index}`} card={card} />
+            {openingAttack.map((card, index) => (
+              <TutorialCard key={`opening-${index}`} card={card} />
             ))}
           </div>
           <div className="button-row">
             <button
               type="button"
               onClick={() => {
-                setEnemyHealth(Math.max(0, 100 - (attackPreview?.damage ?? 0)));
-                setStep(2);
+                setEnemyHealth(Math.max(0, 100 - (openingPreview?.damage ?? 0)));
+                setStep(1);
               }}
             >
               Play hand
@@ -316,13 +197,54 @@ export function TutorialPage({ onBackToLobby }: TutorialPageProps) {
         </section>
       ) : null}
 
+      {step === 1 ? (
+        <section className="tutorial-stage">
+          <div className="tutorial-copy-block">
+            <h3>The bot hits back</h3>
+            <p className="panel-copy compact-copy">
+              Combat is alternating. After your hand resolves, the bot gets its own turn.
+            </p>
+          </div>
+          <article className="hand-preview-panel active tutorial-preview-panel">
+            <div className="hand-preview-copy">
+              <span className="hand-preview-label">Bot hand preview</span>
+              <strong>
+                {titleCase(botPreview?.handType ?? "flush")}{" "}
+                <span className="hand-preview-inline-multiplier">
+                  (Multiplier x{botPreview?.multiplier ?? 1})
+                </span>
+              </strong>
+              <span>The bot is holding a clean flush.</span>
+            </div>
+            <div className="hand-preview-metrics">
+              <span>Deals {botPreview?.damage ?? 0} damage</span>
+            </div>
+          </article>
+          <div className="tutorial-card-row">
+            {botAttack.map((card, index) => (
+              <TutorialCard key={`bot-${index}`} card={card} />
+            ))}
+          </div>
+          <div className="button-row">
+            <button
+              type="button"
+              onClick={() => {
+                setPlayerHealth(Math.max(0, 100 - (botPreview?.damage ?? 0)));
+                setStep(2);
+              }}
+            >
+              Let the bot play
+            </button>
+          </div>
+        </section>
+      ) : null}
+
       {step === 2 ? (
         <section className="tutorial-stage">
           <div className="tutorial-copy-block">
-            <h3>Discarding</h3>
+            <h3>Fix weak hands with discards</h3>
             <p className="panel-copy compact-copy">
-              Discards let you reshape weak hands. Here the opening hand is messy. Discarding two
-              dead cards turns it into a straight.
+              This hand starts weak. Discarding the bad cards turns it into a straight.
             </p>
           </div>
           <article className="hand-preview-panel active tutorial-preview-panel">
@@ -336,8 +258,8 @@ export function TutorialPage({ onBackToLobby }: TutorialPageProps) {
               </strong>
               <span>
                 {discardImproved
-                  ? "Much better. Now you have a clean straight."
-                  : "This is weak. Try cycling into a cleaner shape."}
+                  ? "Much better. Now the hand is worth playing."
+                  : "Use a discard when the opening shape is weak."}
               </span>
             </div>
             <div className="hand-preview-metrics">
@@ -345,18 +267,18 @@ export function TutorialPage({ onBackToLobby }: TutorialPageProps) {
             </div>
           </article>
           <div className="tutorial-card-row">
-            {(discardImproved ? improvedDiscardHand : weakDiscardHand).map((card, index) => (
+            {currentDiscardHand.map((card, index) => (
               <TutorialCard key={`discard-${index}`} card={card} />
             ))}
           </div>
           <div className="button-row">
             {!discardImproved ? (
               <button type="button" onClick={() => setDiscardImproved(true)}>
-                Discard two weak cards
+                Discard into a straight
               </button>
             ) : (
               <button type="button" onClick={() => setStep(3)}>
-                Continue to the shop
+                Continue
               </button>
             )}
           </div>
@@ -366,10 +288,51 @@ export function TutorialPage({ onBackToLobby }: TutorialPageProps) {
       {step === 3 ? (
         <section className="tutorial-stage">
           <div className="tutorial-copy-block">
-            <h3>The shop</h3>
+            <h3>Attack again</h3>
             <p className="panel-copy compact-copy">
-              Between rounds, spend gold to shape your build. Damage upgrades push aggression,
-              health keeps you alive, and extra discards make hands more consistent.
+              One more attack to close the round. This time you’ve built a straight flush.
+            </p>
+          </div>
+          <article className="hand-preview-panel active tutorial-preview-panel">
+            <div className="hand-preview-copy">
+              <span className="hand-preview-label">Selected hand preview</span>
+              <strong>
+                {titleCase(finishingPreview?.handType ?? "straight flush")}{" "}
+                <span className="hand-preview-inline-multiplier">
+                  (Multiplier x{finishingPreview?.multiplier ?? 1})
+                </span>
+              </strong>
+              <span>That’s the kind of payoff discards are meant to create.</span>
+            </div>
+            <div className="hand-preview-metrics">
+              <span>Deals {finishingPreview?.damage ?? 0} damage</span>
+            </div>
+          </article>
+          <div className="tutorial-card-row">
+            {finishingAttack.map((card, index) => (
+              <TutorialCard key={`finishing-${index}`} card={card} />
+            ))}
+          </div>
+          <div className="button-row">
+            <button
+              type="button"
+              onClick={() => {
+                setEnemyHealth(Math.max(0, enemyHealth - (finishingPreview?.damage ?? 0)));
+                setStep(4);
+              }}
+            >
+              Play the second hand
+            </button>
+          </div>
+        </section>
+      ) : null}
+
+      {step === 4 ? (
+        <section className="tutorial-stage">
+          <div className="tutorial-copy-block">
+            <h3>Round over: visit the shop</h3>
+            <p className="panel-copy compact-copy">
+              Between rounds, spend gold to shape your build. Pick one upgrade and you’re done.
             </p>
           </div>
           <div className="tutorial-shop-grid">
@@ -394,41 +357,20 @@ export function TutorialPage({ onBackToLobby }: TutorialPageProps) {
               </button>
             ))}
           </div>
+          {boughtUpgradeId !== null ? (
+            <div className="tutorial-summary-grid">
+              <article className="tutorial-summary-card">
+                <strong>That’s the full loop</strong>
+                <span>Attack, survive the return hit, use discards, attack again, then shop.</span>
+              </article>
+            </div>
+          ) : null}
           <div className="button-row">
-            <button type="button" onClick={() => setStep(4)} disabled={boughtUpgradeId === null}>
-              Finish tutorial
-            </button>
-          </div>
-        </section>
-      ) : null}
-
-      {step === 4 ? (
-        <section className="tutorial-stage tutorial-finish-stage">
-          <div className="tutorial-copy-block">
-            <h3>You’re ready</h3>
-            <p className="panel-copy compact-copy">
-              Quick recap: build the strongest hand you can, use discards to fix weak draws, spend
-              gold between rounds, and race to 5 wins in a match.
-            </p>
-          </div>
-          <div className="tutorial-summary-grid">
-            <article className="tutorial-summary-card">
-              <strong>Hands</strong>
-              <span>Better combos mean bigger multipliers.</span>
-            </article>
-            <article className="tutorial-summary-card">
-              <strong>Discards</strong>
-              <span>Cycle weak cards into straights, flushes, and pairs.</span>
-            </article>
-            <article className="tutorial-summary-card">
-              <strong>Shop</strong>
-              <span>Buy damage, health, draw shaping, or extra discards.</span>
-            </article>
-          </div>
-          <div className="button-row">
-            <button type="button" onClick={onBackToLobby}>
-              Back to join lobby
-            </button>
+            {boughtUpgradeId === null ? null : (
+              <button type="button" onClick={onBackToLobby}>
+                Back to lobby
+              </button>
+            )}
           </div>
         </section>
       ) : null}

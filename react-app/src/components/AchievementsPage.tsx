@@ -7,6 +7,7 @@ interface AchievementsPageProps {
 }
 
 const statLabels: Record<string, string> = {
+  tutorial_completions: "Tutorial completions",
   hands_played: "Hands played",
   games_won: "Games won",
   games_lost: "Games lost",
@@ -32,6 +33,7 @@ const statLabels: Record<string, string> = {
 };
 
 const statIcons: Record<string, string> = {
+  tutorial_completions: "🎓",
   hands_played: "🃏",
   games_won: "👑",
   games_lost: "🪦",
@@ -57,6 +59,7 @@ const statIcons: Record<string, string> = {
 };
 
 const spotlightStatOrder = [
+  "tutorial_completions",
   "campaign_nodes_cleared",
   "campaign_bosses_defeated",
   "campaign_completions",
@@ -70,9 +73,7 @@ const spotlightStatOrder = [
   "upgrades_bought",
 ];
 
-const statPriority = new Map(
-  spotlightStatOrder.map((stat, index) => [stat, index]),
-);
+const statPriority = new Map(spotlightStatOrder.map((stat, index) => [stat, index]));
 
 function getTierClass(index: number) {
   if (index === 0) {
