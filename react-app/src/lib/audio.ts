@@ -29,6 +29,7 @@ import upgradeBuyRareSfx from "./sfx/shop_purchase_rare.wav";
 import upgradeBuyUncommonSfx from "./sfx/shop_purchase_uncommon.mp3";
 import victorySfx from "./sfx/victory.mp3";
 import tableOfFivesMusic from "../assets/audio/velvet-house-edge-menu.mp3";
+import velvetHouseCampaignMusic from "../assets/audio/velvet-house-campaign.mp3";
 import velvetHouseEdgeMusic from "../assets/audio/velvet-house-edge.mp3";
 
 export interface AudioSettings {
@@ -38,7 +39,7 @@ export interface AudioSettings {
   ambienceVolume: number;
 }
 
-export type AudioScene = "hero" | "hub" | "battle" | "shop" | "relic";
+export type AudioScene = "hero" | "hub" | "campaign" | "battle" | "shop" | "relic";
 
 const AUDIO_SETTINGS_KEY = "slaskecards-audio-settings";
 const defaultAudioSettings: AudioSettings = {
@@ -87,8 +88,9 @@ let settings: AudioSettings = loadStoredAudioSettings();
 let unlocked = false;
 let currentScene: AudioScene = "hero";
 let gameMusic: HTMLAudioElement | null = null;
+let campaignMusic: HTMLAudioElement | null = null;
 let nonGameMusic: HTMLAudioElement | null = null;
-let activeMusicKind: "game" | "non-game" | null = null;
+let activeMusicKind: "game" | "campaign" | "non-game" | null = null;
 let musicFadeFrame: number | null = null;
 let musicTransitionToken = 0;
 
@@ -134,6 +136,9 @@ export function getStoredAudioSettings() {
 }
 
 function desiredMusicKind(scene: AudioScene) {
+  if (scene === "campaign") {
+    return "campaign";
+  }
   return scene === "battle" || scene === "shop" || scene === "relic" ? "game" : "non-game";
 }
 
@@ -154,6 +159,12 @@ function initializeMusicTracks() {
     gameMusic = new Audio(velvetHouseEdgeMusic);
     gameMusic.loop = true;
     gameMusic.preload = "auto";
+  }
+
+  if (!campaignMusic) {
+    campaignMusic = new Audio(velvetHouseCampaignMusic);
+    campaignMusic.loop = true;
+    campaignMusic.preload = "auto";
   }
 
   if (!nonGameMusic) {
@@ -185,13 +196,14 @@ function stopMusicPlayback() {
   musicFadeFrame = null;
   musicTransitionToken += 1;
   silenceTrack(gameMusic);
+  silenceTrack(campaignMusic);
   silenceTrack(nonGameMusic);
   activeMusicKind = null;
 }
 
 async function playTrack(
   track: HTMLAudioElement | null,
-  expectedKind?: "game" | "non-game",
+  expectedKind?: "game" | "campaign" | "non-game",
   token?: number,
 ) {
   if (!track) {
@@ -211,7 +223,7 @@ async function playTrack(
 }
 
 function animateMusicTransition(
-  nextKind: "game" | "non-game",
+  nextKind: "game" | "campaign" | "non-game",
   incomingTrack: HTMLAudioElement | null,
   outgoingTrack: HTMLAudioElement | null,
   durationMs = 1800,
@@ -287,6 +299,9 @@ function syncMusicVolume() {
   if (gameMusic && activeMusicKind === "game") {
     setTrackVolume(gameMusic, volume);
   }
+  if (campaignMusic && activeMusicKind === "campaign") {
+    setTrackVolume(campaignMusic, volume);
+  }
   if (nonGameMusic && activeMusicKind === "non-game") {
     setTrackVolume(nonGameMusic, volume);
   }
@@ -301,16 +316,24 @@ function syncMusicPlayback() {
   }
 
   const nextKind = desiredMusicKind(currentScene);
-  const nextTrack = nextKind === "game" ? gameMusic : nonGameMusic;
-  const previousTrack = nextKind === "game" ? nonGameMusic : gameMusic;
+  const nextTrack =
+    nextKind === "game" ? gameMusic : nextKind === "campaign" ? campaignMusic : nonGameMusic;
+  const previousTracks = [gameMusic, campaignMusic, nonGameMusic].filter(
+    (track) => track && track !== nextTrack,
+  );
 
   if (activeMusicKind !== nextKind) {
     activeMusicKind = nextKind;
-    animateMusicTransition(nextKind, nextTrack, previousTrack);
+    animateMusicTransition(nextKind, nextTrack, previousTracks[0] ?? null);
+    for (const staleTrack of previousTracks.slice(1)) {
+      silenceTrack(staleTrack);
+    }
     return;
   }
 
-  silenceTrack(previousTrack);
+  for (const staleTrack of previousTracks) {
+    silenceTrack(staleTrack);
+  }
   syncMusicVolume();
   if (nextTrack?.paused) {
     void playTrack(nextTrack, nextKind, musicTransitionToken);

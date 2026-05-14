@@ -36,6 +36,8 @@ import {
   getMetaProgress,
   listLobbies,
   resetTalents,
+  setProfileBorder,
+  setProfileIcon,
   setTalentElement,
   unlockTalentWithElement,
 } from "./lib/api";
@@ -74,6 +76,8 @@ export default function App() {
 
   const session = useGameSession(currentUser);
   const { setDraftPlayerId } = session;
+  const persistedIcon = metaProgress?.selected_icon ?? null;
+  const persistedBorder = metaProgress?.selected_border ?? "default";
   const chatAuthorName =
     currentUser?.displayName?.trim() || session.playerId || session.draftPlayerId || "Guest";
   const chatAuthorAvatar = currentUser?.photoURL || "👤";
@@ -180,13 +184,15 @@ export default function App() {
         ? "hero"
         : view !== "game"
           ? "hub"
+          : session.isCampaignMatch
+            ? "campaign"
           : session.phase === "shop"
             ? "shop"
             : session.phase === "relic"
               ? "relic"
               : "battle";
     setAudioScene(scene);
-  }, [entryStage, session.phase, view]);
+  }, [entryStage, session.isCampaignMatch, session.phase, view]);
 
   useEffect(() => {
     if (view !== "lobby") {
@@ -417,6 +423,36 @@ export default function App() {
     }
   }
 
+  async function handleSetProfileIcon(icon: string) {
+    if (!currentUser?.email) {
+      return;
+    }
+    try {
+      const response = await setProfileIcon(currentUser.email, icon);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      setMetaProgress(response);
+    } catch {
+      // Ignore profile icon failures and keep existing local state.
+    }
+  }
+
+  async function handleSetProfileBorder(border: string) {
+    if (!currentUser?.email) {
+      return;
+    }
+    try {
+      const response = await setProfileBorder(currentUser.email, border);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      setMetaProgress(response);
+    } catch {
+      // Ignore profile border failures and keep existing local state.
+    }
+  }
+
   async function handleAccountNavigate(nextView: AccountViewTarget) {
     if (view === "game" && nextView !== "lobby") {
       setPendingAccountView(nextView);
@@ -560,6 +596,8 @@ export default function App() {
         onAudioSettingsChange={handleAudioSettingsChange}
         onOpenProgression={() => setProgressionModalOpen(true)}
         onAccountIconClick={handleAccountIconClick}
+        onSetProfileIcon={handleSetProfileIcon}
+        onSetProfileBorder={handleSetProfileBorder}
         onNavigate={handleAccountNavigate}
         onGuestModeChange={setGuestMode}
       />
@@ -575,7 +613,10 @@ export default function App() {
               currentUser?.email?.split("@")[0] ||
               null
             }
-            lockedPlayerAvatar={currentUser?.photoURL ?? null}
+            lockedPlayerAvatar={persistedIcon || currentUser?.photoURL || null}
+            lockedPlayerBorder={persistedBorder}
+            metaProgress={metaProgress}
+            signedIn={Boolean(currentUser)}
             onGameIdChange={session.handleDraftGameIdChange}
             onPlayerIdChange={setDraftPlayerId}
             onCreateGame={async (gameId, playerId) => {
@@ -590,6 +631,11 @@ export default function App() {
             }}
             onStartBotMatch={async (difficulty) => {
               if (await session.handleStartBotMatch(difficulty)) {
+                setView("game");
+              }
+            }}
+            onStartCampaignNode={async (nodeId) => {
+              if (await session.handleStartCampaignNode(nodeId)) {
                 setView("game");
               }
             }}
@@ -655,6 +701,7 @@ export default function App() {
               playerId={session.playerId}
               shopOpen={session.shopOpen}
               battleTimerSeconds={session.battleTimerSeconds}
+              winsToClinch={session.winsToClinch}
               onLeaveLobby={async () => {
                 await session.handleLeaveLobby();
                 setView("lobby");

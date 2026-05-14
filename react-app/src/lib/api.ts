@@ -86,6 +86,15 @@ export function startBotGame(
   });
 }
 
+export function startCampaignNode(email: string, nodeId: string) {
+  return requestJson<StartBotGameResponse>(
+    `/campaign/${encodeURIComponent(email)}/start/${encodeURIComponent(nodeId)}`,
+    {
+      method: "POST",
+    },
+  );
+}
+
 export function getPlayers(gameId: string) {
   return requestJson<PlayersResponse>(`/game/${gameId}/players`);
 }
@@ -141,6 +150,24 @@ export function setTalentElement(email: string, talentId: string, element: strin
 export function resetTalents(email: string) {
   return requestJson<MetaProgressResponse>(
     `/meta/${encodeURIComponent(email)}/talents/actions/reset-all`,
+    {
+      method: "POST",
+    },
+  );
+}
+
+export function setProfileIcon(email: string, icon: string) {
+  return requestJson<MetaProgressResponse>(
+    `/profile/${encodeURIComponent(email)}/icon?icon=${encodeURIComponent(icon)}`,
+    {
+      method: "POST",
+    },
+  );
+}
+
+export function setProfileBorder(email: string, border: string) {
+  return requestJson<MetaProgressResponse>(
+    `/profile/${encodeURIComponent(email)}/border?border=${encodeURIComponent(border)}`,
     {
       method: "POST",
     },

@@ -58,6 +58,8 @@ interface AuthPanelProps {
   onAudioSettingsChange: (settings: AudioSettings) => void;
   onOpenProgression: () => void;
   onAccountIconClick?: () => void;
+  onSetProfileIcon: (icon: string) => void | Promise<void>;
+  onSetProfileBorder: (border: string) => void | Promise<void>;
   onNavigate: (view: Exclude<AccountView, "game">) => void | Promise<void>;
   onGuestModeChange: (guestMode: boolean) => void;
 }
@@ -71,6 +73,8 @@ export function AuthPanel({
   onAudioSettingsChange,
   onOpenProgression,
   onAccountIconClick,
+  onSetProfileIcon,
+  onSetProfileBorder,
   onNavigate,
   onGuestModeChange,
 }: AuthPanelProps) {
@@ -85,6 +89,8 @@ export function AuthPanel({
   const [message, setMessage] = useState("");
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const audioMenuRef = useRef<HTMLDivElement | null>(null);
+  const selectedProfileIcon = metaProgress?.selected_icon ?? currentUser?.photoURL ?? "👤";
+  const selectedProfileBorder = metaProgress?.selected_border ?? "default";
 
   useEffect(() => {
     setMenuOpen(false);
@@ -303,10 +309,54 @@ export function AuthPanel({
                 aria-expanded={menuOpen}
                 title={currentUser.email ?? "Signed in"}
               >
-                {currentUser.photoURL ?? "👤"}
+                <span className={`player-avatar-badge avatar-border-${selectedProfileBorder}`}>
+                  {selectedProfileIcon}
+                </span>
               </button>
               {menuOpen ? (
                 <div className="account-dropdown">
+                  <div className="account-dropdown-section">
+                    <span className="account-dropdown-label">Profile icon</span>
+                    <div className="profile-choice-grid">
+                      {avatarOptions.map((iconOption) => (
+                        <button
+                          key={iconOption}
+                          type="button"
+                          className={`profile-choice-button${
+                            iconOption === selectedProfileIcon ? " active" : ""
+                          }`}
+                          onClick={() => void onSetProfileIcon(iconOption)}
+                        >
+                          {iconOption}
+                        </button>
+                      ))}
+                    </div>
+                    <span className="account-dropdown-help">
+                      Campaign unlocks add special borders. Icons can be changed any time.
+                    </span>
+                  </div>
+                  <div className="account-dropdown-section">
+                    <span className="account-dropdown-label">Profile border</span>
+                    <div className="profile-border-grid">
+                      {(metaProgress?.unlocked_borders ?? ["default"]).map((borderOption) => (
+                        <button
+                          key={borderOption}
+                          type="button"
+                          className={`profile-border-button avatar-border-${borderOption}${
+                            borderOption === selectedProfileBorder ? " active" : ""
+                          }`}
+                          onClick={() => void onSetProfileBorder(borderOption)}
+                        >
+                          <span className={`player-avatar-badge avatar-border-${borderOption}`}>
+                            {selectedProfileIcon}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                    <span className="account-dropdown-help">
+                      New borders unlock by beating campaign bosses.
+                    </span>
+                  </div>
                   {currentView !== "lobby" && currentView !== "game" ? (
                     <button
                       type="button"

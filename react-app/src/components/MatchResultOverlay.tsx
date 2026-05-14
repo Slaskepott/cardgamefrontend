@@ -30,6 +30,7 @@ export function MatchResultOverlay({
   }, [didPlayerWin]);
 
   const botMatch = Boolean(matchResult.is_bot_match || matchResult.progression_disabled);
+  const campaignMatch = Boolean(matchResult.is_campaign_match);
   const playerEntries = Object.entries(matchResult.avatars).map(([name, avatar]) => {
     const elo = matchResult.elo_changes[name] ?? {
       before: null,
@@ -39,6 +40,7 @@ export function MatchResultOverlay({
     return {
       name,
       avatar,
+      avatarBorder: matchResult.avatar_borders?.[name] ?? "default",
       wins: matchResult.scores[name] ?? 0,
       elo,
       isWinner: name === matchResult.winner,
@@ -52,7 +54,11 @@ export function MatchResultOverlay({
         <p className="eyebrow">Match complete</p>
         <h2>{matchResult.winner} wins the match</h2>
         <p className="panel-copy compact-copy">{matchResult.reason}</p>
-        {botMatch ? (
+        {campaignMatch ? (
+          <p className="panel-copy compact-copy match-result-subtitle">
+            Campaign duel resolved. Ranked ELO was not affected.
+          </p>
+        ) : botMatch ? (
           <p className="panel-copy compact-copy match-result-subtitle">
             Practice match versus a bot. No rating or progression changes.
           </p>
@@ -65,7 +71,7 @@ export function MatchResultOverlay({
               className={`match-result-player${entry.isWinner ? " winner" : " loser"}`}
             >
               <div className="match-result-player-head">
-                <span className="player-avatar-badge match-result-avatar">{entry.avatar}</span>
+                <span className={`player-avatar-badge match-result-avatar avatar-border-${entry.avatarBorder}`}>{entry.avatar}</span>
                 <div>
                   <strong>
                     {entry.name}
@@ -75,7 +81,9 @@ export function MatchResultOverlay({
                 </div>
               </div>
               <div className="match-result-elo-block">
-                {botMatch ? (
+                {campaignMatch ? (
+                  <span className="match-result-elo-total">No ranked rating change</span>
+                ) : botMatch ? (
                   <span className="match-result-elo-total">No rating changes</span>
                 ) : (
                   <>

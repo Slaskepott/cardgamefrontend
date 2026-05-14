@@ -26,6 +26,9 @@ const statLabels: Record<string, string> = {
   royal_flushes_played: "Royal flushes",
   upgrades_bought: "Upgrades bought",
   elo_rating: "Elo rating",
+  campaign_nodes_cleared: "Campaign nodes cleared",
+  campaign_bosses_defeated: "Campaign bosses defeated",
+  campaign_completions: "Campaign completions",
 };
 
 const statIcons: Record<string, string> = {
@@ -59,6 +62,7 @@ const spotlightStatOrder = [
   "max_health_in_game",
   "max_single_hand_damage",
   "upgrades_bought",
+  "campaign_nodes_cleared",
 ];
 
 function getTierClass(index: number) {

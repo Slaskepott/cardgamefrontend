@@ -21,6 +21,7 @@ import {
   playHand,
   rerollShop,
   sendHeartbeat,
+  startCampaignNode,
   startBotGame,
 } from "../lib/api";
 import { generateLobbyId, generatePlayerName } from "../lib/nameGenerator";
@@ -152,6 +153,7 @@ export function useGameSession(currentUser: User | null) {
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [players, setPlayers] = useState<string[]>([]);
   const [playerAvatars, setPlayerAvatars] = useState<Record<string, string>>({});
+  const [playerAvatarBorders, setPlayerAvatarBorders] = useState<Record<string, string>>({});
   const [playerHand, setPlayerHand] = useState<Card[]>([]);
   const [selectedCards, setSelectedCards] = useState<SelectedCard[]>([]);
   const [currentTurn, setCurrentTurn] = useState<string | null>(null);
@@ -178,6 +180,10 @@ export function useGameSession(currentUser: User | null) {
   const [playerRelics, setPlayerRelics] = useState<Record<string, Relic[]>>({});
   const [phase, setPhase] = useState<"waiting" | "battle" | "shop" | "relic" | "match_over">("waiting");
   const [isBotMatch, setIsBotMatch] = useState(false);
+  const [isCampaignMatch, setIsCampaignMatch] = useState(false);
+  const [campaignNodeId, setCampaignNodeId] = useState<string | null>(null);
+  const [winsToClinch, setWinsToClinch] = useState(5);
+  const [bestOf, setBestOf] = useState(9);
   const [battleDeadlineAt, setBattleDeadlineAt] = useState<number | null>(null);
   const [shopDeadlines, setShopDeadlines] = useState<Record<string, number>>({});
   const [matchResult, setMatchResult] = useState<MatchOverMessage | null>(null);
@@ -369,6 +375,10 @@ export function useGameSession(currentUser: User | null) {
   function applyMatchState(message: MatchStateMessage) {
     setPhase(message.phase);
     setIsBotMatch(Boolean(message.is_bot_match));
+    setIsCampaignMatch(Boolean(message.is_campaign_match));
+    setCampaignNodeId(message.campaign_node_id ?? null);
+    setWinsToClinch(message.wins_to_clinch ?? 5);
+    setBestOf(message.best_of ?? 9);
     setCurrentTurn(message.current_turn);
     setBattleDeadlineAt(message.battle_deadline_at);
     setShopDeadlines(message.shop_deadlines ?? {});
@@ -440,12 +450,23 @@ export function useGameSession(currentUser: User | null) {
     });
   }
 
+  function syncAvatarBorders(nextAvatarBorders?: Record<string, string>) {
+    if (nextAvatarBorders) {
+      setPlayerAvatarBorders(nextAvatarBorders);
+    }
+  }
+
   async function refreshPlayers(nextGameId: string) {
     const response = await getPlayers(nextGameId);
     syncPlayers(response.players ?? [], response.avatars ?? {});
+    syncAvatarBorders(response.avatar_borders ?? {});
     setCurrentTurn(response.next_player ?? null);
     setPhase(response.phase ?? "waiting");
     setIsBotMatch(Boolean(response.is_bot_match));
+    setIsCampaignMatch(Boolean(response.is_campaign_match));
+    setCampaignNodeId(response.campaign_node_id ?? null);
+    setBestOf(response.best_of ?? 9);
+    setWinsToClinch(response.wins_to_clinch ?? 5);
     setBattleDeadlineAt(response.battle_deadline_at ?? null);
     setShopDeadlines(response.shop_deadlines ?? {});
     setPlayerRelics(response.relics_by_player ?? {});
@@ -472,6 +493,7 @@ export function useGameSession(currentUser: User | null) {
         }
         if (isPlayersUpdatedMessage(message)) {
           syncPlayers(message.players, message.avatars ?? {});
+          syncAvatarBorders(message.avatar_borders ?? {});
           setCurrentTurn(message.next_player ?? null);
         }
         if (isMatchStateMessage(message)) {
@@ -563,6 +585,10 @@ export function useGameSession(currentUser: User | null) {
               ...current,
               ...message.avatars,
             }));
+            setPlayerAvatarBorders((current) => ({
+              ...current,
+              ...(message.avatar_borders ?? {}),
+            }));
             pushFeedEntry(`${message.winner} wins the match.`);
           };
 
@@ -643,6 +669,10 @@ export function useGameSession(currentUser: User | null) {
       setGameId(normalizedGameId);
       setPlayerId(normalizedPlayerId);
       setIsBotMatch(false);
+      setIsCampaignMatch(false);
+      setCampaignNodeId(null);
+      setBestOf(9);
+      setWinsToClinch(5);
       setMatchResult(null);
       pushFeedEntry(response.message ?? `Joined ${normalizedGameId}.`);
       await refreshPlayers(normalizedGameId);
@@ -728,6 +758,7 @@ export function useGameSession(currentUser: User | null) {
       }
 
       setIsBotMatch(true);
+      setIsCampaignMatch(false);
       return await enterResolvedGame(
         response.game_id,
         response.player_id,
@@ -735,6 +766,38 @@ export function useGameSession(currentUser: User | null) {
       );
     } catch (error) {
       pushFeedEntry(error instanceof Error ? error.message : "Failed to start bot match.");
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleStartCampaignNode(nodeId: string) {
+    if (!currentUser?.email) {
+      pushFeedEntry("Sign in to play the campaign.");
+      return false;
+    }
+
+    setBusy(true);
+    setGameIdError(null);
+    try {
+      const response: StartBotGameResponse = await startCampaignNode(currentUser.email, nodeId);
+      if (response.error || !response.game_id || !response.player_id) {
+        throw new Error(response.error ?? "Failed to start campaign node.");
+      }
+
+      setIsBotMatch(true);
+      setIsCampaignMatch(true);
+      setCampaignNodeId(response.campaign_node_id ?? nodeId);
+      setBestOf(response.best_of ?? 9);
+      setWinsToClinch(response.wins_to_clinch ?? 5);
+      return await enterResolvedGame(
+        response.game_id,
+        response.player_id,
+        response.message ?? "Started campaign node.",
+      );
+    } catch (error) {
+      pushFeedEntry(error instanceof Error ? error.message : "Failed to start campaign node.");
       return false;
     } finally {
       setBusy(false);
@@ -950,6 +1013,7 @@ export function useGameSession(currentUser: User | null) {
       setPlayerId(null);
       setPlayers([]);
       setPlayerAvatars({});
+      setPlayerAvatarBorders({});
       setPlayerHand([]);
       setSelectedCards([]);
       setCurrentTurn(null);
@@ -967,6 +1031,10 @@ export function useGameSession(currentUser: User | null) {
       setDiscardMoment(null);
       setPhase("waiting");
       setIsBotMatch(false);
+      setIsCampaignMatch(false);
+      setCampaignNodeId(null);
+      setBestOf(9);
+      setWinsToClinch(5);
       setBattleDeadlineAt(null);
       setShopDeadlines({});
       setMatchResult(null);
@@ -1023,6 +1091,7 @@ export function useGameSession(currentUser: User | null) {
   const battlePlayers = players.map((name) => ({
     id: name,
     avatar: playerAvatars[name] ?? "ðŸ‘¤",
+    avatarBorder: playerAvatarBorders[name] ?? "default",
     health: playerHealth[name] ?? 100,
     maxHealth: playerMaxHealth[name] ?? 100,
     wins: playerWins[name] ?? 0,
@@ -1092,8 +1161,12 @@ export function useGameSession(currentUser: User | null) {
     enemyPlayerId,
     phase,
     isBotMatch,
+    isCampaignMatch,
+    campaignNodeId,
     battleDeadlineAt,
     shopDeadlines,
+    winsToClinch,
+    bestOf,
     matchResult,
     websocketConnected,
     feedEntries,
@@ -1115,6 +1188,7 @@ export function useGameSession(currentUser: User | null) {
     handleCreateGame,
     handleJoinGame,
     handleStartBotMatch,
+    handleStartCampaignNode,
     handleToggleCard,
     handleDiscard,
     handlePlayHand,

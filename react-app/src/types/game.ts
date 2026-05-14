@@ -109,6 +109,36 @@ export interface MetaProgress {
   talent_bonuses: Record<string, number>;
   level_milestones: LevelMilestone[];
   unlocked_level_rewards: string[];
+  campaign_progress: CampaignProgress;
+  campaign_nodes: CampaignNode[];
+  unlocked_icons: string[];
+  unlocked_borders: string[];
+  selected_icon: string | null;
+  selected_border: string | null;
+}
+
+export interface CampaignProgress {
+  current_node_id: string;
+  cleared_node_ids: string[];
+  completed: boolean;
+}
+
+export interface CampaignNode {
+  id: string;
+  region: number;
+  index: number;
+  name: string;
+  type: "bo3" | "bo5" | "boss";
+  best_of: number;
+  wins_to_clinch: number;
+  description: string;
+}
+
+export interface PlayerCosmetics {
+  selected_icon: string | null;
+  selected_border: string | null;
+  unlocked_icons: string[];
+  unlocked_borders: string[];
 }
 
 export interface HealthUpdate {
@@ -172,6 +202,8 @@ export interface MatchStateMessage {
   match_winner: string | null;
   match_end_reason: string | null;
   is_bot_match?: boolean;
+  is_campaign_match?: boolean;
+  campaign_node_id?: string | null;
 }
 
 export interface EloChange {
@@ -187,8 +219,11 @@ export interface MatchOverMessage {
   reason: string;
   scores: Record<string, number>;
   avatars: Record<string, string>;
+  avatar_borders?: Record<string, string>;
   elo_changes: Record<string, EloChange>;
   is_bot_match?: boolean;
+  is_campaign_match?: boolean;
+  campaign_node_id?: string | null;
   progression_disabled?: boolean;
 }
 
@@ -221,6 +256,7 @@ export interface PlayersUpdatedMessage {
   players: string[];
   next_player?: string | null;
   avatars?: Record<string, string>;
+  avatar_borders?: Record<string, string>;
 }
 
 export interface NewHandMessage {
@@ -275,16 +311,25 @@ export interface StartBotGameResponse {
   player_id?: string;
   bot_player_id?: string;
   difficulty?: "easy" | "medium" | "hard";
+  is_campaign_match?: boolean;
+  campaign_node_id?: string;
+  best_of?: number;
+  wins_to_clinch?: number;
 }
 
 export interface PlayersResponse {
   players?: string[];
   next_player?: string | null;
   avatars?: Record<string, string>;
+  avatar_borders?: Record<string, string>;
   phase?: "waiting" | "battle" | "shop" | "relic" | "match_over";
   battle_deadline_at?: number | null;
   shop_deadlines?: Record<string, number>;
   is_bot_match?: boolean;
+  is_campaign_match?: boolean;
+  campaign_node_id?: string | null;
+  best_of?: number;
+  wins_to_clinch?: number;
   relics_by_player?: Record<string, Relic[]>;
   error?: string;
 }

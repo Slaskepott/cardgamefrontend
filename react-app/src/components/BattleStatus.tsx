@@ -3,6 +3,7 @@ import type { BattleMoment } from "../types/game";
 interface PlayerStatus {
   id: string;
   avatar: string;
+  avatarBorder?: string;
   health: number;
   maxHealth: number;
   wins: number;
@@ -110,7 +111,7 @@ export function BattleStatus({
               <div className="health-meta">
                 <strong className="health-player-name">
                   <span className="health-avatar-shell" aria-hidden="true">
-                    <span className="player-avatar-badge health-avatar">{player.avatar}</span>
+                    <span className={`player-avatar-badge health-avatar avatar-border-${player.avatarBorder ?? "default"}`}>{player.avatar}</span>
                     {matchFinisher ? <span className="defeat-shockwave" /> : null}
                     {matchFinisher ? <span className="defeat-slash defeat-slash-a" /> : null}
                     {matchFinisher ? <span className="defeat-slash defeat-slash-b" /> : null}
