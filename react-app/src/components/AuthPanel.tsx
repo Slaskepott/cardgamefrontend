@@ -315,48 +315,6 @@ export function AuthPanel({
               </button>
               {menuOpen ? (
                 <div className="account-dropdown">
-                  <div className="account-dropdown-section">
-                    <span className="account-dropdown-label">Profile icon</span>
-                    <div className="profile-choice-grid">
-                      {avatarOptions.map((iconOption) => (
-                        <button
-                          key={iconOption}
-                          type="button"
-                          className={`profile-choice-button${
-                            iconOption === selectedProfileIcon ? " active" : ""
-                          }`}
-                          onClick={() => void onSetProfileIcon(iconOption)}
-                        >
-                          {iconOption}
-                        </button>
-                      ))}
-                    </div>
-                    <span className="account-dropdown-help">
-                      Campaign unlocks add special borders. Icons can be changed any time.
-                    </span>
-                  </div>
-                  <div className="account-dropdown-section">
-                    <span className="account-dropdown-label">Profile border</span>
-                    <div className="profile-border-grid">
-                      {(metaProgress?.unlocked_borders ?? ["default"]).map((borderOption) => (
-                        <button
-                          key={borderOption}
-                          type="button"
-                          className={`profile-border-button avatar-border-${borderOption}${
-                            borderOption === selectedProfileBorder ? " active" : ""
-                          }`}
-                          onClick={() => void onSetProfileBorder(borderOption)}
-                        >
-                          <span className={`player-avatar-badge avatar-border-${borderOption}`}>
-                            {selectedProfileIcon}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                    <span className="account-dropdown-help">
-                      New borders unlock by beating campaign bosses.
-                    </span>
-                  </div>
                   {currentView !== "lobby" && currentView !== "game" ? (
                     <button
                       type="button"
@@ -409,6 +367,48 @@ export function AuthPanel({
                   >
                     Sign out
                   </button>
+                  <div className="account-dropdown-section account-dropdown-section-cosmetics">
+                    <span className="account-dropdown-label">Profile icon</span>
+                    <div className="profile-choice-grid">
+                      {avatarOptions.map((iconOption) => (
+                        <button
+                          key={iconOption}
+                          type="button"
+                          className={`profile-choice-button${
+                            iconOption === selectedProfileIcon ? " active" : ""
+                          }`}
+                          onClick={() => void onSetProfileIcon(iconOption)}
+                        >
+                          {iconOption}
+                        </button>
+                      ))}
+                    </div>
+                    <span className="account-dropdown-help">
+                      Icons can be changed any time. Special borders unlock in campaign.
+                    </span>
+                  </div>
+                  <div className="account-dropdown-section account-dropdown-section-cosmetics">
+                    <span className="account-dropdown-label">Profile border</span>
+                    <div className="profile-border-grid">
+                      {(metaProgress?.unlocked_borders ?? ["default"]).map((borderOption) => (
+                        <button
+                          key={borderOption}
+                          type="button"
+                          className={`profile-border-button avatar-border-${borderOption}${
+                            borderOption === selectedProfileBorder ? " active" : ""
+                          }`}
+                          onClick={() => void onSetProfileBorder(borderOption)}
+                        >
+                          <span className={`player-avatar-badge avatar-border-${borderOption}`}>
+                            {selectedProfileIcon}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                    <span className="account-dropdown-help">
+                      New borders unlock by beating campaign bosses.
+                    </span>
+                  </div>
                 </div>
               ) : null}
             </div>

@@ -29,7 +29,11 @@ import upgradeBuyRareSfx from "./sfx/shop_purchase_rare.wav";
 import upgradeBuyUncommonSfx from "./sfx/shop_purchase_uncommon.mp3";
 import victorySfx from "./sfx/victory.mp3";
 import tableOfFivesMusic from "../assets/audio/velvet-house-edge-menu.mp3";
-import velvetHouseCampaignMusic from "../assets/audio/velvet-house-campaign.mp3";
+import velvetHouseCampaign2Music from "../assets/audio/velvet-house-campaign-2.mp3";
+import velvetHouseCampaignBoss1Music from "../assets/audio/velvet-house-campaign-boss-1.mp3";
+import velvetHouseCampaignBoss2Music from "../assets/audio/velvet-house-campaign-boss-2.mp3";
+import velvetHouseCampaignBoss3Music from "../assets/audio/velvet-house-campaign-boss-3.mp3";
+import velvetHouseCampaignBoss4Music from "../assets/audio/velvet-house-campaign-boss-4.mp3";
 import velvetHouseEdgeMusic from "../assets/audio/velvet-house-edge.mp3";
 
 export interface AudioSettings {
@@ -39,7 +43,17 @@ export interface AudioSettings {
   ambienceVolume: number;
 }
 
-export type AudioScene = "hero" | "hub" | "campaign" | "battle" | "shop" | "relic";
+export type AudioScene =
+  | "hero"
+  | "hub"
+  | "campaign"
+  | "campaignBoss1"
+  | "campaignBoss2"
+  | "campaignBoss3"
+  | "campaignBoss4"
+  | "battle"
+  | "shop"
+  | "relic";
 
 const AUDIO_SETTINGS_KEY = "slaskecards-audio-settings";
 const defaultAudioSettings: AudioSettings = {
@@ -88,9 +102,21 @@ let settings: AudioSettings = loadStoredAudioSettings();
 let unlocked = false;
 let currentScene: AudioScene = "hero";
 let gameMusic: HTMLAudioElement | null = null;
-let campaignMusic: HTMLAudioElement | null = null;
 let nonGameMusic: HTMLAudioElement | null = null;
-let activeMusicKind: "game" | "campaign" | "non-game" | null = null;
+let campaignMusic: HTMLAudioElement | null = null;
+let campaignBoss1Music: HTMLAudioElement | null = null;
+let campaignBoss2Music: HTMLAudioElement | null = null;
+let campaignBoss3Music: HTMLAudioElement | null = null;
+let campaignBoss4Music: HTMLAudioElement | null = null;
+let activeMusicKind:
+  | "game"
+  | "campaign"
+  | "campaignBoss1"
+  | "campaignBoss2"
+  | "campaignBoss3"
+  | "campaignBoss4"
+  | "non-game"
+  | null = null;
 let musicFadeFrame: number | null = null;
 let musicTransitionToken = 0;
 
@@ -136,9 +162,11 @@ export function getStoredAudioSettings() {
 }
 
 function desiredMusicKind(scene: AudioScene) {
-  if (scene === "campaign") {
-    return "campaign";
-  }
+  if (scene === "campaign") return "campaign";
+  if (scene === "campaignBoss1") return "campaignBoss1";
+  if (scene === "campaignBoss2") return "campaignBoss2";
+  if (scene === "campaignBoss3") return "campaignBoss3";
+  if (scene === "campaignBoss4") return "campaignBoss4";
   return scene === "battle" || scene === "shop" || scene === "relic" ? "game" : "non-game";
 }
 
@@ -162,9 +190,33 @@ function initializeMusicTracks() {
   }
 
   if (!campaignMusic) {
-    campaignMusic = new Audio(velvetHouseCampaignMusic);
+    campaignMusic = new Audio(velvetHouseCampaign2Music);
     campaignMusic.loop = true;
     campaignMusic.preload = "auto";
+  }
+
+  if (!campaignBoss1Music) {
+    campaignBoss1Music = new Audio(velvetHouseCampaignBoss1Music);
+    campaignBoss1Music.loop = true;
+    campaignBoss1Music.preload = "auto";
+  }
+
+  if (!campaignBoss2Music) {
+    campaignBoss2Music = new Audio(velvetHouseCampaignBoss2Music);
+    campaignBoss2Music.loop = true;
+    campaignBoss2Music.preload = "auto";
+  }
+
+  if (!campaignBoss3Music) {
+    campaignBoss3Music = new Audio(velvetHouseCampaignBoss3Music);
+    campaignBoss3Music.loop = true;
+    campaignBoss3Music.preload = "auto";
+  }
+
+  if (!campaignBoss4Music) {
+    campaignBoss4Music = new Audio(velvetHouseCampaignBoss4Music);
+    campaignBoss4Music.loop = true;
+    campaignBoss4Music.preload = "auto";
   }
 
   if (!nonGameMusic) {
@@ -196,14 +248,25 @@ function stopMusicPlayback() {
   musicFadeFrame = null;
   musicTransitionToken += 1;
   silenceTrack(gameMusic);
-  silenceTrack(campaignMusic);
   silenceTrack(nonGameMusic);
+  silenceTrack(campaignMusic);
+  silenceTrack(campaignBoss1Music);
+  silenceTrack(campaignBoss2Music);
+  silenceTrack(campaignBoss3Music);
+  silenceTrack(campaignBoss4Music);
   activeMusicKind = null;
 }
 
 async function playTrack(
   track: HTMLAudioElement | null,
-  expectedKind?: "game" | "campaign" | "non-game",
+  expectedKind?:
+    | "game"
+    | "campaign"
+    | "campaignBoss1"
+    | "campaignBoss2"
+    | "campaignBoss3"
+    | "campaignBoss4"
+    | "non-game",
   token?: number,
 ) {
   if (!track) {
@@ -223,7 +286,14 @@ async function playTrack(
 }
 
 function animateMusicTransition(
-  nextKind: "game" | "campaign" | "non-game",
+  nextKind:
+    | "game"
+    | "campaign"
+    | "campaignBoss1"
+    | "campaignBoss2"
+    | "campaignBoss3"
+    | "campaignBoss4"
+    | "non-game",
   incomingTrack: HTMLAudioElement | null,
   outgoingTrack: HTMLAudioElement | null,
   durationMs = 1800,
@@ -299,11 +369,23 @@ function syncMusicVolume() {
   if (gameMusic && activeMusicKind === "game") {
     setTrackVolume(gameMusic, volume);
   }
+  if (nonGameMusic && activeMusicKind === "non-game") {
+    setTrackVolume(nonGameMusic, volume);
+  }
   if (campaignMusic && activeMusicKind === "campaign") {
     setTrackVolume(campaignMusic, volume);
   }
-  if (nonGameMusic && activeMusicKind === "non-game") {
-    setTrackVolume(nonGameMusic, volume);
+  if (campaignBoss1Music && activeMusicKind === "campaignBoss1") {
+    setTrackVolume(campaignBoss1Music, volume);
+  }
+  if (campaignBoss2Music && activeMusicKind === "campaignBoss2") {
+    setTrackVolume(campaignBoss2Music, volume);
+  }
+  if (campaignBoss3Music && activeMusicKind === "campaignBoss3") {
+    setTrackVolume(campaignBoss3Music, volume);
+  }
+  if (campaignBoss4Music && activeMusicKind === "campaignBoss4") {
+    setTrackVolume(campaignBoss4Music, volume);
   }
 }
 
@@ -317,10 +399,28 @@ function syncMusicPlayback() {
 
   const nextKind = desiredMusicKind(currentScene);
   const nextTrack =
-    nextKind === "game" ? gameMusic : nextKind === "campaign" ? campaignMusic : nonGameMusic;
-  const previousTracks = [gameMusic, campaignMusic, nonGameMusic].filter(
-    (track) => track && track !== nextTrack,
-  );
+    nextKind === "game"
+      ? gameMusic
+      : nextKind === "campaign"
+        ? campaignMusic
+        : nextKind === "campaignBoss1"
+          ? campaignBoss1Music
+          : nextKind === "campaignBoss2"
+            ? campaignBoss2Music
+            : nextKind === "campaignBoss3"
+              ? campaignBoss3Music
+              : nextKind === "campaignBoss4"
+                ? campaignBoss4Music
+                : nonGameMusic;
+  const previousTracks = [
+    gameMusic,
+    campaignMusic,
+    campaignBoss1Music,
+    campaignBoss2Music,
+    campaignBoss3Music,
+    campaignBoss4Music,
+    nonGameMusic,
+  ].filter((track) => track && track !== nextTrack);
 
   if (activeMusicKind !== nextKind) {
     activeMusicKind = nextKind;

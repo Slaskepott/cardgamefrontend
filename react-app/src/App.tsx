@@ -4,7 +4,6 @@ import { AchievementUnlockToast } from "./components/AchievementUnlockToast";
 import { AchievementsPage } from "./components/AchievementsPage";
 import { BattleStatus } from "./components/BattleStatus";
 import { BootSplash } from "./components/BootSplash";
-import { AvailableLobbies } from "./components/AvailableLobbies";
 import { AuthPanel } from "./components/AuthPanel";
 import { ChatTray } from "./components/ChatTray";
 import { EventFeed } from "./components/EventFeed";
@@ -53,6 +52,9 @@ interface LevelUpEvent {
 export default function App() {
   type AccountViewTarget = "lobby" | "achievements" | "talents" | "tutorial" | "rulebook";
   type EntryStage = "hero" | "hub";
+  type LobbyMode = "multiplayer" | "singleplayer";
+  type LobbyMultiplayerMode = "host" | "join";
+  type LobbySingleplayerMode = "practice" | "campaign";
   const [bootProgress, setBootProgress] = useState(0);
   const [bootComplete, setBootComplete] = useState(false);
   const [entryStage, setEntryStage] = useState<EntryStage>("hero");
@@ -73,6 +75,9 @@ export default function App() {
   const [progressionModalOpen, setProgressionModalOpen] = useState(false);
   const [pendingAccountView, setPendingAccountView] = useState<AccountViewTarget | null>(null);
   const [audioSettings, setAudioSettingsState] = useState<AudioSettings>(() => getStoredAudioSettings());
+  const [lobbyMode, setLobbyMode] = useState<LobbyMode>("multiplayer");
+  const [lobbyMultiplayerMode, setLobbyMultiplayerMode] = useState<LobbyMultiplayerMode>("host");
+  const [lobbySingleplayerMode, setLobbySingleplayerMode] = useState<LobbySingleplayerMode>("practice");
 
   const session = useGameSession(currentUser);
   const { setDraftPlayerId } = session;
@@ -179,20 +184,30 @@ export default function App() {
   }, [audioSettings]);
 
   useEffect(() => {
+    const campaignBossScene =
+      session.campaignNodeId === "cinder_marquis"
+        ? "campaignBoss1"
+        : session.campaignNodeId === "archivist_of_gaps"
+          ? "campaignBoss2"
+          : session.campaignNodeId === "the_house_edge"
+            ? "campaignBoss3"
+            : session.campaignNodeId === "boss_4"
+              ? "campaignBoss4"
+              : "campaign";
     const scene =
       entryStage === "hero"
         ? "hero"
         : view !== "game"
           ? "hub"
           : session.isCampaignMatch
-            ? "campaign"
+            ? campaignBossScene
           : session.phase === "shop"
             ? "shop"
             : session.phase === "relic"
               ? "relic"
               : "battle";
     setAudioScene(scene);
-  }, [entryStage, session.isCampaignMatch, session.phase, view]);
+  }, [entryStage, session.campaignNodeId, session.isCampaignMatch, session.phase, view]);
 
   useEffect(() => {
     if (view !== "lobby") {
@@ -496,6 +511,14 @@ export default function App() {
   }
 
   const hasChosenAccess = Boolean(currentUser || guestMode);
+  const appThemeClass =
+    view === "game"
+      ? session.isCampaignMatch
+        ? "theme-campaign"
+        : session.isBotMatch
+          ? "theme-default"
+          : "theme-pvp"
+      : "theme-default";
 
   if (!bootComplete) {
     return <BootSplash progress={bootProgress} />;
@@ -503,7 +526,7 @@ export default function App() {
 
   if (entryStage === "hero") {
     return (
-      <main className="app-shell marketing-shell">
+      <main className="app-shell marketing-shell theme-default">
         <MarketingHero
           onEnter={() => {
             setEntryStage("hub");
@@ -515,7 +538,7 @@ export default function App() {
   }
 
   return (
-    <main className="app-shell">
+    <main className={`app-shell ${appThemeClass}`}>
       {view !== "game" ? <FloatingCardsBackground /> : null}
       <div className="app-foreground">
 
@@ -546,6 +569,10 @@ export default function App() {
           playerId={session.playerId}
           onLeaveLobby={async () => {
             await session.handleLeaveLobby();
+            if (session.matchResult?.is_campaign_match) {
+              setLobbyMode("singleplayer");
+              setLobbySingleplayerMode("campaign");
+            }
             setView("lobby");
           }}
         />
@@ -615,8 +642,15 @@ export default function App() {
             }
             lockedPlayerAvatar={persistedIcon || currentUser?.photoURL || null}
             lockedPlayerBorder={persistedBorder}
+            lobbies={availableLobbies}
             metaProgress={metaProgress}
             signedIn={Boolean(currentUser)}
+            initialMode={lobbyMode}
+            initialMultiplayerMode={lobbyMultiplayerMode}
+            initialSingleplayerMode={lobbySingleplayerMode}
+            onModeChange={setLobbyMode}
+            onMultiplayerModeChange={setLobbyMultiplayerMode}
+            onSingleplayerModeChange={setLobbySingleplayerMode}
             onGameIdChange={session.handleDraftGameIdChange}
             onPlayerIdChange={setDraftPlayerId}
             onCreateGame={async (gameId, playerId) => {
@@ -626,6 +660,12 @@ export default function App() {
             }}
             onJoinGame={async (gameId, playerId) => {
               if (await session.handleJoinGame(gameId, playerId)) {
+                setView("game");
+              }
+            }}
+            onJoinLobby={async (selectedGameId) => {
+              session.handleDraftGameIdChange(selectedGameId);
+              if (await session.handleJoinGame(selectedGameId, session.draftPlayerId)) {
                 setView("game");
               }
             }}
@@ -639,18 +679,8 @@ export default function App() {
                 setView("game");
               }
             }}
-            busy={session.busy}
-          />
-          <AvailableLobbies
-            lobbies={availableLobbies}
-            busy={session.busy}
             onStartTutorial={() => setView("tutorial")}
-            onJoinLobby={async (selectedGameId) => {
-              session.handleDraftGameIdChange(selectedGameId);
-              if (await session.handleJoinGame(selectedGameId, session.draftPlayerId)) {
-                setView("game");
-              }
-            }}
+            busy={session.busy}
           />
           {debugVisible ? (
             <section className="debug-stack">

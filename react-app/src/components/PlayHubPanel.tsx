@@ -1,22 +1,24 @@
-import { useMemo, useState } from "react";
-import type { CampaignNode, MetaProgress } from "../types/game";
+import { useEffect, useMemo, useState } from "react";
+import type { CampaignNode, LobbySummary, MetaProgress } from "../types/game";
 
 type PlayMode = "multiplayer" | "singleplayer";
+type MultiplayerMode = "host" | "join";
+type JoinMode = "browser" | "id";
 type SingleplayerMode = "practice" | "campaign";
 
 const fallbackCampaignNodes: CampaignNode[] = [
-  { id: "ember_wake", region: 1, index: 1, name: "Ember Wake", type: "bo3", best_of: 3, wins_to_clinch: 2, description: "A fire-leaning opener. The rival drafts toward flame draw and direct damage." },
-  { id: "second_deal", region: 1, index: 2, name: "Second Deal", type: "bo3", best_of: 3, wins_to_clinch: 2, description: "A sly merchant duel. The enemy shops harder and always finds one more reroll." },
-  { id: "moss_ledger", region: 1, index: 3, name: "Moss Ledger", type: "bo5", best_of: 5, wins_to_clinch: 3, description: "A slower grind through bark and stone. Expect armor, health, and resistance scaling." },
-  { id: "cinder_marquis", region: 1, index: 4, name: "The Cinder Marquis", type: "boss", best_of: 9, wins_to_clinch: 5, description: "Soft Flush is always on, and the boss always shops premium." },
-  { id: "slipstream_table", region: 2, index: 5, name: "Slipstream Table", type: "bo3", best_of: 3, wins_to_clinch: 2, description: "A fast air table built around tempo and high cards." },
-  { id: "house_of_echoes", region: 2, index: 6, name: "House of Echoes", type: "bo3", best_of: 3, wins_to_clinch: 2, description: "Combo lines echo, and repeat-hand pressure appears more often." },
-  { id: "floodmarked_vault", region: 2, index: 7, name: "Floodmarked Vault", type: "bo5", best_of: 5, wins_to_clinch: 3, description: "A water-heavy vault with flush packages and relic synergy." },
-  { id: "archivist_of_gaps", region: 2, index: 8, name: "The Archivist of Gaps", type: "boss", best_of: 9, wins_to_clinch: 5, description: "Gap Straight is always on, and the boss starts each round with an extra card." },
-  { id: "stonewire_hollow", region: 3, index: 9, name: "Stonewire Hollow", type: "bo3", best_of: 3, wins_to_clinch: 2, description: "Earth draw, armor, and low-card durability make this table stubborn." },
-  { id: "prism_tax", region: 3, index: 10, name: "Prism Tax", type: "bo3", best_of: 3, wins_to_clinch: 2, description: "A punishing elemental specialist that taxes predictable suit lines." },
-  { id: "the_fifth_seat", region: 3, index: 11, name: "The Fifth Seat", type: "bo5", best_of: 5, wins_to_clinch: 3, description: "A fuller-handed duel with stronger relic pressure and larger shops." },
-  { id: "the_house_edge", region: 3, index: 12, name: "The House Edge", type: "boss", best_of: 9, wins_to_clinch: 5, description: "Gap Straight, Soft Flush, a free relic, and oversized shops." },
+  { id: "ember_wake", region: 1, index: 1, name: "Ember Wake", type: "bo3", best_of: 3, wins_to_clinch: 2, description: "+55% Fire draw chance, +25% Fire damage." },
+  { id: "second_deal", region: 1, index: 2, name: "Second Deal", type: "bo3", best_of: 3, wins_to_clinch: 2, description: "+1 shop reroll and +1 gold gained when playing hands." },
+  { id: "moss_ledger", region: 1, index: 3, name: "Moss Ledger", type: "bo5", best_of: 5, wins_to_clinch: 3, description: "+35 health, +18 armor, +14% low-card resistance, +12% high-card resistance." },
+  { id: "cinder_marquis", region: 1, index: 4, name: "The Cinder Marquis", type: "boss", best_of: 9, wins_to_clinch: 5, description: "Soft Flush enabled, +1 shop selection, guaranteed rare-or-better shop option, +70% Fire draw chance." },
+  { id: "slipstream_table", region: 2, index: 5, name: "Slipstream Table", type: "bo3", best_of: 3, wins_to_clinch: 2, description: "+55% Air draw chance, +35% high-card draw chance, +18% high-card damage." },
+  { id: "house_of_echoes", region: 2, index: 6, name: "House of Echoes", type: "bo3", best_of: 3, wins_to_clinch: 2, description: "+18% chance to play a hand twice, +15% pair damage, +10% straight damage." },
+  { id: "floodmarked_vault", region: 2, index: 7, name: "Floodmarked Vault", type: "bo5", best_of: 5, wins_to_clinch: 3, description: "+60% Water draw chance, +20% Water damage, +20% flush damage." },
+  { id: "archivist_of_gaps", region: 2, index: 8, name: "The Archivist of Gaps", type: "boss", best_of: 9, wins_to_clinch: 5, description: "Gap Straight enabled, +1 hand size, +18% straight damage." },
+  { id: "stonewire_hollow", region: 3, index: 9, name: "Stonewire Hollow", type: "bo3", best_of: 3, wins_to_clinch: 2, description: "+55% Earth draw chance, +14 armor, +18% low-card resistance." },
+  { id: "prism_tax", region: 3, index: 10, name: "Prism Tax", type: "bo3", best_of: 3, wins_to_clinch: 2, description: "+25% Fire/Air/Earth/Water draw chance and +12% Fire/Air/Earth/Water damage." },
+  { id: "the_fifth_seat", region: 3, index: 11, name: "The Fifth Seat", type: "bo5", best_of: 5, wins_to_clinch: 3, description: "+1 hand size, +1 shop selection, starts with Fortress Heart relic." },
+  { id: "the_house_edge", region: 3, index: 12, name: "The House Edge", type: "boss", best_of: 9, wins_to_clinch: 5, description: "Gap Straight enabled, Soft Flush enabled, starts with Plasma Lattice relic, +2 shop selections, +1 hand size." },
 ];
 
 interface PlayHubPanelProps {
@@ -26,14 +28,23 @@ interface PlayHubPanelProps {
   lockedPlayerAvatar?: string | null;
   lockedPlayerBorder?: string | null;
   lockedPlayerName?: string | null;
+  lobbies: LobbySummary[];
   metaProgress: MetaProgress | null;
   signedIn: boolean;
+  initialMode?: PlayMode;
+  initialMultiplayerMode?: MultiplayerMode;
+  initialSingleplayerMode?: SingleplayerMode;
+  onModeChange?: (mode: PlayMode) => void;
+  onMultiplayerModeChange?: (mode: MultiplayerMode) => void;
+  onSingleplayerModeChange?: (mode: SingleplayerMode) => void;
   onGameIdChange: (value: string) => void;
   onPlayerIdChange: (value: string) => void;
   onCreateGame: (gameId: string, playerId: string) => Promise<void>;
   onJoinGame: (gameId: string, playerId: string) => Promise<void>;
+  onJoinLobby: (gameId: string) => Promise<void>;
   onStartBotMatch: (difficulty: "easy" | "medium" | "hard") => Promise<void>;
   onStartCampaignNode: (nodeId: string) => Promise<void>;
+  onStartTutorial: () => void;
   busy: boolean;
 }
 
@@ -57,31 +68,51 @@ export function PlayHubPanel({
   lockedPlayerAvatar,
   lockedPlayerBorder,
   lockedPlayerName,
+  lobbies,
   metaProgress,
   signedIn,
+  initialMode = "multiplayer",
+  initialMultiplayerMode = "host",
+  initialSingleplayerMode = "practice",
+  onModeChange,
+  onMultiplayerModeChange,
+  onSingleplayerModeChange,
   onGameIdChange,
   onPlayerIdChange,
   onCreateGame,
   onJoinGame,
+  onJoinLobby,
   onStartBotMatch,
   onStartCampaignNode,
+  onStartTutorial,
   busy,
 }: PlayHubPanelProps) {
-  const [mode, setMode] = useState<PlayMode>("multiplayer");
-  const [singleplayerMode, setSingleplayerMode] = useState<SingleplayerMode>("practice");
+  const [mode, setMode] = useState<PlayMode>(initialMode);
+  const [multiplayerMode, setMultiplayerMode] = useState<MultiplayerMode>(initialMultiplayerMode);
+  const [joinMode, setJoinMode] = useState<JoinMode>("browser");
+  const [singleplayerMode, setSingleplayerMode] = useState<SingleplayerMode>(initialSingleplayerMode);
   const campaignNodes = metaProgress?.campaign_nodes?.length
     ? metaProgress.campaign_nodes
     : fallbackCampaignNodes;
-  const campaignGroups = useMemo(
-    () => groupCampaignNodes(campaignNodes),
-    [campaignNodes],
-  );
+  const campaignGroups = useMemo(() => groupCampaignNodes(campaignNodes), [campaignNodes]);
   const clearedNodeIds = new Set(metaProgress?.campaign_progress?.cleared_node_ids ?? []);
   const currentNodeId = metaProgress?.campaign_progress?.current_node_id ?? fallbackCampaignNodes[0].id;
 
-  async function handleMultiplayer(modeAction: "create" | "join") {
+  useEffect(() => {
+    setMode(initialMode);
+  }, [initialMode]);
+
+  useEffect(() => {
+    setMultiplayerMode(initialMultiplayerMode);
+  }, [initialMultiplayerMode]);
+
+  useEffect(() => {
+    setSingleplayerMode(initialSingleplayerMode);
+  }, [initialSingleplayerMode]);
+
+  async function handleMultiplayer(modeAction: MultiplayerMode) {
     const resolvedPlayerName = lockedPlayerName ?? playerId;
-    if (modeAction === "create") {
+    if (modeAction === "host") {
       await onCreateGame(gameId, resolvedPlayerName);
       return;
     }
@@ -158,6 +189,75 @@ export function PlayHubPanel({
     );
   }
 
+  function renderJoinLobbies() {
+    return (
+      <div className="play-hub-join-stack">
+        <div className="play-mode-toggle nested" role="tablist" aria-label="Choose join mode">
+          <button
+            type="button"
+            className={joinMode === "browser" ? "play-mode-pill active" : "play-mode-pill"}
+            onClick={() => setJoinMode("browser")}
+          >
+            Game browser
+          </button>
+          <button
+            type="button"
+            className={joinMode === "id" ? "play-mode-pill active" : "play-mode-pill"}
+            onClick={() => setJoinMode("id")}
+          >
+            Join by ID
+          </button>
+        </div>
+        {joinMode === "browser" ? (
+          <div className="play-hub-lobbies-box">
+            <div className="lobby-list compact">
+              {lobbies.length === 0 ? (
+                <p className="panel-copy">
+                  No public lobbies are open right now. Create one and be the first player in.
+                </p>
+              ) : null}
+              {lobbies.map((lobby) => (
+                <button
+                  key={lobby.game_id}
+                  type="button"
+                  className="lobby-card"
+                  onClick={() => void onJoinLobby(lobby.game_id)}
+                  disabled={busy}
+                >
+                  <span className="lobby-card-title">{lobby.game_id}</span>
+                  <span>{lobby.player_count} player{lobby.player_count === 1 ? "" : "s"}</span>
+                  <span>{lobby.players.length > 0 ? lobby.players.join(", ") : "Empty lobby"}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <>
+            <label>
+              Game ID
+              <input
+                value={gameId}
+                onChange={(event) => onGameIdChange(event.target.value)}
+                placeholder="Enter a lobby ID"
+              />
+              {gameIdError ? <span className="field-error">{gameIdError}</span> : null}
+            </label>
+            <div className="button-row">
+              <button
+                type="button"
+                disabled={busy}
+                className="secondary"
+                onClick={() => void handleMultiplayer("join")}
+              >
+                Join lobby
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
   return (
     <section className="panel lobby-panel play-hub-panel">
       <div className="section-header play-hub-header">
@@ -165,16 +265,20 @@ export function PlayHubPanel({
           <p className="eyebrow">{mode === "multiplayer" ? "Multiplayer" : "Singleplayer"}</p>
           <h2>
             {mode === "multiplayer"
-              ? "Start a live Slaskecards match"
+              ? multiplayerMode === "host"
+                ? "Host a live Slaskecards match"
+                : "Join a live Slaskecards match"
               : singleplayerMode === "practice"
                 ? "Play against a bot"
                 : "Climb the campaign table"}
           </h2>
           <p className="panel-copy">
             {mode === "multiplayer"
-              ? "Host a lobby or jump into an existing duel. Leave a field blank and Slaskecards will generate it for you."
+              ? multiplayerMode === "host"
+                ? null
+                : "Join by lobby code or jump into one of the open tables below."
               : singleplayerMode === "practice"
-                ? "Practice against Easy, Medium, or Hard bots. Bot matches feel real, but they do not affect Elo or progression."
+                ? "Bot matches do not affect elo or progression."
                 : "Take on an authored route of unfair houses, escalating match formats, and campaign-only rewards."}
           </p>
         </div>
@@ -182,14 +286,20 @@ export function PlayHubPanel({
           <button
             type="button"
             className={mode === "multiplayer" ? "play-mode-pill active" : "play-mode-pill"}
-            onClick={() => setMode("multiplayer")}
+            onClick={() => {
+              setMode("multiplayer");
+              onModeChange?.("multiplayer");
+            }}
           >
             Multiplayer
           </button>
           <button
             type="button"
             className={mode === "singleplayer" ? "play-mode-pill active" : "play-mode-pill"}
-            onClick={() => setMode("singleplayer")}
+            onClick={() => {
+              setMode("singleplayer");
+              onModeChange?.("singleplayer");
+            }}
           >
             Singleplayer
           </button>
@@ -198,50 +308,70 @@ export function PlayHubPanel({
 
       {mode === "multiplayer" ? (
         <form className="setup-form play-hub-form" onSubmit={(event) => event.preventDefault()}>
-          <label>
-            Game ID
-            <input
-              value={gameId}
-              onChange={(event) => onGameIdChange(event.target.value)}
-              placeholder="Auto-generate a lobby name"
-            />
-            {gameIdError ? <span className="field-error">{gameIdError}</span> : null}
-          </label>
-
-          {lockedPlayerName ? (
-            <div className="locked-player-name">
-              <span className="locked-player-label">Playing as</span>
-              <strong className="locked-player-identity">
-                <span className={`player-avatar-badge avatar-border-${lockedPlayerBorder ?? "default"}`}>
-                  {lockedPlayerAvatar ?? "ðŸ‘¤"}
-                </span>
-                {lockedPlayerName}
-              </strong>
-            </div>
-          ) : (
-            <label>
-              Player name
-              <input
-                value={playerId}
-                onChange={(event) => onPlayerIdChange(event.target.value)}
-                placeholder="Auto-generate a player name"
-              />
-            </label>
-          )}
-
-          <div className="button-row">
-            <button type="button" disabled={busy} onClick={() => void handleMultiplayer("create")}>
-              {busy ? "Working..." : "Host lobby"}
+          <div className="play-mode-toggle nested" role="tablist" aria-label="Choose multiplayer mode">
+            <button
+              type="button"
+              className={multiplayerMode === "host" ? "play-mode-pill active" : "play-mode-pill"}
+              onClick={() => {
+                setMultiplayerMode("host");
+                onMultiplayerModeChange?.("host");
+              }}
+            >
+              Host lobby
             </button>
             <button
               type="button"
-              disabled={busy}
-              className="secondary"
-              onClick={() => void handleMultiplayer("join")}
+              className={multiplayerMode === "join" ? "play-mode-pill active" : "play-mode-pill"}
+              onClick={() => {
+                setMultiplayerMode("join");
+                onMultiplayerModeChange?.("join");
+              }}
             >
               Join lobby
             </button>
           </div>
+          {multiplayerMode === "host" ? (
+            <>
+              <label>
+                Game ID
+                <input
+                  value={gameId}
+                  onChange={(event) => onGameIdChange(event.target.value)}
+                  placeholder="Auto-generate a lobby name"
+                />
+                {gameIdError ? <span className="field-error">{gameIdError}</span> : null}
+              </label>
+
+              {lockedPlayerName ? (
+                <div className="locked-player-name">
+                  <span className="locked-player-label">Playing as</span>
+                  <strong className="locked-player-identity">
+                    <span className={`player-avatar-badge avatar-border-${lockedPlayerBorder ?? "default"}`}>
+                      {lockedPlayerAvatar ?? "👤"}
+                    </span>
+                    {lockedPlayerName}
+                  </strong>
+                </div>
+              ) : (
+                <label>
+                  Player name
+                  <input
+                    value={playerId}
+                    onChange={(event) => onPlayerIdChange(event.target.value)}
+                    placeholder="Auto-generate a player name"
+                  />
+                </label>
+              )}
+
+              <div className="button-row">
+                <button type="button" disabled={busy} onClick={() => void handleMultiplayer("host")}>
+                  {busy ? "Working..." : "Host lobby"}
+                </button>
+              </div>
+            </>
+          ) : (
+            renderJoinLobbies()
+          )}
         </form>
       ) : (
         <div className="singleplayer-panel-stack">
@@ -249,39 +379,62 @@ export function PlayHubPanel({
             <button
               type="button"
               className={singleplayerMode === "practice" ? "play-mode-pill active" : "play-mode-pill"}
-              onClick={() => setSingleplayerMode("practice")}
+              onClick={() => {
+                setSingleplayerMode("practice");
+                onSingleplayerModeChange?.("practice");
+              }}
             >
               Practice
             </button>
             <button
               type="button"
               className={singleplayerMode === "campaign" ? "play-mode-pill active" : "play-mode-pill"}
-              onClick={() => setSingleplayerMode("campaign")}
+              onClick={() => {
+                setSingleplayerMode("campaign");
+                onSingleplayerModeChange?.("campaign");
+              }}
             >
               Campaign
             </button>
           </div>
 
           {singleplayerMode === "practice" ? (
-            <div className="play-hub-bot-stack">
-              <button type="button" disabled={busy} onClick={() => void onStartBotMatch("easy")}>
-                {busy ? "Working..." : "Easy"}
-              </button>
+            <div className="singleplayer-practice-stack">
+              <div className="play-hub-subsection">
+                <span className="eyebrow">Play against bots</span>
+              </div>
+              <div className="play-hub-bot-stack">
+                <button type="button" className="secondary" disabled={busy} onClick={() => void onStartBotMatch("easy")}>
+                  {busy ? "Working..." : "Easy"}
+                </button>
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={busy}
+                  onClick={() => void onStartBotMatch("medium")}
+                >
+                  Medium
+                </button>
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={busy}
+                  onClick={() => void onStartBotMatch("hard")}
+                >
+                  Hard
+                </button>
+              </div>
+              <div className="play-hub-subsection">
+                <span className="eyebrow">Tutorial</span>
+              </div>
               <button
                 type="button"
-                className="secondary"
+                className="lobby-card tutorial-entry-card practice-tutorial-card"
+                onClick={onStartTutorial}
                 disabled={busy}
-                onClick={() => void onStartBotMatch("medium")}
               >
-                Medium
-              </button>
-              <button
-                type="button"
-                className="secondary"
-                disabled={busy}
-                onClick={() => void onStartBotMatch("hard")}
-              >
-                Hard
+                <span className="lobby-card-title">Play tutorial</span>
+                <span>Learn hands, attacking, discarding, and the shop in a couple of minutes.</span>
               </button>
             </div>
           ) : (

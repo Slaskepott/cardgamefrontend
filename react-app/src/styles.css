@@ -5009,6 +5009,27 @@ body::after {
   max-width: 1280px;
   padding: 2.8rem 1.4rem 4rem;
   isolation: isolate;
+  --shell-glow-primary: rgba(86, 196, 255, 0.12);
+  --shell-glow-secondary: rgba(163, 138, 255, 0.08);
+  --shell-panel-tint: rgba(255, 255, 255, 0.05);
+}
+
+.app-shell.theme-default {
+  --shell-glow-primary: rgba(86, 196, 255, 0.12);
+  --shell-glow-secondary: rgba(163, 138, 255, 0.08);
+  --shell-panel-tint: rgba(255, 255, 255, 0.05);
+}
+
+.app-shell.theme-pvp {
+  --shell-glow-primary: rgba(102, 229, 154, 0.18);
+  --shell-glow-secondary: rgba(47, 180, 103, 0.12);
+  --shell-panel-tint: rgba(176, 255, 207, 0.05);
+}
+
+.app-shell.theme-campaign {
+  --shell-glow-primary: rgba(255, 98, 98, 0.2);
+  --shell-glow-secondary: rgba(255, 171, 74, 0.14);
+  --shell-panel-tint: rgba(255, 214, 214, 0.05);
 }
 
 .app-shell::before {
@@ -5018,8 +5039,9 @@ body::after {
   height: 420px;
   border-radius: 48px;
   background:
-    radial-gradient(circle at 50% 50%, rgba(86, 196, 255, 0.12), transparent 42%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 48%);
+    radial-gradient(circle at 50% 50%, var(--shell-glow-primary), transparent 42%),
+    radial-gradient(circle at 80% 18%, var(--shell-glow-secondary), transparent 32%),
+    linear-gradient(180deg, var(--shell-panel-tint), transparent 48%);
   filter: blur(1px);
   pointer-events: none;
   z-index: -1;
@@ -5915,14 +5937,14 @@ input::placeholder {
 }
 
 .landing-hub-grid {
-  grid-template-columns: minmax(360px, 470px) minmax(420px, 1fr);
+  grid-template-columns: minmax(360px, 940px);
   gap: 1.25rem;
 }
 
-.play-hub-panel,
-.available-lobbies-panel {
+.play-hub-panel {
   grid-column: auto;
   min-height: 100%;
+  max-width: 940px;
 }
 
 .play-hub-header {
@@ -5960,6 +5982,41 @@ input::placeholder {
 
 .play-hub-form {
   margin-top: 1.3rem;
+}
+
+.play-hub-join-stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.singleplayer-practice-stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.play-hub-subsection {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.play-hub-lobbies-box {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem 1.05rem;
+  border-radius: 22px;
+  border: 1px solid rgba(136, 192, 255, 0.14);
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 34%),
+    linear-gradient(180deg, rgba(13, 25, 43, 0.9), rgba(8, 16, 29, 0.92));
+}
+
+.lobby-list.compact {
+  margin-top: 0;
+  max-height: 320px;
+}
+
+.practice-tutorial-card {
+  margin-top: 0;
 }
 
 .play-hub-bot-stack {
@@ -6057,6 +6114,12 @@ input::placeholder {
   align-content: start;
   gap: 0.45rem;
   text-align: left;
+  color: #f4f8ff;
+}
+
+.campaign-node strong {
+  color: #f8fbff;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.22);
 }
 
 .campaign-node.current {
@@ -6082,6 +6145,13 @@ input::placeholder {
     linear-gradient(180deg, rgba(31, 24, 42, 0.96), rgba(12, 18, 31, 0.94));
 }
 
+.campaign-node.boss strong {
+  color: #fff1c1;
+  text-shadow:
+    0 1px 12px rgba(0, 0, 0, 0.36),
+    0 0 18px rgba(255, 211, 120, 0.1);
+}
+
 .campaign-node-type,
 .campaign-node-status,
 .account-dropdown-label {
@@ -6102,6 +6172,12 @@ input::placeholder {
   display: grid;
   gap: 0.55rem;
   padding: 0.3rem 0.2rem 0.65rem;
+}
+
+.account-dropdown-section-cosmetics {
+  margin-top: 0.3rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid rgba(136, 192, 255, 0.12);
 }
 
 .account-dropdown-help {
