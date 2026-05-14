@@ -232,6 +232,10 @@ export interface HandPlayedMessage {
   player: string;
   cards: Card[];
   damage: number;
+  raw_damage?: number;
+  armor_mitigation_pct?: number;
+  rank_resistance_mitigation_pct?: number;
+  hand_type_mitigation_pct?: number;
   damage_instances?: number[];
   hits?: number;
   double_play_triggered?: boolean;

@@ -62,6 +62,28 @@ type SelectedCard = Card & { key: string };
 type DraftSetter = Dispatch<SetStateAction<string>>;
 
 function formatSocketMessage(message: GameSocketMessage) {
+  if ("type" in message && message.type === "hand_played") {
+    const rawDamage = message.raw_damage ?? message.damage;
+    const armorMitigation = message.armor_mitigation_pct ?? 0;
+    const rankMitigation = message.rank_resistance_mitigation_pct ?? 0;
+    const handTypeMitigation = message.hand_type_mitigation_pct ?? 0;
+    const mitigationParts = [];
+    if (armorMitigation > 0) {
+      mitigationParts.push(`${armorMitigation}% armor`);
+    }
+    if (rankMitigation > 0) {
+      mitigationParts.push(`${rankMitigation}% rank resist`);
+    }
+    if (handTypeMitigation > 0) {
+      mitigationParts.push(`${handTypeMitigation}% hand resist`);
+    }
+    const mitigationSuffix =
+      rawDamage !== message.damage && mitigationParts.length > 0
+        ? ` (${rawDamage} raw, reduced by ${mitigationParts.join(", ")})`
+        : "";
+    return `${message.player} played ${message.hand_type} for ${message.damage} damage${mitigationSuffix}.`;
+  }
+
   if ("type" in message && typeof message.type === "string") {
     return `socket:${message.type} ${JSON.stringify(message)}`;
   }

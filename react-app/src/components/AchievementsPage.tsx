@@ -51,9 +51,15 @@ const statIcons: Record<string, string> = {
   royal_flushes_played: "👸",
   upgrades_bought: "✨",
   elo_rating: "🏆",
+  campaign_nodes_cleared: "🗺️",
+  campaign_bosses_defeated: "👹",
+  campaign_completions: "👑",
 };
 
 const spotlightStatOrder = [
+  "campaign_nodes_cleared",
+  "campaign_bosses_defeated",
+  "campaign_completions",
   "hands_played",
   "games_won",
   "damage_dealt",
@@ -62,8 +68,11 @@ const spotlightStatOrder = [
   "max_health_in_game",
   "max_single_hand_damage",
   "upgrades_bought",
-  "campaign_nodes_cleared",
 ];
+
+const statPriority = new Map(
+  spotlightStatOrder.map((stat, index) => [stat, index]),
+);
 
 function getTierClass(index: number) {
   if (index === 0) {
@@ -114,6 +123,11 @@ function groupAchievements(achievements: MetaAchievement[], stats: Record<string
       if (leftUnlocked !== rightUnlocked) {
         return rightUnlocked - leftUnlocked;
       }
+      const leftPriority = statPriority.get(left.stat) ?? Number.MAX_SAFE_INTEGER;
+      const rightPriority = statPriority.get(right.stat) ?? Number.MAX_SAFE_INTEGER;
+      if (leftPriority !== rightPriority) {
+        return leftPriority - rightPriority;
+      }
       return left.label.localeCompare(right.label);
     });
 }
@@ -134,7 +148,7 @@ export function AchievementsPage({
       <section className="panel account-page-panel">
         <p className="eyebrow">Account</p>
         <h2>Achievements</h2>
-        <p className="panel-copy">Loading account progress…</p>
+        <p className="panel-copy">Loading account progress...</p>
       </section>
     );
   }

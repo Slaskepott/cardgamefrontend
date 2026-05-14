@@ -248,7 +248,7 @@ const shopUpgradeGroups: ShopUpgradeGroup[] = [
           { rarity: "uncommon", effect: "+15% Earth Draw Chance", cost: 7 },
           { rarity: "rare", effect: "+25% Earth Draw Chance", cost: 11 },
           { rarity: "epic", effect: "+40% Earth Draw Chance", cost: 16 },
-          { rarity: "legendary", effect: "+60% Earth Draw Chance", cost: 23 },
+          { rarity: "legendary", effect: "+125% Earth Draw Chance", cost: 23 },
         ],
       },
       {
@@ -260,7 +260,7 @@ const shopUpgradeGroups: ShopUpgradeGroup[] = [
           { rarity: "uncommon", effect: "+15% Fire Draw Chance", cost: 7 },
           { rarity: "rare", effect: "+25% Fire Draw Chance", cost: 11 },
           { rarity: "epic", effect: "+40% Fire Draw Chance", cost: 16 },
-          { rarity: "legendary", effect: "+60% Fire Draw Chance", cost: 23 },
+          { rarity: "legendary", effect: "+125% Fire Draw Chance", cost: 23 },
         ],
       },
       {
@@ -272,7 +272,7 @@ const shopUpgradeGroups: ShopUpgradeGroup[] = [
           { rarity: "uncommon", effect: "+15% Water Draw Chance", cost: 7 },
           { rarity: "rare", effect: "+25% Water Draw Chance", cost: 11 },
           { rarity: "epic", effect: "+40% Water Draw Chance", cost: 16 },
-          { rarity: "legendary", effect: "+60% Water Draw Chance", cost: 23 },
+          { rarity: "legendary", effect: "+125% Water Draw Chance", cost: 23 },
         ],
       },
       {
@@ -284,7 +284,7 @@ const shopUpgradeGroups: ShopUpgradeGroup[] = [
           { rarity: "uncommon", effect: "+15% Air Draw Chance", cost: 7 },
           { rarity: "rare", effect: "+25% Air Draw Chance", cost: 11 },
           { rarity: "epic", effect: "+40% Air Draw Chance", cost: 16 },
-          { rarity: "legendary", effect: "+60% Air Draw Chance", cost: 23 },
+          { rarity: "legendary", effect: "+125% Air Draw Chance", cost: 23 },
         ],
       },
       {
@@ -326,7 +326,7 @@ const shopUpgradeGroups: ShopUpgradeGroup[] = [
         summary: "Hard-targets 2s and 3s for low-card builds.",
         tiers: [
           { rarity: "epic", effect: "+45% Chance To Draw 2 Or 3", cost: 17 },
-          { rarity: "legendary", effect: "+90% Chance To Draw 2 Or 3", cost: 28 },
+          { rarity: "legendary", effect: "+115% Chance To Draw 2 Or 3", cost: 28 },
         ],
       },
     ],

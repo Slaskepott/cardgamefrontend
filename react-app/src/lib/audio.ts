@@ -10,7 +10,7 @@ import punch1Sfx from "./sfx/punch1.wav";
 import punch2Sfx from "./sfx/punch2.wav";
 import punch3Sfx from "./sfx/punch3.wav";
 import punch4Sfx from "./sfx/punch4.wav";
-import punchExtremeSfx from "./sfx/punch_extreme.mp3";
+import punchExtremeSfx from "./sfx/punch_extreme.wav";
 import punchHard1Sfx from "./sfx/punch_hard1.wav";
 import punchMedium1Sfx from "./sfx/punch_medium1.wav";
 import relicPickSfx from "./sfx/relic_pick.mp3";

@@ -14,11 +14,11 @@ const fallbackCampaignNodes: CampaignNode[] = [
   { id: "slipstream_table", region: 2, index: 5, name: "Slipstream Table", type: "bo3", best_of: 3, wins_to_clinch: 2, description: "+55% Air draw chance, +35% high-card draw chance, +18% high-card damage." },
   { id: "house_of_echoes", region: 2, index: 6, name: "House of Echoes", type: "bo3", best_of: 3, wins_to_clinch: 2, description: "+18% chance to play a hand twice, +15% pair damage, +10% straight damage." },
   { id: "floodmarked_vault", region: 2, index: 7, name: "Floodmarked Vault", type: "bo5", best_of: 5, wins_to_clinch: 3, description: "+60% Water draw chance, +20% Water damage, +20% flush damage." },
-  { id: "archivist_of_gaps", region: 2, index: 8, name: "The Archivist of Gaps", type: "boss", best_of: 9, wins_to_clinch: 5, description: "Gap Straight enabled, +1 hand size, +18% straight damage." },
+  { id: "archivist_of_gaps", region: 2, index: 8, name: "The Archivist of Gaps", type: "boss", best_of: 9, wins_to_clinch: 5, description: "Gap Straight enabled, +50 health, +1 hand size, +18% straight damage." },
   { id: "stonewire_hollow", region: 3, index: 9, name: "Stonewire Hollow", type: "bo3", best_of: 3, wins_to_clinch: 2, description: "+55% Earth draw chance, +14 armor, +18% low-card resistance." },
   { id: "prism_tax", region: 3, index: 10, name: "Prism Tax", type: "bo3", best_of: 3, wins_to_clinch: 2, description: "+25% Fire/Air/Earth/Water draw chance and +12% Fire/Air/Earth/Water damage." },
   { id: "the_fifth_seat", region: 3, index: 11, name: "The Fifth Seat", type: "bo5", best_of: 5, wins_to_clinch: 3, description: "+1 hand size, +1 shop selection, starts with Fortress Heart relic." },
-  { id: "the_house_edge", region: 3, index: 12, name: "The House Edge", type: "boss", best_of: 9, wins_to_clinch: 5, description: "Gap Straight enabled, Soft Flush enabled, starts with Plasma Lattice relic, +2 shop selections, +1 hand size." },
+  { id: "the_house_edge", region: 3, index: 12, name: "The House Edge", type: "boss", best_of: 9, wins_to_clinch: 5, description: "Gap Straight enabled, Soft Flush enabled, +75 health, starts with Plasma Lattice relic, +2 shop selections, +1 hand size." },
 ];
 
 interface PlayHubPanelProps {
