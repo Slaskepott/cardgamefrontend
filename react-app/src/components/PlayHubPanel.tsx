@@ -4,9 +4,9 @@ import type { CampaignNode, LobbySummary, MetaProgress } from "../types/game";
 type PlayMode = "multiplayer" | "singleplayer";
 type MultiplayerMode = "host" | "join";
 type JoinMode = "browser" | "id";
-type SingleplayerMode = "practice" | "campaign";
+type SingleplayerMode = "practice" | "campaign" | "tutorial";
 type MultiplayerEntryMode = "host" | "browser" | "id";
-type PlayHubAction = "host" | "browser" | "id" | "practice" | "campaign";
+type PlayHubAction = "host" | "browser" | "id" | "practice" | "campaign" | "tutorial";
 
 const fallbackCampaignNodes: CampaignNode[] = [
   { id: "ember_wake", region: 1, index: 1, name: "Ember Wake", type: "bo3", best_of: 3, wins_to_clinch: 2, description: "+55% Fire draw chance, +25% Fire damage." },
@@ -166,6 +166,14 @@ export function PlayHubPanel({
       return;
     }
 
+    if (action === "tutorial") {
+      setMode("singleplayer");
+      setSingleplayerMode("tutorial");
+      onModeChange?.("singleplayer");
+      onSingleplayerModeChange?.("tutorial");
+      return;
+    }
+
     setMode("singleplayer");
     setSingleplayerMode("campaign");
     onModeChange?.("singleplayer");
@@ -177,7 +185,9 @@ export function PlayHubPanel({
       ? multiplayerEntryMode
       : singleplayerMode === "campaign"
         ? "campaign"
-        : "practice";
+        : singleplayerMode === "tutorial"
+          ? "tutorial"
+          : "practice";
 
   function renderCampaignMap() {
     if (!signedIn) {
@@ -340,7 +350,7 @@ export function PlayHubPanel({
               className={activeAction === "practice" ? "play-mode-pill active" : "play-mode-pill"}
               onClick={() => setAction("practice")}
             >
-              Practice
+              Bot practice
             </button>
             <button
               type="button"
@@ -349,30 +359,40 @@ export function PlayHubPanel({
             >
               Campaign
             </button>
+            <button
+              type="button"
+              className={activeAction === "tutorial" ? "play-mode-pill active tutorial-strip-pill" : "play-mode-pill tutorial-strip-pill"}
+              onClick={() => setAction("tutorial")}
+            >
+              Tutorial
+            </button>
           </div>
         </div>
       </div>
 
       <div className="section-header play-hub-header">
         <div>
-          <p className="eyebrow">{mode === "multiplayer" ? "Multiplayer" : "Singleplayer"}</p>
           <h2>
             {mode === "multiplayer"
               ? multiplayerEntryMode === "host"
                 ? "Host a live Slaskecards match"
                 : "Join a live Slaskecards match"
-              : singleplayerMode === "practice"
-                ? "Play against a bot"
-                : "Climb the campaign table"}
+              : singleplayerMode === "campaign"
+                ? "Climb the campaign table"
+                : singleplayerMode === "tutorial"
+                  ? "Start here"
+                  : "Play against a bot"}
           </h2>
           <p className="panel-copy">
             {mode === "multiplayer"
               ? multiplayerMode === "host"
                 ? null
                 : null
-              : singleplayerMode === "practice"
-                ? "Bot matches do not affect elo or progression."
-                : "Take on an authored route of unfair houses, escalating match formats, and campaign-only rewards."}
+              : singleplayerMode === "campaign"
+                ? "Take on an authored route of unfair houses, escalating match formats, and campaign-only rewards."
+                : singleplayerMode === "tutorial"
+                  ? null
+                  : "Bot matches do not affect elo or progression."}
           </p>
         </div>
       </div>
@@ -446,17 +466,18 @@ export function PlayHubPanel({
                 >
                   Hard
                 </button>
-                <button
-                  type="button"
-                  className={`secondary tutorial-practice-button${
-                    !tutorialCompleted ? " tutorial-practice-button-glow" : ""
-                  }`}
-                  onClick={onStartTutorial}
-                  disabled={busy}
-                >
-                  Tutorial
-                </button>
               </div>
+            </div>
+          ) : singleplayerMode === "tutorial" ? (
+            <div className="singleplayer-practice-stack">
+              <button
+                type="button"
+                className={`tutorial-hero-button${!tutorialCompleted ? " tutorial-hero-button-glow" : ""}`}
+                onClick={onStartTutorial}
+                disabled={busy}
+              >
+                <strong>Play the tutorial!</strong>
+              </button>
             </div>
           ) : (
             renderCampaignMap()

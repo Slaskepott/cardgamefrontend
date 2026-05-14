@@ -55,7 +55,7 @@ export default function App() {
   type EntryStage = "hero" | "hub";
   type LobbyMode = "multiplayer" | "singleplayer";
   type LobbyMultiplayerMode = "host" | "join";
-  type LobbySingleplayerMode = "practice" | "campaign";
+  type LobbySingleplayerMode = "practice" | "campaign" | "tutorial";
   const [bootProgress, setBootProgress] = useState(0);
   const [bootComplete, setBootComplete] = useState(false);
   const [entryStage, setEntryStage] = useState<EntryStage>("hero");
@@ -78,7 +78,7 @@ export default function App() {
   const [audioSettings, setAudioSettingsState] = useState<AudioSettings>(() => getStoredAudioSettings());
   const [lobbyMode, setLobbyMode] = useState<LobbyMode>("singleplayer");
   const [lobbyMultiplayerMode, setLobbyMultiplayerMode] = useState<LobbyMultiplayerMode>("host");
-  const [lobbySingleplayerMode, setLobbySingleplayerMode] = useState<LobbySingleplayerMode>("practice");
+  const [lobbySingleplayerMode, setLobbySingleplayerMode] = useState<LobbySingleplayerMode>("tutorial");
 
   const session = useGameSession(currentUser);
   const { setDraftPlayerId } = session;
@@ -240,6 +240,24 @@ export default function App() {
       window.clearInterval(intervalId);
     };
   }, [view]);
+
+  useEffect(() => {
+    if (!currentUser) {
+      setLobbyMode("singleplayer");
+      setLobbySingleplayerMode("tutorial");
+      return;
+    }
+
+    if ((metaProgress?.stats?.tutorial_completions ?? 0) > 0) {
+      setLobbyMode("multiplayer");
+      setLobbyMultiplayerMode("host");
+      setLobbySingleplayerMode("practice");
+      return;
+    }
+
+    setLobbyMode("singleplayer");
+    setLobbySingleplayerMode("tutorial");
+  }, [currentUser, metaProgress?.stats?.tutorial_completions]);
 
   useEffect(() => {
     if (!currentUser?.email) {
@@ -478,6 +496,9 @@ export default function App() {
       const response = await completeTutorial(currentUser.email);
       if (!response.error) {
         setMetaProgress(response);
+        setLobbyMode("multiplayer");
+        setLobbyMultiplayerMode("host");
+        setLobbySingleplayerMode("practice");
       }
     } catch {
       // Keep the current meta snapshot if tutorial completion fails.

@@ -2,12 +2,20 @@ import { useEffect, useMemo, useState } from "react";
 import type { Card } from "../types/game";
 import { buildHandPreview } from "../lib/handPreview";
 import { launchVictoryConfetti } from "../lib/confetti";
-import { playVictorySound } from "../lib/audio";
+import {
+  playBattleImpact,
+  playDiscardSound,
+  playShopRevealSound,
+  playUpgradeBuySound,
+  playVictorySound,
+} from "../lib/audio";
 
 interface TutorialPageProps {
   onCompleteTutorial: () => void | Promise<void>;
   onBackToLobby: () => void;
 }
+
+type TutorialHitSide = "player" | "enemy";
 
 const openingAttack: Card[] = [
   { rank: "8", suit: "Fire" },
@@ -75,6 +83,15 @@ export function TutorialPage({ onCompleteTutorial, onBackToLobby }: TutorialPage
   const [discardImproved, setDiscardImproved] = useState(false);
   const [boughtUpgradeId, setBoughtUpgradeId] = useState<number | null>(null);
   const [completionTracked, setCompletionTracked] = useState(false);
+  const [animating, setAnimating] = useState(false);
+  const [damagedSide, setDamagedSide] = useState<TutorialHitSide | null>(null);
+  const [defeatedSide, setDefeatedSide] = useState<TutorialHitSide | null>(null);
+  const [damageBurst, setDamageBurst] = useState<{
+    side: TutorialHitSide;
+    amount: number;
+    key: number;
+  } | null>(null);
+  const [revealedShopCount, setRevealedShopCount] = useState(0);
 
   const openingPreview = useMemo(() => buildHandPreview(openingAttack, [], [], null, []), []);
   const botPreview = useMemo(() => buildHandPreview(botAttack, [], [], null, []), []);
@@ -92,6 +109,27 @@ export function TutorialPage({ onCompleteTutorial, onBackToLobby }: TutorialPage
   }, [step, boughtUpgradeId]);
 
   useEffect(() => {
+    if (step !== 4) {
+      setRevealedShopCount(0);
+      return;
+    }
+
+    setRevealedShopCount(0);
+    const timeouts = tutorialShop.map((upgrade, index) =>
+      window.setTimeout(() => {
+        setRevealedShopCount(index + 1);
+        playShopRevealSound(upgrade.rarity);
+      }, index * 240),
+    );
+
+    return () => {
+      for (const timeout of timeouts) {
+        window.clearTimeout(timeout);
+      }
+    };
+  }, [step]);
+
+  useEffect(() => {
     if (step === 4 && boughtUpgradeId !== null && !completionTracked) {
       setCompletionTracked(true);
       void onCompleteTutorial();
@@ -99,6 +137,46 @@ export function TutorialPage({ onCompleteTutorial, onBackToLobby }: TutorialPage
   }, [boughtUpgradeId, completionTracked, onCompleteTutorial, step]);
 
   const currentDiscardHand = discardImproved ? improvedHand : weakHand;
+
+  function queueHitAnimation(options: {
+    target: TutorialHitSide;
+    damage: number;
+    targetHealthBefore: number;
+    nextHealth: number;
+    onDone: () => void;
+  }) {
+    setAnimating(true);
+    setDamagedSide(options.target);
+    setDefeatedSide(options.nextHealth <= 0 ? options.target : null);
+    setDamageBurst({
+      side: options.target,
+      amount: options.damage,
+      key: Date.now(),
+    });
+
+    playBattleImpact({
+      damage: options.damage,
+      hits: 1,
+      doublePlayTriggered: false,
+      matchFinished: options.nextHealth <= 0,
+      targetHealthBefore: options.targetHealthBefore,
+    });
+
+    window.setTimeout(() => {
+      if (options.target === "enemy") {
+        setEnemyHealth(options.nextHealth);
+      } else {
+        setPlayerHealth(options.nextHealth);
+      }
+    }, 120);
+
+    window.setTimeout(() => {
+      setDamagedSide(null);
+      setDamageBurst(null);
+      setAnimating(false);
+      options.onDone();
+    }, options.nextHealth <= 0 ? 1400 : 900);
+  }
 
   return (
     <section className="panel account-page-panel tutorial-page">
@@ -121,7 +199,9 @@ export function TutorialPage({ onCompleteTutorial, onBackToLobby }: TutorialPage
         {["Attack", "Bot attack", "Discard", "Attack", "Shop"].map((label, index) => (
           <div
             key={label}
-            className={`tutorial-step-pill${index === step ? " active" : ""}${index < step ? " complete" : ""}`}
+            className={`tutorial-step-pill${index === step ? " active" : ""}${
+              index < step ? " complete" : ""
+            }`}
           >
             {label}
           </div>
@@ -129,7 +209,15 @@ export function TutorialPage({ onCompleteTutorial, onBackToLobby }: TutorialPage
       </div>
 
       <div className="tutorial-duel-strip">
-        <article className="health-card tutorial-health-card">
+        <article
+          className={`health-card tutorial-health-card tutorial-enemy-card${
+            damagedSide === "enemy"
+              ? defeatedSide === "enemy"
+                ? " health-card-defeated health-card-finished"
+                : " health-card-damaged"
+              : ""
+          }`}
+        >
           <div className="health-meta">
             <strong className="health-player-name">
               <span className="player-avatar-badge health-avatar">🤖</span>
@@ -140,8 +228,19 @@ export function TutorialPage({ onCompleteTutorial, onBackToLobby }: TutorialPage
           <div className="health-bar-shell">
             <div className="health-bar-fill" style={{ width: `${Math.max(enemyHealth, 0)}%` }} />
           </div>
+          {damageBurst?.side === "enemy" ? (
+            <span key={damageBurst.key} className="damage-burst">
+              -{damageBurst.amount}
+            </span>
+          ) : null}
+          {defeatedSide === "enemy" ? <span className="defeat-burst">Defeated</span> : null}
         </article>
-        <article className="health-card tutorial-health-card">
+
+        <article
+          className={`health-card tutorial-health-card tutorial-player-card${
+            damagedSide === "player" ? " health-card-damaged" : ""
+          }`}
+        >
           <div className="health-meta">
             <strong className="health-player-name">
               <span className="player-avatar-badge health-avatar">🧑</span>
@@ -150,8 +249,16 @@ export function TutorialPage({ onCompleteTutorial, onBackToLobby }: TutorialPage
             <span>{playerHealth} HP</span>
           </div>
           <div className="health-bar-shell">
-            <div className="health-bar-fill player" style={{ width: `${Math.max(playerHealth, 0)}%` }} />
+            <div
+              className="health-bar-fill player"
+              style={{ width: `${Math.max(playerHealth, 0)}%` }}
+            />
           </div>
+          {damageBurst?.side === "player" ? (
+            <span key={damageBurst.key} className="damage-burst">
+              -{damageBurst.amount}
+            </span>
+          ) : null}
         </article>
       </div>
 
@@ -160,7 +267,8 @@ export function TutorialPage({ onCompleteTutorial, onBackToLobby }: TutorialPage
           <div className="tutorial-copy-block">
             <h3>Open with a real hand</h3>
             <p className="panel-copy compact-copy">
-              These five cards are already selected. A full house gives you strong damage and good gold.
+              These five cards are already selected. A full house gives you strong damage and good
+              gold.
             </p>
           </div>
           <article className="hand-preview-panel active tutorial-preview-panel">
@@ -186,12 +294,20 @@ export function TutorialPage({ onCompleteTutorial, onBackToLobby }: TutorialPage
           <div className="button-row">
             <button
               type="button"
+              disabled={animating}
               onClick={() => {
-                setEnemyHealth(Math.max(0, 100 - (openingPreview?.damage ?? 0)));
-                setStep(1);
+                const damage = openingPreview?.damage ?? 0;
+                const nextHealth = Math.max(0, enemyHealth - damage);
+                queueHitAnimation({
+                  target: "enemy",
+                  damage,
+                  targetHealthBefore: enemyHealth,
+                  nextHealth,
+                  onDone: () => setStep(1),
+                });
               }}
             >
-              Play hand
+              {animating ? "Resolving..." : "Play hand"}
             </button>
           </div>
         </section>
@@ -228,12 +344,20 @@ export function TutorialPage({ onCompleteTutorial, onBackToLobby }: TutorialPage
           <div className="button-row">
             <button
               type="button"
+              disabled={animating}
               onClick={() => {
-                setPlayerHealth(Math.max(0, 100 - (botPreview?.damage ?? 0)));
-                setStep(2);
+                const damage = botPreview?.damage ?? 0;
+                const nextHealth = Math.max(0, playerHealth - damage);
+                queueHitAnimation({
+                  target: "player",
+                  damage,
+                  targetHealthBefore: playerHealth,
+                  nextHealth,
+                  onDone: () => setStep(2),
+                });
               }}
             >
-              Let the bot play
+              {animating ? "Resolving..." : "Let the bot play"}
             </button>
           </div>
         </section>
@@ -273,7 +397,13 @@ export function TutorialPage({ onCompleteTutorial, onBackToLobby }: TutorialPage
           </div>
           <div className="button-row">
             {!discardImproved ? (
-              <button type="button" onClick={() => setDiscardImproved(true)}>
+              <button
+                type="button"
+                onClick={() => {
+                  playDiscardSound();
+                  setDiscardImproved(true);
+                }}
+              >
                 Discard into a straight
               </button>
             ) : (
@@ -290,7 +420,7 @@ export function TutorialPage({ onCompleteTutorial, onBackToLobby }: TutorialPage
           <div className="tutorial-copy-block">
             <h3>Attack again</h3>
             <p className="panel-copy compact-copy">
-              One more attack to close the round. This time you’ve built a straight flush.
+              One more attack to close the round. This time you have built a straight flush.
             </p>
           </div>
           <article className="hand-preview-panel active tutorial-preview-panel">
@@ -302,7 +432,7 @@ export function TutorialPage({ onCompleteTutorial, onBackToLobby }: TutorialPage
                   (Multiplier x{finishingPreview?.multiplier ?? 1})
                 </span>
               </strong>
-              <span>That’s the kind of payoff discards are meant to create.</span>
+              <span>That is the kind of payoff discards are meant to create.</span>
             </div>
             <div className="hand-preview-metrics">
               <span>Deals {finishingPreview?.damage ?? 0} damage</span>
@@ -316,12 +446,20 @@ export function TutorialPage({ onCompleteTutorial, onBackToLobby }: TutorialPage
           <div className="button-row">
             <button
               type="button"
+              disabled={animating}
               onClick={() => {
-                setEnemyHealth(Math.max(0, enemyHealth - (finishingPreview?.damage ?? 0)));
-                setStep(4);
+                const damage = Math.min(enemyHealth, finishingPreview?.damage ?? 0);
+                const nextHealth = Math.max(0, enemyHealth - damage);
+                queueHitAnimation({
+                  target: "enemy",
+                  damage,
+                  targetHealthBefore: enemyHealth,
+                  nextHealth,
+                  onDone: () => setStep(4),
+                });
               }}
             >
-              Play the second hand
+              {animating ? "Resolving..." : "Play the second hand"}
             </button>
           </div>
         </section>
@@ -332,47 +470,58 @@ export function TutorialPage({ onCompleteTutorial, onBackToLobby }: TutorialPage
           <div className="tutorial-copy-block">
             <h3>Round over: visit the shop</h3>
             <p className="panel-copy compact-copy">
-              Between rounds, spend gold to shape your build. Pick one upgrade and you’re done.
+              Between rounds, spend gold to shape your build. Pick one upgrade and you are done.
             </p>
           </div>
           <div className="tutorial-shop-grid">
-            {tutorialShop.map((upgrade) => (
-              <button
-                key={upgrade.id}
-                type="button"
-                className={`upgrade-card ${upgrade.rarity} tutorial-shop-card${
-                  boughtUpgradeId === upgrade.id ? " tutorial-shop-card-bought" : ""
-                }`}
-                onClick={() => setBoughtUpgradeId(upgrade.id)}
-              >
-                <div className="upgrade-card-content">
-                  <span className="upgrade-price">{upgrade.cost} gold</span>
-                  <span className="upgrade-emoji" aria-hidden="true">
-                    ✨
-                  </span>
-                  <strong>{upgrade.name}</strong>
-                  <span>{upgrade.effect}</span>
-                  <span className="upgrade-rarity-label">{upgrade.rarity}</span>
-                </div>
-              </button>
-            ))}
+            {tutorialShop.map((upgrade, index) => {
+              const revealed = index < revealedShopCount;
+              return (
+                <button
+                  key={upgrade.id}
+                  type="button"
+                  className={`upgrade-card ${upgrade.rarity} tutorial-shop-card${
+                    revealed ? " tutorial-shop-card-revealed" : ""
+                  }${boughtUpgradeId === upgrade.id ? " tutorial-shop-card-bought" : ""}`}
+                  onClick={() => {
+                    playUpgradeBuySound(upgrade.rarity);
+                    setBoughtUpgradeId(upgrade.id);
+                  }}
+                  disabled={!revealed || boughtUpgradeId !== null}
+                >
+                  <div className="upgrade-card-content">
+                    <span className="upgrade-price">{upgrade.cost} gold</span>
+                    <span className="upgrade-emoji" aria-hidden="true">
+                      ✨
+                    </span>
+                    <strong>{upgrade.name}</strong>
+                    <span>{upgrade.effect}</span>
+                    <span className="upgrade-rarity-label">{upgrade.rarity}</span>
+                  </div>
+                </button>
+              );
+            })}
           </div>
-          {boughtUpgradeId !== null ? (
-            <div className="tutorial-summary-grid">
-              <article className="tutorial-summary-card">
-                <strong>That’s the full loop</strong>
-                <span>Attack, survive the return hit, use discards, attack again, then shop.</span>
-              </article>
+        </section>
+      ) : null}
+
+      {step === 4 && boughtUpgradeId !== null ? (
+        <div className="modal-backdrop">
+          <section className="panel modal-panel tutorial-finish-modal">
+            <div className="tutorial-finish-modal-copy">
+              <p className="eyebrow">Tutorial complete</p>
+              <h3>That is the full loop</h3>
+              <p className="panel-copy">
+                Attack, survive the return hit, use discards, attack again, then shop.
+              </p>
             </div>
-          ) : null}
-          <div className="button-row">
-            {boughtUpgradeId === null ? null : (
+            <div className="button-row">
               <button type="button" onClick={onBackToLobby}>
                 Back to lobby
               </button>
-            )}
-          </div>
-        </section>
+            </div>
+          </section>
+        </div>
       ) : null}
     </section>
   );

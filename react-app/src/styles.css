@@ -1482,16 +1482,25 @@ input {
 .tutorial-duel-strip {
   display: grid;
   gap: 1rem;
-  grid-template-columns: minmax(220px, 280px) 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: start;
 }
 
 .tutorial-health-card {
   min-height: 0;
+  position: relative;
+  overflow: hidden;
 }
 
 .tutorial-preview-panel {
   margin-top: 0;
+}
+
+.tutorial-enemy-card,
+.tutorial-player-card {
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease;
 }
 
 .tutorial-shop-grid,
@@ -1501,10 +1510,39 @@ input {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
+.tutorial-finish-modal {
+  width: min(560px, 100%);
+  display: grid;
+  gap: 1rem;
+}
+
+.tutorial-finish-modal-copy {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.tutorial-finish-modal-copy h3 {
+  margin: 0;
+  font-size: 1.7rem;
+}
+
 .tutorial-shop-card {
   min-height: 0;
   max-width: 260px;
   justify-self: start;
+  opacity: 0;
+  transform: translateY(18px) scale(0.96);
+  pointer-events: none;
+}
+
+.tutorial-shop-card-revealed {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+  transition:
+    opacity 240ms ease,
+    transform 280ms cubic-bezier(0.16, 0.84, 0.26, 1.08),
+    box-shadow 240ms ease;
 }
 
 .tutorial-shop-grid {
@@ -5986,7 +6024,7 @@ input::placeholder {
 
 .play-hub-action-strip {
   display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
   margin-bottom: 1.25rem;
 }
@@ -6030,6 +6068,22 @@ input::placeholder {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.tutorial-strip-pill {
+  position: relative;
+  color: #2a1d3f;
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.28), transparent 44%),
+    linear-gradient(135deg, rgba(255, 214, 124, 0.94), rgba(255, 168, 84, 0.9));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 0 0 1px rgba(255, 190, 92, 0.24),
+    0 10px 24px rgba(255, 156, 61, 0.14);
+}
+
+.tutorial-strip-pill.active {
+  color: #2a1d3f;
+}
+
 .play-mode-pill {
   padding: 0.7rem 1rem;
   border-radius: 999px;
@@ -6060,6 +6114,62 @@ input::placeholder {
   gap: 1rem;
 }
 
+.tutorial-hero-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 4.4rem;
+  padding: 1rem 1.35rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 201, 108, 0.38);
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.28), transparent 40%),
+    linear-gradient(135deg, rgba(255, 205, 104, 0.96), rgba(255, 154, 72, 0.92));
+  color: #221631;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 16px 30px rgba(255, 145, 40, 0.14),
+    0 0 0 1px rgba(255, 193, 91, 0.2);
+  text-align: center;
+}
+
+.tutorial-hero-button:hover:not(:disabled) {
+  transform: translateY(-1px) scale(1.005);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.36),
+    0 18px 34px rgba(255, 145, 40, 0.18),
+    0 0 0 1px rgba(255, 193, 91, 0.28);
+}
+
+.tutorial-hero-button strong {
+  font-size: 1.15rem;
+  line-height: 1.1;
+}
+
+.tutorial-hero-button-glow {
+  animation: tutorialHeroGlow 1.8s ease-in-out infinite;
+}
+
+@keyframes tutorialHeroGlow {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.38),
+      0 22px 48px rgba(255, 145, 40, 0.2),
+      0 0 0 1px rgba(255, 193, 91, 0.18),
+      0 0 0 0 rgba(255, 199, 86, 0.18);
+  }
+
+  50% {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.44),
+      0 26px 60px rgba(255, 145, 40, 0.28),
+      0 0 0 1px rgba(255, 193, 91, 0.3),
+      0 0 0 10px rgba(255, 199, 86, 0.08);
+  }
+}
+
 .play-hub-subsection {
   display: grid;
   gap: 0.2rem;
@@ -6087,7 +6197,7 @@ input::placeholder {
 
 .play-hub-bot-stack {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.85rem;
 }
 
