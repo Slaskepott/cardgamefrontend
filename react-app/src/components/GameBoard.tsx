@@ -1,6 +1,6 @@
-import type { BattleMoment, Card, DiscardMoment, Suit } from "../types/game";
+import type { BattleMoment, Card, DiscardMoment, MatchSpell, SpellMoment, Suit } from "../types/game";
 import type { MetaProgress, Relic, Upgrade } from "../types/game";
-import { buildHandPreview } from "../lib/handPreview";
+import { buildHandPreview, type PreviewSpellId } from "../lib/handPreview";
 
 interface GameBoardProps {
   cards: Card[];
@@ -9,11 +9,15 @@ interface GameBoardProps {
   selectedCardKeys: string[];
   ownedUpgrades: Upgrade[];
   ownedRelics: Relic[];
+  matchSpells: MatchSpell[];
+  spellMoment: SpellMoment | null;
+  opponentHealthRatio: number;
   metaProgress: MetaProgress | null;
   unlockedLevelRewards?: string[];
   onToggleCard: (card: Card, index: number) => void;
   onPlayHand: () => Promise<void>;
   onDiscard: () => Promise<void>;
+  onUseSpell: (spellId: string) => Promise<void>;
   onEndTurn: () => Promise<void>;
   canPlayActions: boolean;
   canEndTurn: boolean;
@@ -60,6 +64,72 @@ const rankOrder: Record<string, number> = {
   "15": 16,
 };
 
+const spellFlavor: Record<
+  string,
+  { icon: string; prepareLabel: string; prepareDetail: string; castDetail: string }
+> = {
+  kindle: {
+    icon: "🔥",
+    prepareLabel: "Ember drawn",
+    prepareDetail: "The next hand is primed for +20% damage.",
+    castDetail: "The hit lands hotter with a +20% damage surge.",
+  },
+  guard_pulse: {
+    icon: "🛡️",
+    prepareLabel: "Barrier ready",
+    prepareDetail: "A defensive pulse is ready to snap into place.",
+    castDetail: "A shield pulse surges in for 12 armor.",
+  },
+  second_breath: {
+    icon: "💚",
+    prepareLabel: "Breath held",
+    prepareDetail: "A reserve of health is waiting to be called on.",
+    castDetail: "A second breath restores 10 health.",
+  },
+  heavy_blow: {
+    icon: "💥",
+    prepareLabel: "Weight loaded",
+    prepareDetail: "The next 1-card hand is set to slam for 8x damage.",
+    castDetail: "A single card crashes down at 8x force.",
+  },
+  perfect_pairing: {
+    icon: "🂡",
+    prepareLabel: "Pattern fixed",
+    prepareDetail: "The next hand will count as at least two pair.",
+    castDetail: "The pattern locks into two pair before the strike.",
+  },
+  stone_delay: {
+    icon: "🪨",
+    prepareLabel: "Anchor set",
+    prepareDetail: "The next incoming hit will be slowed by 25%.",
+    castDetail: "A stone brace catches 25% of the next hit.",
+  },
+  overcharge: {
+    icon: "⚡",
+    prepareLabel: "Power surging",
+    prepareDetail: "The next hand gains +35% damage, then bites back.",
+    castDetail: "The hand erupts with +35% damage and recoil.",
+  },
+  blood_price: {
+    icon: "🩸",
+    prepareLabel: "Blood pledged",
+    prepareDetail: "Health is about to be traded for one more discard.",
+    castDetail: "8 health is paid for +1 discard.",
+  },
+  double_stake: {
+    icon: "🎲",
+    prepareLabel: "Bet raised",
+    prepareDetail: "The next hand is gambling for gold at a health cost.",
+    castDetail: "The wager resolves: +4 gold, but 6 health is lost.",
+  },
+  final_push: {
+    icon: "👑",
+    prepareLabel: "Finisher lined up",
+    prepareDetail: "If the foe is low enough, the next hand gets +50% damage.",
+    castDetail: "The finisher connects for a +50% damage push.",
+  },
+};
+
 export function makeCardKey(card: Card, index: number) {
   return `${card.rank}-${card.suit}-${index}`;
 }
@@ -80,11 +150,15 @@ export function GameBoard({
   selectedCardKeys,
   ownedUpgrades,
   ownedRelics,
+  matchSpells,
+  spellMoment,
+  opponentHealthRatio,
   metaProgress,
   unlockedLevelRewards = [],
   onToggleCard,
   onPlayHand,
   onDiscard,
+  onUseSpell,
   onEndTurn,
   canPlayActions,
   canEndTurn,
@@ -100,12 +174,17 @@ export function GameBoard({
   const selectedPreviewCards = sortedCards
     .filter(({ card, index }) => selectedCardKeys.includes(makeCardKey(card, index)))
     .map(({ card }) => card);
+  const preparedSpellId =
+    matchSpells.find((spell) => spell.prepared)?.id ?? null;
+  const preparedSpellFlavor = preparedSpellId ? spellFlavor[preparedSpellId] : null;
   const handPreview = buildHandPreview(
     selectedPreviewCards,
     ownedUpgrades,
     ownedRelics,
     metaProgress,
     unlockedLevelRewards,
+    preparedSpellId as PreviewSpellId,
+    opponentHealthRatio,
   );
 
   return (
@@ -172,6 +251,28 @@ export function GameBoard({
         </div>
       ) : null}
 
+      {spellMoment ? (
+        <div className="board-spell-banner-shell" aria-hidden="true">
+          <section className={`spell-effect-banner spell-${spellMoment.animation}`}>
+            <span className="spell-effect-icon">
+              {spellFlavor[spellMoment.spellId]?.icon ?? "✦"}
+            </span>
+            <span className="spell-effect-label">
+              {spellMoment.effectNow
+                ? spellFlavor[spellMoment.spellId]?.castDetail ?? "Spell cast"
+                : spellFlavor[spellMoment.spellId]?.prepareLabel ?? "Spell primed"}
+            </span>
+            <strong>{spellMoment.spellName}</strong>
+            <span className="spell-effect-detail">
+              {spellMoment.player}{" "}
+              {spellMoment.effectNow
+                ? spellFlavor[spellMoment.spellId]?.castDetail ?? "triggers it."
+                : spellFlavor[spellMoment.spellId]?.prepareDetail ?? "arms it."}
+            </span>
+          </section>
+        </div>
+      ) : null}
+
       <div className={disabled ? "game-board-body game-board-disabled" : "game-board-body"}>
         <div className="section-header">
           <div>
@@ -179,6 +280,28 @@ export function GameBoard({
             <h2>Your hand</h2>
           </div>
           <div className="action-row">
+            {matchSpells.length > 0 ? (
+              <div className="spell-action-row">
+                {matchSpells.map((spell) => (
+                  <button
+                    key={spell.id}
+                    type="button"
+                    className={`spell-pill spell-${spell.animation}${spell.prepared ? " prepared" : ""}${spell.used ? " used" : ""}`}
+                    disabled={busy || disabled || spell.used}
+                    onClick={() => void onUseSpell(spell.id)}
+                    title={spell.description}
+                  >
+                    <span className="spell-pill-icon">
+                      {spellFlavor[spell.id]?.icon ?? "✦"}
+                    </span>
+                    <span className="spell-pill-name">{spell.name}</span>
+                    <span className="spell-pill-copy">
+                      {spell.used ? "Spent" : spell.prepared ? "Primed" : "Ready"}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
             <button
               type="button"
               onClick={() => void onPlayHand()}
@@ -223,6 +346,11 @@ export function GameBoard({
                   {selectedPreviewCards.length} card{selectedPreviewCards.length === 1 ? "" : "s"}{" "}
                   selected
                 </span>
+                {preparedSpellFlavor ? (
+                  <span className="hand-preview-spell-copy">
+                    {preparedSpellFlavor.icon} {preparedSpellFlavor.prepareDetail}
+                  </span>
+                ) : null}
               </div>
               <div className="hand-preview-metrics">
                 <span>Deals {handPreview.damage} damage</span>

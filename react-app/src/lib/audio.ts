@@ -525,6 +525,76 @@ export function playRelicPickSound() {
   playSfx("relicPick");
 }
 
+export function playSpellPrepareSound(animation: string) {
+  switch (animation) {
+    case "kindle":
+    case "perfect_pairing":
+      playSfx("cardSelect", 1.05);
+      return;
+    case "guard_pulse":
+    case "stone_delay":
+      playSfx("relicReveal", 0.8);
+      return;
+    case "second_breath":
+      playSfx("achievementUnlock", 0.42);
+      return;
+    case "heavy_blow":
+      playSfx("cardSelect", 1.25);
+      return;
+    case "overcharge":
+      playSfx("relicPick", 1.05);
+      return;
+    case "blood_price":
+      playSfx("notEnoughGold", 0.24);
+      return;
+    case "double_stake":
+      playSfx("shopReroll", 0.72);
+      return;
+    case "final_push":
+      playSfx("victory", 0.28);
+      return;
+    default:
+      playSfx("relicPick", 0.95);
+  }
+}
+
+export function playSpellCastSound(animation: string) {
+  switch (animation) {
+    case "kindle":
+      playSfx("impactDouble", 0.85);
+      return;
+    case "guard_pulse":
+      playSfx("relicReveal", 1.05);
+      return;
+    case "second_breath":
+      playSfx("achievementUnlock", 0.58);
+      return;
+    case "heavy_blow":
+      playSfx("punchHard1", 1.05);
+      return;
+    case "perfect_pairing":
+      playSfx("impactDouble", 0.9);
+      return;
+    case "stone_delay":
+      playSfx("relicReveal", 0.92);
+      return;
+    case "overcharge":
+      playSfx("punchMedium1", 1);
+      return;
+    case "blood_price":
+      playSfx("notEnoughGold", 0.3);
+      return;
+    case "double_stake":
+      playSfx("upgradeBuyRare", 0.72);
+      return;
+    case "final_push":
+      playSfx("punchExtreme", 0.96);
+      return;
+    default:
+      playSfx("impactDouble", 0.95);
+  }
+}
+
 export function playGoldErrorSound() {
   playSfx("notEnoughGold");
 }

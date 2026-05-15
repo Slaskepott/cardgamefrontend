@@ -47,7 +47,7 @@ const avatarOptions = [
 ];
 
 type AuthMode = "sign-in" | "sign-up";
-type AccountView = "lobby" | "achievements" | "talents" | "tutorial" | "rulebook" | "game";
+type AccountView = "lobby" | "achievements" | "talents" | "spells" | "tutorial" | "rulebook" | "game";
 
 interface AuthPanelProps {
   currentUser: User | null;
@@ -346,6 +346,16 @@ export function AuthPanel({
                     }}
                   >
                     Talent tree
+                  </button>
+                  <button
+                    type="button"
+                    className="account-dropdown-item"
+                    onClick={() => {
+                      void onNavigate("spells");
+                      setMenuOpen(false);
+                    }}
+                  >
+                    Spells
                   </button>
                   <button
                     type="button"

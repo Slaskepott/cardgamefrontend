@@ -16,6 +16,7 @@ import type {
   PlayersResponse,
   RerollShopResponse,
   StartBotGameResponse,
+  UseSpellResponse,
   Card,
 } from "../types/game";
 
@@ -174,6 +175,16 @@ export function setProfileBorder(email: string, border: string) {
   );
 }
 
+export function setEquippedSpells(email: string, spellIds: string[]) {
+  return requestJson<MetaProgressResponse>(
+    `/profile/${encodeURIComponent(email)}/spells/equip`,
+    {
+      method: "POST",
+      body: JSON.stringify(spellIds),
+    },
+  );
+}
+
 export function completeTutorial(email: string) {
   return requestJson<MetaProgressResponse>(
     `/meta/${encodeURIComponent(email)}/tutorial/complete`,
@@ -199,6 +210,16 @@ export function playHand(gameId: string, playerId: string, cards: Card[]) {
     body: JSON.stringify({
       player_id: playerId,
       cards,
+    }),
+  });
+}
+
+export function useSpell(gameId: string, playerId: string, spellId: string) {
+  return requestJson<UseSpellResponse>(`/game/${gameId}/spell/use`, {
+    method: "POST",
+    body: JSON.stringify({
+      player_id: playerId,
+      spell_id: spellId,
     }),
   });
 }

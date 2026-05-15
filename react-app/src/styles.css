@@ -443,6 +443,70 @@ input {
   align-items: center;
 }
 
+.spell-action-row {
+  display: flex;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+  margin-right: 0.5rem;
+}
+
+.spell-pill {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.18rem;
+  min-width: 144px;
+  padding: 0.72rem 0.96rem;
+  border-radius: 18px;
+  border: 1px solid rgba(130, 196, 255, 0.34);
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.16), transparent 44%),
+    linear-gradient(180deg, rgba(16, 28, 47, 0.94), rgba(12, 21, 38, 0.96));
+  color: #eef5ff;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.spell-pill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 18%, rgba(255,255,255,0.16) 48%, transparent 78%);
+  transform: translateX(-120%);
+  opacity: 0;
+}
+
+.spell-pill.prepared {
+  border-color: rgba(255, 197, 96, 0.75);
+  box-shadow: 0 0 24px rgba(255, 173, 58, 0.26), inset 0 1px 0 rgba(255,255,255,0.1);
+  transform: translateY(-1px);
+}
+
+.spell-pill.prepared::after {
+  opacity: 1;
+  animation: spellPreparedShine 1.4s ease-in-out infinite;
+}
+
+.spell-pill.used {
+  opacity: 0.48;
+  filter: saturate(0.6);
+}
+
+.spell-pill-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.spell-pill-name {
+  font-weight: 800;
+}
+
+.spell-pill-copy {
+  font-size: 0.78rem;
+  color: rgba(223, 238, 255, 0.72);
+}
+
 .battle-metrics span {
   padding: 0.55rem 0.85rem;
   border-radius: 999px;
@@ -6986,4 +7050,413 @@ input::placeholder {
   border-radius: 1rem;
   border: 1px dashed rgba(146, 175, 234, 0.28);
   background: rgba(8, 16, 28, 0.45);
+}
+
+.board-spell-banner-shell {
+  position: absolute;
+  top: 1.3rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  pointer-events: none;
+}
+
+.spell-effect-banner {
+  position: relative;
+  overflow: hidden;
+  min-width: 260px;
+  padding: 0.95rem 1.15rem;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 209, 115, 0.45);
+  background:
+    radial-gradient(circle at top, rgba(255,255,255,0.18), transparent 48%),
+    linear-gradient(135deg, rgba(45, 25, 20, 0.95), rgba(87, 43, 26, 0.9));
+  box-shadow: 0 16px 38px rgba(10, 14, 24, 0.38), 0 0 30px rgba(255, 164, 84, 0.24);
+  animation: spellBannerEnter 540ms cubic-bezier(0.18, 0.88, 0.32, 1.06);
+  text-align: center;
+}
+
+.spell-effect-banner::after {
+  content: "";
+  position: absolute;
+  inset: -30% -10%;
+  opacity: 0.32;
+  pointer-events: none;
+}
+
+.spell-effect-banner.spell-guard_pulse,
+.spell-effect-banner.spell-second_breath,
+.spell-effect-banner.spell-stone_delay {
+  background: linear-gradient(135deg, rgba(26, 49, 71, 0.96), rgba(27, 91, 112, 0.92));
+  border-color: rgba(133, 231, 255, 0.55);
+}
+
+.spell-effect-banner.spell-blood_price,
+.spell-effect-banner.spell-double_stake,
+.spell-effect-banner.spell-overcharge {
+  background: linear-gradient(135deg, rgba(64, 20, 28, 0.96), rgba(115, 36, 48, 0.92));
+  border-color: rgba(255, 116, 135, 0.6);
+}
+
+.spell-effect-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  margin: 0 auto 0.45rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
+  font-size: 1.15rem;
+}
+
+.spell-effect-label {
+  display: block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: rgba(255, 236, 198, 0.8);
+}
+
+.spell-effect-banner strong {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 1.18rem;
+  color: #fff6e4;
+}
+
+.spell-effect-detail {
+  display: block;
+  margin-top: 0.22rem;
+  font-size: 0.84rem;
+  color: rgba(239, 244, 255, 0.78);
+}
+
+.spell-loadout-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1.3rem;
+}
+
+.spell-loadout-chip {
+  padding: 1rem 1.1rem;
+  border-radius: 20px;
+  border: 1px solid rgba(115, 199, 255, 0.22);
+  background: linear-gradient(180deg, rgba(16, 28, 47, 0.94), rgba(12, 21, 38, 0.96));
+}
+
+.spell-loadout-label {
+  display: block;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(130, 210, 255, 0.74);
+}
+
+.spell-loadout-chip strong {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 1.08rem;
+}
+
+.spell-page-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-top: 1.3rem;
+}
+
+.spell-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  min-height: 220px;
+  padding: 1rem 1rem 1.1rem;
+  border-radius: 24px;
+  border: 1px solid rgba(122, 199, 255, 0.26);
+  background:
+    radial-gradient(circle at top, rgba(255,255,255,0.13), transparent 44%),
+    linear-gradient(180deg, rgba(17, 28, 46, 0.96), rgba(11, 18, 32, 0.96));
+}
+
+.spell-card.equipped {
+  border-color: rgba(255, 197, 96, 0.72);
+  box-shadow: 0 0 26px rgba(255, 172, 63, 0.18);
+}
+
+.spell-card.locked {
+  opacity: 0.56;
+}
+
+.spell-card strong {
+  font-size: 1.08rem;
+}
+
+.spell-card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.spell-card-tag {
+  padding: 0.28rem 0.56rem;
+  border-radius: 999px;
+  background: rgba(108, 196, 255, 0.12);
+  color: rgba(195, 231, 255, 0.92);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.spell-card-tag.subtle {
+  background: rgba(255,255,255,0.07);
+  color: rgba(223, 235, 255, 0.68);
+}
+
+.spell-card p,
+.spell-card-help {
+  color: rgba(224, 235, 248, 0.78);
+  line-height: 1.5;
+}
+
+@keyframes spellBannerEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes spellPreparedShine {
+  0% {
+    transform: translateX(-120%);
+  }
+  50% {
+    transform: translateX(25%);
+  }
+  100% {
+    transform: translateX(140%);
+  }
+}
+
+@keyframes spellHeatHaze {
+  0%, 100% {
+    transform: scale(0.92) rotate(0deg);
+    filter: blur(12px);
+  }
+  50% {
+    transform: scale(1.05) rotate(7deg);
+    filter: blur(18px);
+  }
+}
+
+@keyframes spellWaveShield {
+  0% {
+    transform: scale(0.78);
+    opacity: 0.14;
+  }
+  100% {
+    transform: scale(1.08);
+    opacity: 0.38;
+  }
+}
+
+@keyframes spellHeartbeat {
+  0%, 100% {
+    transform: scale(0.96);
+  }
+  45% {
+    transform: scale(1.08);
+  }
+}
+
+@keyframes spellHeavySwing {
+  0% {
+    transform: rotate(-8deg) scale(0.94);
+  }
+  55% {
+    transform: rotate(8deg) scale(1.06);
+  }
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+@keyframes spellFacetSnap {
+  0%, 100% {
+    clip-path: inset(0 0 0 0 round 22px);
+  }
+  50% {
+    clip-path: inset(8% 3% 8% 3% round 28px);
+  }
+}
+
+@keyframes spellStoneBrace {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes spellVoltage {
+  0%, 100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.28);
+  }
+}
+
+@keyframes spellBloodRattle {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-4px);
+  }
+  40% {
+    transform: translateX(4px);
+  }
+  60% {
+    transform: translateX(-2px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+}
+
+@keyframes spellCoinFlip {
+  0% {
+    transform: rotateY(0deg) scale(0.96);
+  }
+  100% {
+    transform: rotateY(360deg) scale(1.03);
+  }
+}
+
+@keyframes spellFinisherPulse {
+  0%, 100% {
+    transform: scale(0.96);
+    box-shadow: 0 0 0 rgba(255, 209, 99, 0);
+  }
+  50% {
+    transform: scale(1.06);
+    box-shadow: 0 0 30px rgba(255, 209, 99, 0.26);
+  }
+}
+
+.spell-pill.spell-kindle.prepared,
+.spell-effect-banner.spell-kindle {
+  border-color: rgba(255, 160, 92, 0.72);
+}
+
+.spell-pill.spell-kindle.prepared::after,
+.spell-effect-banner.spell-kindle::after {
+  background: radial-gradient(circle at center, rgba(255, 152, 82, 0.38), transparent 58%);
+  animation: spellHeatHaze 1.25s ease-in-out infinite;
+}
+
+.spell-pill.spell-guard_pulse.prepared,
+.spell-effect-banner.spell-guard_pulse,
+.spell-pill.spell-stone_delay.prepared,
+.spell-effect-banner.spell-stone_delay {
+  border-color: rgba(128, 225, 255, 0.72);
+}
+
+.spell-pill.spell-guard_pulse.prepared::after,
+.spell-effect-banner.spell-guard_pulse::after {
+  background: radial-gradient(circle at center, rgba(117, 224, 255, 0.34), transparent 60%);
+  animation: spellWaveShield 920ms ease-out infinite alternate;
+}
+
+.spell-pill.spell-second_breath.prepared,
+.spell-effect-banner.spell-second_breath {
+  border-color: rgba(129, 255, 176, 0.72);
+}
+
+.spell-pill.spell-second_breath.prepared::after,
+.spell-effect-banner.spell-second_breath::after {
+  background: radial-gradient(circle at center, rgba(110, 255, 174, 0.32), transparent 62%);
+  animation: spellHeartbeat 1.2s ease-in-out infinite;
+}
+
+.spell-pill.spell-heavy_blow.prepared,
+.spell-effect-banner.spell-heavy_blow {
+  border-color: rgba(255, 208, 120, 0.78);
+}
+
+.spell-pill.spell-heavy_blow.prepared::after,
+.spell-effect-banner.spell-heavy_blow::after {
+  background: linear-gradient(120deg, transparent 30%, rgba(255, 214, 128, 0.32) 50%, transparent 70%);
+  animation: spellHeavySwing 820ms ease-in-out infinite;
+}
+
+.spell-pill.spell-perfect_pairing.prepared,
+.spell-effect-banner.spell-perfect_pairing {
+  border-color: rgba(201, 182, 255, 0.72);
+}
+
+.spell-pill.spell-perfect_pairing.prepared::after,
+.spell-effect-banner.spell-perfect_pairing::after {
+  background: linear-gradient(135deg, rgba(176, 145, 255, 0.24), transparent 70%);
+  animation: spellFacetSnap 1.1s ease-in-out infinite;
+}
+
+.spell-pill.spell-overcharge.prepared,
+.spell-effect-banner.spell-overcharge {
+  border-color: rgba(255, 126, 241, 0.78);
+}
+
+.spell-pill.spell-overcharge.prepared::after,
+.spell-effect-banner.spell-overcharge::after {
+  background: radial-gradient(circle at center, rgba(255, 123, 235, 0.3), transparent 64%);
+  animation: spellVoltage 720ms linear infinite;
+}
+
+.spell-pill.spell-blood_price.prepared,
+.spell-effect-banner.spell-blood_price {
+  border-color: rgba(255, 108, 132, 0.8);
+}
+
+.spell-pill.spell-blood_price.prepared::after,
+.spell-effect-banner.spell-blood_price::after {
+  background: linear-gradient(135deg, rgba(255, 100, 132, 0.3), transparent 74%);
+  animation: spellBloodRattle 560ms ease-in-out infinite;
+}
+
+.spell-pill.spell-double_stake.prepared,
+.spell-effect-banner.spell-double_stake {
+  border-color: rgba(255, 210, 110, 0.78);
+}
+
+.spell-pill.spell-double_stake.prepared::after,
+.spell-effect-banner.spell-double_stake::after {
+  background: radial-gradient(circle at center, rgba(255, 214, 120, 0.28), transparent 62%);
+  animation: spellCoinFlip 980ms linear infinite;
+}
+
+.spell-pill.spell-final_push.prepared,
+.spell-effect-banner.spell-final_push {
+  border-color: rgba(255, 227, 132, 0.84);
+}
+
+.spell-pill.spell-final_push.prepared::after,
+.spell-effect-banner.spell-final_push::after {
+  background: radial-gradient(circle at center, rgba(255, 227, 132, 0.28), transparent 58%);
+  animation: spellFinisherPulse 980ms ease-in-out infinite;
+}
+
+.hand-preview-spell-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.18rem;
+  color: rgba(255, 227, 182, 0.9);
+  font-size: 0.82rem;
 }

@@ -57,6 +57,15 @@ export interface HandPreview {
   playTwiceChancePct: number;
 }
 
+export type PreviewSpellId =
+  | "kindle"
+  | "overcharge"
+  | "final_push"
+  | "heavy_blow"
+  | "perfect_pairing"
+  | "double_stake"
+  | null;
+
 function parsePercent(effect: string) {
   const match = effect.match(/([+-]?\d+)/);
   return match ? Number(match[1]) : 0;
@@ -333,6 +342,8 @@ export function buildHandPreview(
   relics: Relic[],
   metaProgress: MetaProgress | null,
   unlockedLevelRewards: string[],
+  activeSpellId: PreviewSpellId = null,
+  opponentHealthRatio = 1,
 ): HandPreview | null {
   if (cards.length === 0) {
     return null;
@@ -347,6 +358,19 @@ export function buildHandPreview(
 
   combinations.forEach((resolvedCards) => {
     const preview = evaluateConcreteHand(resolvedCards as Card[], modifiers);
+    if (activeSpellId === "perfect_pairing" && preview.multiplier < 3) {
+      preview.damage = Math.round(preview.damage * (3 / Math.max(1, preview.multiplier)));
+      preview.handType = "two pair";
+      preview.multiplier = 3;
+    } else if (activeSpellId === "kindle") {
+      preview.damage = Math.round(preview.damage * 1.2);
+    } else if (activeSpellId === "overcharge") {
+      preview.damage = Math.round(preview.damage * 1.35);
+    } else if (activeSpellId === "final_push" && opponentHealthRatio <= 0.3) {
+      preview.damage = Math.round(preview.damage * 1.5);
+    } else if (activeSpellId === "heavy_blow" && cards.length === 1) {
+      preview.damage = Math.round(preview.damage * 8);
+    }
     const rankTotal = (resolvedCards as Card[]).reduce(
       (sum, card) => sum + (RANK_VALUES[card.rank] ?? 0),
       0,

@@ -21,6 +21,27 @@ export interface Relic {
   description: string;
 }
 
+export interface MetaSpell {
+  id: string;
+  name: string;
+  description: string;
+  effect_type: "instant" | "hand";
+  animation: string;
+  unlock_source: string;
+  unlocked: boolean;
+  equipped: boolean;
+}
+
+export interface MatchSpell {
+  id: string;
+  name: string;
+  description: string;
+  effect_type: "instant" | "hand";
+  animation: string;
+  used: boolean;
+  prepared: boolean;
+}
+
 export interface ChatMessage {
   id: string;
   scope: "global" | "game";
@@ -43,6 +64,16 @@ export interface BattleMoment {
   accentSuit: Suit | null;
   winner: string | null;
   matchFinished?: boolean;
+  spellEffectId?: string | null;
+  spellEffectName?: string | null;
+}
+
+export interface SpellMoment {
+  player: string;
+  spellId: string;
+  spellName: string;
+  animation: string;
+  effectNow: boolean;
 }
 
 export interface DiscardMoment {
@@ -115,6 +146,8 @@ export interface MetaProgress {
   unlocked_borders: string[];
   selected_icon: string | null;
   selected_border: string | null;
+  spells: MetaSpell[];
+  equipped_spell_ids: string[];
 }
 
 export interface CampaignProgress {
@@ -197,6 +230,7 @@ export interface MatchStateMessage {
   waiting_players: string[];
   relic_waiting_players?: string[];
   relics_by_player?: Record<string, Relic[]>;
+  spells_by_player?: Record<string, MatchSpell[]>;
   wins_to_clinch: number;
   best_of: number;
   match_winner: string | null;
@@ -236,6 +270,7 @@ export interface HandPlayedMessage {
   armor_mitigation_pct?: number;
   rank_resistance_mitigation_pct?: number;
   hand_type_mitigation_pct?: number;
+  spell_mitigation_pct?: number;
   damage_instances?: number[];
   hits?: number;
   double_play_triggered?: boolean;
@@ -253,6 +288,24 @@ export interface HandPlayedMessage {
   match_finished?: boolean;
   remaining_discards: number;
   gold: number;
+  spell_effect_id?: string | null;
+  spell_effect_name?: string | null;
+  spells_by_player?: Record<string, MatchSpell[]>;
+}
+
+export interface SpellUsedMessage {
+  type: "spell_used";
+  player: string;
+  spell_id: string;
+  spell_name: string;
+  animation: string;
+  effect_now: boolean;
+  health_update: HealthUpdate;
+  max_health_update: HealthUpdate;
+  armor_update: HealthUpdate;
+  gold_update: HealthUpdate;
+  remaining_discards_update: Record<string, number>;
+  spells_by_player: Record<string, MatchSpell[]>;
 }
 
 export interface PlayersUpdatedMessage {
@@ -294,6 +347,7 @@ export type GameSocketMessage =
   | OpenRelicsMessage
   | MatchStateMessage
   | MatchOverMessage
+  | SpellUsedMessage
   | ApplyUpgradesMessage
   | TurnEndedMessage
   | Record<string, unknown>;
@@ -335,6 +389,7 @@ export interface PlayersResponse {
   best_of?: number;
   wins_to_clinch?: number;
   relics_by_player?: Record<string, Relic[]>;
+  spells_by_player?: Record<string, MatchSpell[]>;
   error?: string;
 }
 
@@ -372,6 +427,8 @@ export interface PlayHandResponse extends ActionResponse {
   winner?: string | null;
   round_finished?: boolean;
   match_finished?: boolean;
+  gold?: number;
+  spell_effect_id?: string | null;
 }
 
 export interface BuyUpgradeResponse extends ActionResponse {
@@ -395,6 +452,13 @@ export interface HeartbeatResponse extends ActionResponse {
 
 export interface ChooseRelicResponse extends ActionResponse {
   waiting_players?: string[];
+}
+
+export interface UseSpellResponse extends ActionResponse {
+  spell_id?: string;
+  spell_name?: string;
+  animation?: string;
+  effect_now?: boolean;
 }
 
 export interface ChatResponse {

@@ -16,6 +16,7 @@ import { MatchResultOverlay } from "./components/MatchResultOverlay";
 import { PlayHubPanel } from "./components/PlayHubPanel";
 import { RulebookPage } from "./components/RulebookPage";
 import { RelicPanel } from "./components/RelicPanel";
+import { SpellsPage } from "./components/SpellsPage";
 import { StatusPanel } from "./components/StatusPanel";
 import { TalentTreePage } from "./components/TalentTreePage";
 import { TutorialPage } from "./components/TutorialPage";
@@ -36,6 +37,7 @@ import {
   getMetaProgress,
   listLobbies,
   resetTalents,
+  setEquippedSpells,
   setProfileBorder,
   setProfileIcon,
   setTalentElement,
@@ -51,7 +53,7 @@ interface LevelUpEvent {
 }
 
 export default function App() {
-  type AccountViewTarget = "lobby" | "achievements" | "talents" | "tutorial" | "rulebook";
+  type AccountViewTarget = "lobby" | "achievements" | "talents" | "spells" | "tutorial" | "rulebook";
   type EntryStage = "hero" | "hub";
   type LobbyMode = "multiplayer" | "singleplayer";
   type LobbyMultiplayerMode = "host" | "join";
@@ -61,7 +63,7 @@ export default function App() {
   const [entryStage, setEntryStage] = useState<EntryStage>("hero");
   const [debugVisible, setDebugVisible] = useState(false);
   const [view, setView] = useState<
-    "lobby" | "achievements" | "talents" | "tutorial" | "rulebook" | "game"
+    "lobby" | "achievements" | "talents" | "spells" | "tutorial" | "rulebook" | "game"
   >("lobby");
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [guestMode, setGuestMode] = useState(false);
@@ -487,6 +489,16 @@ export default function App() {
     }
   }
 
+  async function handleSetEquippedSpells(nextSpellIds: string[]) {
+    if (!currentUser?.email) {
+      return;
+    }
+    const response = await setEquippedSpells(currentUser.email, nextSpellIds);
+    if (!response.error) {
+      setMetaProgress(response);
+    }
+  }
+
   async function handleCompleteTutorial() {
     if (!currentUser?.email) {
       return;
@@ -760,6 +772,14 @@ export default function App() {
         <section className="content-grid account-grid">
           <RulebookPage onBackToLobby={() => setView("lobby")} />
         </section>
+      ) : view === "spells" ? (
+        <section className="content-grid account-grid">
+          <SpellsPage
+            metaProgress={metaProgress}
+            busy={session.busy}
+            onSetEquippedSpells={handleSetEquippedSpells}
+          />
+        </section>
       ) : hasChosenAccess ? (
         <section className="content-grid">
           {!session.shopOpen && session.phase !== "relic" ? (
@@ -787,11 +807,20 @@ export default function App() {
               selectedCardKeys={session.selectedCardKeys}
               ownedUpgrades={session.ownedUpgrades}
               ownedRelics={session.ownedRelics}
+              matchSpells={session.playerId ? session.playerSpells[session.playerId] ?? [] : []}
+              spellMoment={session.spellMoment}
+              opponentHealthRatio={
+                session.battlePlayers.find((player) => player.id !== session.playerId)?.maxHealth
+                  ? (session.battlePlayers.find((player) => player.id !== session.playerId)?.health ?? 0) /
+                    (session.battlePlayers.find((player) => player.id !== session.playerId)?.maxHealth ?? 1)
+                  : 1
+              }
               metaProgress={metaProgress}
               unlockedLevelRewards={metaProgress?.unlocked_level_rewards ?? []}
               onToggleCard={session.handleToggleCard}
               onPlayHand={session.handlePlayHand}
               onDiscard={session.handleDiscard}
+              onUseSpell={session.handleUseSpell}
               onEndTurn={session.handleEndTurn}
               canPlayActions={session.canPlayActions}
               canEndTurn={session.canEndTurn}

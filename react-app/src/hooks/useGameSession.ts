@@ -23,6 +23,7 @@ import {
   sendHeartbeat,
   startCampaignNode,
   startBotGame,
+  useSpell,
 } from "../lib/api";
 import { generateLobbyId, generatePlayerName } from "../lib/nameGenerator";
 import { connectToGameSocket } from "../lib/ws";
@@ -34,6 +35,8 @@ import {
   playRelicPickSound,
   playRelicRevealSound,
   playRerollSound,
+  playSpellCastSound,
+  playSpellPrepareSound,
   playShopRevealSound,
   playUpgradeBuySound,
 } from "../lib/audio";
@@ -45,6 +48,7 @@ import type {
   GameSocketMessage,
   HandPlayedMessage,
   HandUpdatedMessage,
+  MatchSpell,
   MatchOverMessage,
   MatchStateMessage,
   NewHandMessage,
@@ -54,6 +58,8 @@ import type {
   Relic,
   RelicStatusMessage,
   ShopStatusMessage,
+  SpellMoment,
+  SpellUsedMessage,
   StartBotGameResponse,
   Upgrade,
 } from "../types/game";
@@ -82,6 +88,10 @@ function formatSocketMessage(message: GameSocketMessage) {
         ? ` (${rawDamage} raw, reduced by ${mitigationParts.join(", ")})`
         : "";
     return `${message.player} played ${message.hand_type} for ${message.damage} damage${mitigationSuffix}.`;
+  }
+
+  if ("type" in message && message.type === "spell_used") {
+    return `${message.player} ${message.effect_now ? "cast" : "prepared"} ${message.spell_name}.`;
   }
 
   if ("type" in message && typeof message.type === "string") {
@@ -159,6 +169,12 @@ function isMatchOverMessage(
   return "type" in message && message.type === "match_over";
 }
 
+function isSpellUsedMessage(
+  message: GameSocketMessage,
+): message is SpellUsedMessage {
+  return "type" in message && message.type === "spell_used";
+}
+
 function clearWindowTimeout(timeoutRef: MutableRefObject<number | null>) {
   if (timeoutRef.current !== null) {
     window.clearTimeout(timeoutRef.current);
@@ -191,6 +207,7 @@ export function useGameSession(currentUser: User | null) {
   const [playerGold, setPlayerGold] = useState(0);
   const [goldAttentionActive, setGoldAttentionActive] = useState(false);
   const [battleMoment, setBattleMoment] = useState<BattleMoment | null>(null);
+  const [spellMoment, setSpellMoment] = useState<SpellMoment | null>(null);
   const [discardMoment, setDiscardMoment] = useState<DiscardMoment | null>(null);
   const [shopOpen, setShopOpen] = useState(false);
   const [shopUpgrades, setShopUpgrades] = useState<Upgrade[]>([]);
@@ -200,6 +217,7 @@ export function useGameSession(currentUser: User | null) {
   const [relicOffers, setRelicOffers] = useState<Relic[]>([]);
   const [relicWaitingPlayers, setRelicWaitingPlayers] = useState<string[]>([]);
   const [playerRelics, setPlayerRelics] = useState<Record<string, Relic[]>>({});
+  const [playerSpells, setPlayerSpells] = useState<Record<string, MatchSpell[]>>({});
   const [phase, setPhase] = useState<"waiting" | "battle" | "shop" | "relic" | "match_over">("waiting");
   const [isBotMatch, setIsBotMatch] = useState(false);
   const [isCampaignMatch, setIsCampaignMatch] = useState(false);
@@ -218,6 +236,7 @@ export function useGameSession(currentUser: User | null) {
   const socketRef = useRef<WebSocket | null>(null);
   const goldAttentionTimeoutRef = useRef<number | null>(null);
   const battleMomentTimeoutRef = useRef<number | null>(null);
+  const spellMomentTimeoutRef = useRef<number | null>(null);
   const discardMomentTimeoutRef = useRef<number | null>(null);
   const shopOpenTimeoutRef = useRef<number | null>(null);
   const matchResultTimeoutRef = useRef<number | null>(null);
@@ -228,6 +247,7 @@ export function useGameSession(currentUser: User | null) {
       socketRef.current?.close();
       clearWindowTimeout(goldAttentionTimeoutRef);
       clearWindowTimeout(battleMomentTimeoutRef);
+      clearWindowTimeout(spellMomentTimeoutRef);
       clearWindowTimeout(discardMomentTimeoutRef);
       clearWindowTimeout(shopOpenTimeoutRef);
       clearWindowTimeout(matchResultTimeoutRef);
@@ -330,6 +350,21 @@ export function useGameSession(currentUser: User | null) {
     clearWindowTimeout(battleMomentTimeoutRef);
     finisherVisibleUntilRef.current = message.match_finished ? Date.now() + 1850 : 0;
     setBattleMoment(buildBattleMoment(message));
+    if (message.spell_effect_id && message.spell_effect_name) {
+      clearWindowTimeout(spellMomentTimeoutRef);
+      setSpellMoment({
+        player: message.player,
+        spellId: message.spell_effect_id,
+        spellName: message.spell_effect_name,
+        animation: message.spell_effect_id,
+        effectNow: true,
+      });
+      playSpellCastSound(message.spell_effect_id);
+      spellMomentTimeoutRef.current = window.setTimeout(() => {
+        setSpellMoment(null);
+        spellMomentTimeoutRef.current = null;
+      }, 1800);
+    }
     const targetPlayerId =
       Object.keys(message.health_update).find((name) => name !== message.player) ?? null;
     const targetHealthAfter =
@@ -408,6 +443,9 @@ export function useGameSession(currentUser: User | null) {
     setRelicWaitingPlayers(message.relic_waiting_players ?? []);
     if (message.relics_by_player) {
       setPlayerRelics(message.relics_by_player);
+    }
+    if (message.spells_by_player) {
+      setPlayerSpells(message.spells_by_player);
     }
     if (message.phase !== "match_over") {
       setMatchResult(null);
@@ -492,6 +530,7 @@ export function useGameSession(currentUser: User | null) {
     setBattleDeadlineAt(response.battle_deadline_at ?? null);
     setShopDeadlines(response.shop_deadlines ?? {});
     setPlayerRelics(response.relics_by_player ?? {});
+    setPlayerSpells(response.spells_by_player ?? {});
   }
 
   function openSocket(nextGameId: string, nextPlayerId: string) {
@@ -520,6 +559,35 @@ export function useGameSession(currentUser: User | null) {
         }
         if (isMatchStateMessage(message)) {
           applyMatchState(message);
+        }
+        if (isSpellUsedMessage(message)) {
+          setPlayerHealth((current) => ({ ...current, ...message.health_update }));
+          setPlayerMaxHealth((current) => ({ ...current, ...message.max_health_update }));
+          setPlayerArmor((current) => ({ ...current, ...message.armor_update }));
+          setPlayerSpells(message.spells_by_player);
+          if (message.gold_update[nextPlayerId] != null) {
+            setPlayerGold(message.gold_update[nextPlayerId]);
+          }
+          if (message.remaining_discards_update[nextPlayerId] != null) {
+            setRemainingDiscards(message.remaining_discards_update[nextPlayerId]);
+          }
+          clearWindowTimeout(spellMomentTimeoutRef);
+          setSpellMoment({
+            player: message.player,
+            spellId: message.spell_id,
+            spellName: message.spell_name,
+            animation: message.animation,
+            effectNow: message.effect_now,
+          });
+          if (message.effect_now) {
+            playSpellCastSound(message.animation);
+          } else {
+            playSpellPrepareSound(message.animation);
+          }
+          spellMomentTimeoutRef.current = window.setTimeout(() => {
+            setSpellMoment(null);
+            spellMomentTimeoutRef.current = null;
+          }, 1800);
         }
         if (isNewHandMessage(message) && message.player === nextPlayerId) {
           setPlayerHand(message.cards);
@@ -553,6 +621,9 @@ export function useGameSession(currentUser: User | null) {
             setRemainingDiscards(message.remaining_discards);
             setPlayerGold((current) => current + message.gold);
             setSelectedCards([]);
+          }
+          if (message.spells_by_player) {
+            setPlayerSpells(message.spells_by_player);
           }
           if (message.winner && !message.match_finished) {
             pushFeedEntry(`Round over. ${message.winner} wins the round.`);
@@ -696,6 +767,7 @@ export function useGameSession(currentUser: User | null) {
       setBestOf(9);
       setWinsToClinch(5);
       setMatchResult(null);
+      setPlayerSpells({});
       pushFeedEntry(response.message ?? `Joined ${normalizedGameId}.`);
       await refreshPlayers(normalizedGameId);
       openSocket(normalizedGameId, normalizedPlayerId);
@@ -904,6 +976,24 @@ export function useGameSession(currentUser: User | null) {
     }
   }
 
+  async function handleUseSpell(spellId: string) {
+    if (!gameId || !playerId) {
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const response = await useSpell(gameId, playerId, spellId);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+    } catch (error) {
+      pushFeedEntry(error instanceof Error ? error.message : "Spell failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleEndTurn() {
     if (!gameId || !playerId) {
       return;
@@ -1046,10 +1136,12 @@ export function useGameSession(currentUser: User | null) {
       setPlayerArmorReductionPct({});
       setPlayerUpgrades({});
       setPlayerRelics({});
+      setPlayerSpells({});
       setRemainingDiscards(1);
       setPlayerGold(0);
       setGoldAttentionActive(false);
       setBattleMoment(null);
+      setSpellMoment(null);
       setDiscardMoment(null);
       setPhase("waiting");
       setIsBotMatch(false);
@@ -1179,6 +1271,8 @@ export function useGameSession(currentUser: User | null) {
     enemyUpgrades,
     ownedRelics,
     enemyRelics,
+    playerSpells,
+    spellMoment,
     relicOffers,
     enemyPlayerId,
     phase,
@@ -1214,6 +1308,7 @@ export function useGameSession(currentUser: User | null) {
     handleToggleCard,
     handleDiscard,
     handlePlayHand,
+    handleUseSpell,
     handleEndTurn,
     handleBuyUpgrade,
     handleRerollShop,
